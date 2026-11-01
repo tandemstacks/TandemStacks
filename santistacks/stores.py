@@ -27,23 +27,56 @@ def _ps(cmd):
         return ""
 
 # ---------------- Epic ----------------
+EPIC_DATA = r"C:\ProgramData\Epic\EpicGamesLauncher\Data"
+EPIC_NO_JUEGO = re.compile(r"soundtrack|\bost\b|public test|playtest|test server|test branch|resource archiver|\beditor\b|\bcontent\b|\bdemo\b|benchmark|dedicated server|\bsdk\b|\btools?\b|artbook|wallpaper", re.I)
+
+def _epic_uri(ns, item, app):
+    """La misma URI juega si está instalado y abre la instalación si no."""
+    return "com.epicgames.launcher://apps/%s%%3A%s%%3A%s?action=launch&silent=true" % (ns, item, app)
+
 def epic():
-    out = []
-    for f in glob.glob(r"C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests\*.item"):
+    """Biblioteca completa desde el catálogo que guarda el launcher (catcache.bin, base64 de JSON; no hace falta login)
+    + lo instalado desde los manifiestos .item. Sin DLC ni extras (bandas sonoras, editores, servidores de prueba)."""
+    import base64
+    juegos = {}
+    try:
+        cat = json.loads(base64.b64decode(open(os.path.join(EPIC_DATA, "Catalog", "catcache.bin"), "rb").read()))
+    except Exception:
+        cat = []
+    for it in cat:
+        cats = {c.get("path") for c in it.get("categories", [])}
+        if "games" not in cats or "addons" in cats:
+            continue
+        if (it.get("mainGameItem") or {}).get("id"):
+            continue  # DLC / contenido de otro juego
+        titulo = str(it.get("title", "")).strip()
+        if not titulo or EPIC_NO_JUEGO.search(titulo):
+            continue
+        rel = (it.get("releaseInfo") or [{}])[0]
+        if rel.get("platform") and "Windows" not in rel["platform"]:
+            continue
+        app = rel.get("appId", "")
+        alta = next((k.get("url") for k in it.get("keyImages", []) if k.get("type") == "DieselGameBoxTall"), "")
+        juegos[it["id"]] = {"id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", app or titulo)[:40], "name": titulo, "store": "Epic", "installed": False,
+                            "dir": "", "dev": str(it.get("developer", "")), "cover_url": alta,
+                            "desc": re.sub(r"\s+", " ", str(it.get("description", "")))[:400],
+                            "launch": _epic_uri(it.get("namespace"), it["id"], app) if app else None}
+    for f in glob.glob(os.path.join(EPIC_DATA, "Manifests", "*.item")):
         try:
             m = json.load(io.open(f, encoding="utf-8"))
         except Exception:
             continue
         if m.get("MainGameAppName") and m.get("MainGameAppName") != m.get("AppName"):
-            continue  # DLC / contenido extra
+            continue  # DLC instalado
         if not m.get("DisplayName"):
             continue
         loc = m.get("InstallLocation", "")
-        out.append({"id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", m.get("AppName", m["DisplayName"]))[:40], "name": m["DisplayName"], "store": "Epic",
-                    "installed": True, "dir": loc, "drive": drive(loc), "sizeGB": round(m.get("InstallSize", 0) / 1073741824, 1),
-                    "launch": "com.epicgames.launcher://apps/%s%%3A%s%%3A%s?action=launch&silent=true" % (m.get("CatalogNamespace"), m.get("CatalogItemId"), m.get("AppName")),
-                    "epic_slug": m.get("MandatoryAppFolderName", "")})
-    return out
+        g = juegos.get(m.get("CatalogItemId")) or {"id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", m.get("AppName", m["DisplayName"]))[:40],
+                                                   "name": m["DisplayName"], "store": "Epic"}
+        g.update(installed=True, dir=loc, drive=drive(loc), sizeGB=round(m.get("InstallSize", 0) / 1073741824, 1),
+                 launch=_epic_uri(m.get("CatalogNamespace"), m.get("CatalogItemId"), m.get("AppName")))
+        juegos[m.get("CatalogItemId") or g["id"]] = g
+    return list(juegos.values())
 
 # ---------------- EA ----------------
 def ea():

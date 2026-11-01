@@ -59,6 +59,11 @@ def asegurar(g):
         src = os.path.join(paths.ASSETS, "covers", g["cover_builtin"])
         if os.path.exists(src):
             shutil.copy(src, dest); ok = True
+    if not ok and g.get("cover_url"):  # portada vertical que trae la propia tienda (catálogo de Epic)
+        try:
+            _a23(http(g["cover_url"] + ("?h=900&resize=1&w=600" if "epicgames.com" in g["cover_url"] else ""), 60), dest); ok = True
+        except Exception:
+            ok = False
     if not ok:
         ok = _steam(g.get("appid") or g.get("steam_hint"), dest)
     if not ok and g.get("store") == "Epic":

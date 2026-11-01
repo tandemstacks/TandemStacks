@@ -71,7 +71,7 @@ class Nucleo:
             self.juegos = juegos
             # resumen de tiendas
             cuenta = lambda s: sum(1 for g in juegos if g["store"] == s)
-            solo_inst = {"Epic", "EA", "Xbox", "Ubisoft"}
+            solo_inst = {"EA", "Xbox", "Ubisoft"}
             self.tiendas = []
             for n in ORDEN_TIENDAS:
                 l = self.launchers[n]

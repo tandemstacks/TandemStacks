@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import webview
 from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, VERSION
 
-ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft"]
+ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io"]
 
 class Nucleo:
     def __init__(self):
@@ -76,6 +76,15 @@ class Nucleo:
             paso("Ubisoft")
             try: juegos += stores.ubisoft()
             except Exception as e: paths.log("ubisoft", e)
+            paso("GOG")
+            try: juegos += stores.gog(self.launchers["GOG"]["exe"] if self.launchers["GOG"]["ok"] else "")
+            except Exception as e: paths.log("gog", e)
+            paso("Amazon")
+            try: juegos += stores.amazon()
+            except Exception as e: paths.log("amazon", e)
+            paso("itch.io")
+            try: juegos += stores.itch()
+            except Exception as e: paths.log("itch", e)
             self.estado.update(msg="Armando la biblioteca…", de="")
             # fichas ya cacheadas + portadas ya bajadas (instantáneo). La ficha de Steam es solo para juegos de Steam:
             # los de otras tiendas muestran lo de su tienda (steam_hint queda solo para la portada)
@@ -89,12 +98,12 @@ class Nucleo:
             self.juegos = juegos
             # resumen de tiendas
             cuenta = lambda s: sum(1 for g in juegos if g["store"] == s)
-            solo_inst = {"EA", "Xbox", "Ubisoft"}
+            solo_inst = {"EA", "Xbox", "Ubisoft", "Amazon"}
             self.tiendas = []
             for n in ORDEN_TIENDAS:
                 l = self.launchers[n]
                 if n == "Steam": info, st = steam_info, ("ok" if bib is not None else "parcial") if l["ok"] else "no"
-                elif n in solo_inst: info, st = ("%d instalados (%s)" % (cuenta(n), "Ubisoft guarda tu biblioteca cifrada: solo se ven los instalados" if n == "Ubisoft" else "la tienda no deja leer la biblioteca completa")), ("parcial" if l["ok"] else "no")
+                elif n in solo_inst: info, st = ("%d instalados (%s)" % (cuenta(n), "%s guarda tu biblioteca cifrada: solo se ven los instalados" % n if n in ("Ubisoft", "Amazon") else "la tienda no deja leer la biblioteca completa")), ("parcial" if l["ok"] else "no")
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
@@ -164,6 +173,8 @@ class Nucleo:
         except OSError: pass
         for ruta in (r"SOFTWARE\WOW6432Node\Blizzard Entertainment", r"SOFTWARE\WOW6432Node\Rockstar Games"):
             partes.append(ruta + "|" + "|".join(sorted(detect.reg_hijas(detect.HKLM, ruta))))
+        partes.append(stores.huella_bases())
+        partes.append("gog|" + "|".join(sorted(detect.reg_hijas(detect.HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games"))))
         partes.append("|".join(sorted(str(e.get("DisplayName")) for e in detect.uninstall_entries() if "electronic arts" in str(e.get("Publisher", "")).lower() or str(e.get("_key", "")).startswith("Uplay Install"))))
         return "\n".join(partes)
 

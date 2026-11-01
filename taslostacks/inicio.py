@@ -6,7 +6,7 @@ import re, time, winreg
 HKCU, HKLM = winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE
 RUN = r"Software\Microsoft\Windows\CurrentVersion\Run"
 APROB = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
-LAUNCHER = re.compile(r"steam|epicgames|eadm|ea ?desktop|eabackground|origin|riotclient|riot client|battle\.net|upc\.exe|ubisoft|uplay|rockstar|socialclub", re.I)
+LAUNCHER = re.compile(r"steam|epicgames|eadm|ea ?desktop|eabackground|origin|riotclient|riot client|battle\.net|upc\.exe|ubisoft|uplay|rockstar|socialclub|goggalaxy|galaxyclient|amazon games|itch-setup", re.I)
 NO_TOCAR = re.compile(r"vanguard|vgtray", re.I)  # anti-trampas de Riot: si se saca, LoL/VALORANT no arrancan
 
 def _entradas():

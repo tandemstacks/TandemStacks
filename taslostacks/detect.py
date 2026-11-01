@@ -4,6 +4,7 @@ import os, json, glob, winreg
 
 HKLM, HKCU = winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER
 PF, PF86 = os.environ.get("ProgramFiles", r"C:\Program Files"), os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+LAD = os.environ.get("LOCALAPPDATA", "")
 
 def reg(hive, ruta, valor):
     try:
@@ -106,6 +107,27 @@ LAUNCHERS = {
         "abrir": lambda exe: "uplay://",
         "bajar": "https://ubisoftconnect.com/",
         "procs": ["upc.exe", "ubisoftconnect.exe", "uplaywebcore.exe", "ubisoftgamelauncher.exe"],
+    },
+    "GOG": {
+        "color": "#86328a",
+        "exe": lambda: os.path.join(reg(HKLM, r"SOFTWARE\WOW6432Node\GOG.com\GalaxyClient\paths", "client") or os.path.join(PF, "GOG Galaxy"), "GalaxyClient.exe"),
+        "abrir": lambda exe: exe,
+        "bajar": "https://www.gog.com/galaxy",
+        "procs": ["galaxyclient.exe", "galaxyclient helper.exe", "gog galaxy notifications renderer.exe", "galaxycommunication.exe"],
+    },
+    "Amazon": {
+        "color": "#ff9900",
+        "exe": lambda: os.path.join(LAD, r"Amazon Games\App\Amazon Games.exe"),
+        "abrir": lambda exe: exe,
+        "bajar": "https://gaming.amazon.com/home",
+        "procs": ["amazon games.exe", "amazon games ui.exe", "amazon games services.exe"],
+    },
+    "itch.io": {
+        "color": "#fa5c5c",
+        "exe": lambda: os.path.join(LAD, r"itch\itch-setup.exe"),
+        "abrir": lambda exe: "itch://library",
+        "bajar": "https://itch.io/app",
+        "procs": ["itch.exe", "butler.exe"],
     },
 }
 

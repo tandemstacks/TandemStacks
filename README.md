@@ -1,6 +1,6 @@
 # TasloStacks
 
-**Todas tus bibliotecas de juegos en una sola pantalla.** Steam, Epic, EA, Xbox / Game Pass, Riot, Battle.net, Rockstar y Ubisoft, con portadas, fichas, reseñas, lo que ocupa cada juego en el disco y botones de *Instalar* / *Jugar* que abren la tienda que corresponda.
+**Todas tus bibliotecas de juegos en una sola pantalla.** Steam, Epic, GOG, EA, Xbox / Game Pass, Riot, Battle.net, Rockstar, Ubisoft, Amazon Games e itch.io, con portadas, fichas, reseñas, lo que ocupa cada juego en el disco y botones de *Instalar* / *Jugar* que abren la tienda que corresponda.
 
 Gratis y de código abierto (licencia MIT). Hecho para Windows 10/11.
 
@@ -17,7 +17,8 @@ Comunidad: [Discord](https://discord.gg/CKqByMZ2m) · [Instagram @taslostacks](h
 - **Riot y Battle.net**: catálogo gratis (LoL, VALORANT, Overwatch 2, Hearthstone…) más lo que tengas instalado.
 - **Rockstar**: los juegos de tu cuenta (los lee del launcher) y lo instalado.
 - **Epic**: toda tu biblioteca (la lee del catálogo que guarda el launcher, sin pedir login).
-- **EA, Xbox, Ubisoft**: lo instalado (sus bibliotecas no se pueden leer desde la PC; Ubisoft las guarda cifradas).
+- **GOG e itch.io**: toda tu biblioteca (la leen de la base que guardan GOG Galaxy y la app de itch) y lo instalado.
+- **EA, Xbox, Ubisoft, Amazon Games**: lo instalado (sus bibliotecas no se pueden leer desde la PC; Ubisoft y Amazon las guardan cifradas).
 - Un juego que tenés en varias tiendas aparece **una sola vez**, con los logos de todas.
 - Fichas (descripción, géneros, año, estudio, porcentaje de reseñas de la comunidad de Steam) se bajan solas y quedan en caché. Las portadas son links directos a cada tienda: la app no guarda imágenes.
 - **No deja nada corriendo**: ningún launcher se abre al iniciar Windows por culpa de TasloStacks y, si abrís un juego desde acá, el launcher que se abrió se cierra cuando terminás (configurable).

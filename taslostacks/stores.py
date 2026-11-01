@@ -3,7 +3,8 @@
    {id, name, store, installed, dir, sizeGB, drive, launch (str|list|None), uninstall, steam_hint (appid para ficha/portada),
     cover_builtin / cover_url, desc (+ desc_en), genres, anio, dev, reqGB}
    Epic: biblioteca completa (catálogo local) + instalados. Riot y Battle.net: catálogo gratis + instalados.
-   Rockstar: los títulos cuyo manifiesto bajó el launcher (= biblioteca) + instalados. EA/Xbox/Ubisoft: solo instalados."""
+   Rockstar: los títulos cuyo manifiesto bajó el launcher (= biblioteca) + instalados. EA/Xbox/Ubisoft/Amazon: solo instalados.
+   GOG e itch.io: biblioteca completa (bases SQLite de sus apps) + instalados."""
 import os, re, io, json, glob, time, threading, subprocess
 from . import paths
 from .detect import reg_hijas, uninstall_entries, HKLM
@@ -286,3 +287,138 @@ def ubisoft():
                     "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1),
                     "uninstall": "uplay://uninstall/%s" % m.group(1)})
     return out
+
+# ---------------- bases SQLite de los launchers ----------------
+def _sqlite(ruta):
+    """Abre una copia de la base del launcher (la original puede estar en uso y con cambios en el -wal)."""
+    import sqlite3, shutil
+    if not os.path.exists(ruta):
+        return None
+    tmp = os.path.join(paths.CACHE, "db_%s_%s" % (threading.get_ident(), os.path.basename(ruta)))  # un archivo por hilo: escaneo y vigilancia corren juntos
+    shutil.copy(ruta, tmp)
+    for ext in ("-wal", "-shm"):
+        if os.path.exists(ruta + ext): shutil.copy(ruta + ext, tmp + ext)
+        elif os.path.exists(tmp + ext): os.remove(tmp + ext)
+    return sqlite3.connect(tmp)
+
+def _carga(v):
+    try:
+        return json.loads(v)
+    except Exception:
+        return {}
+
+# ---------------- GOG ----------------
+GOG_DB = r"C:\ProgramData\GOG.com\Galaxy\storage\galaxy-2.0.db"
+GOG_NO_JUEGO = re.compile(EPIC_NO_JUEGO.pattern + r"|goodies|bonus content|upgrade|season pass", re.I)
+
+def gog(exe):
+    """Biblioteca completa desde la base de GOG Galaxy (LibraryReleases + GamePieces; no hace falta login)
+    + instalados desde el registro (sirve también para juegos instalados sin Galaxy)."""
+    juegos = {}
+    c = _sqlite(GOG_DB)
+    if c:
+        try:
+            tipos = {n: i for i, n in c.execute("select id, type from GamePieceTypes")}
+            def pieza(rk, tipo):
+                r = c.execute("select value from GamePieces where releaseKey=? and gamePieceTypeId=? order by userId is null", (rk, tipos.get(tipo))).fetchone()
+                return _carga(r[0]) if r else {}
+            for (rk,) in c.execute("select distinct releaseKey from LibraryReleases where releaseKey like 'gog_%'").fetchall():
+                titulo = (pieza(rk, "title") or pieza(rk, "originalTitle")).get("title", "")
+                if not titulo or GOG_NO_JUEGO.search(titulo):
+                    continue
+                meta = pieza(rk, "meta") or pieza(rk, "originalMeta")
+                img = pieza(rk, "originalImages")
+                desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", pieza(rk, "summary").get("summary") or "")).strip()
+                anio = time.gmtime(meta["releaseDate"]).tm_year if meta.get("releaseDate") else None
+                pid = rk[4:]
+                juegos[pid] = {"id": "gog_" + pid, "name": titulo, "store": "GOG", "installed": False, "dir": "",
+                               "cover_url": (img.get("verticalCover") or "").replace(".webp", ".jpg") if img.get("verticalCover") else "",
+                               "desc": desc[:400], "genres": meta.get("genres") or [], "anio": anio, "dev": ", ".join(meta.get("developers") or []),
+                               "launch": "goggalaxy://openGameView/" + rk}
+        finally:
+            c.close()
+    for pid, v in reg_hijas(HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games").items():
+        carpeta = str(v.get("path") or "")
+        if not carpeta or not os.path.isdir(carpeta) or str(v.get("dependsOn") or "").strip():
+            continue  # DLC: depende de otro juego
+        g = juegos.get(pid) or {"id": "gog_" + pid, "name": str(v.get("gameName") or pid), "store": "GOG"}
+        juego_exe = str(v.get("exe") or "")
+        g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta),
+                 launch=[exe, "/command=runGame", "/gameId=" + pid, "/path=" + carpeta] if exe and os.path.exists(exe)
+                 else (juego_exe if os.path.exists(juego_exe) else None))
+        uni = next((str(e.get("UninstallString", "")) for e in uninstall_entries() if str(e.get("_key", "")) == pid + "_is1"), "")
+        if uni: g["uninstall"] = uni
+        juegos[pid] = g
+    return list(juegos.values())
+
+# ---------------- Amazon Games ----------------
+AMAZON_SQL = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Amazon Games\Data\Games\Sql")
+
+def amazon():
+    """Solo instalados: la lista de juegos de la cuenta (Entitlements.sqlite) está cifrada por Windows para el launcher."""
+    out = []
+    c = _sqlite(os.path.join(AMAZON_SQL, "GameInstallInfo.sqlite"))
+    if not c:
+        return out
+    try:
+        for gid, carpeta, titulo in c.execute("select Id, InstallDirectory, ProductTitle from DbSet where Installed=1"):
+            if not titulo or not carpeta or not os.path.isdir(carpeta):
+                continue
+            out.append({"id": "amz_" + re.sub(r"[^A-Za-z0-9]", "", gid)[:40], "name": titulo, "store": "Amazon", "installed": True,
+                        "dir": carpeta, "drive": drive(carpeta), "sizeGB": tam_gb(carpeta), "launch": "amazon-games://play/" + gid})
+    finally:
+        c.close()
+    return out
+
+# ---------------- itch.io ----------------
+ITCH_DB = os.path.join(os.environ.get("APPDATA", ""), r"itch\db\butler.db")
+
+def itch():
+    """Biblioteca (juegos comprados o reclamados: download_keys) + instalados (caves) desde la base de la app de itch."""
+    juegos = {}
+    c = _sqlite(ITCH_DB)
+    if not c:
+        return []
+    try:
+        def fila(gid):
+            r = c.execute("select id, title, short_text, cover_url, classification, published_at from games where id=?", (gid,)).fetchone()
+            return r
+        def nuevo(r):
+            gid, titulo, corto, portada, clase, pub = r
+            return {"id": "itch_%s" % gid, "name": titulo, "store": "itch.io", "installed": False, "dir": "", "desc": (corto or "")[:400],
+                    "cover_url": portada or "", "anio": int(str(pub)[:4]) if pub and str(pub)[:4].isdigit() else None,
+                    "tipo": "game" if (clase or "game") == "game" else "otro", "launch": "itch://games/%s" % gid}
+        for (gid,) in c.execute("select distinct game_id from download_keys").fetchall():
+            r = fila(gid)
+            if r and r[1]: juegos[gid] = nuevo(r)
+        cols = [x[1] for x in c.execute("pragma table_info(caves)")]
+        carp = "install_folder_name" if "install_folder_name" in cols else None
+        sel = "select c.id, c.game_id, l.path%s from caves c left join install_locations l on l.id=c.install_location_id" % (", c." + carp if carp else "")
+        for fila_c in c.execute(sel).fetchall():
+            cid, gid, base = fila_c[:3]
+            carpeta = os.path.join(base, fila_c[3]) if carp and base and fila_c[3] else ""
+            g = juegos.get(gid)
+            if not g:
+                r = fila(gid)
+                if not r or not r[1]: continue
+                g = juegos[gid] = nuevo(r)
+            g.update(installed=True, dir=carpeta, drive=drive(carpeta) if carpeta else "", sizeGB=tam_gb(carpeta) if carpeta and os.path.isdir(carpeta) else 0,
+                     launch="itch://caves/%s/launch" % cid)
+    finally:
+        c.close()
+    return list(juegos.values())
+
+def huella_bases():
+    """Qué juegos hay en las bases de GOG, Amazon e itch (no su fecha: los launchers las tocan seguido aunque nada cambie)."""
+    partes = []
+    for ruta, sql in ((GOG_DB, "select releaseKey from LibraryReleases"),
+                      (os.path.join(AMAZON_SQL, "GameInstallInfo.sqlite"), "select Id from DbSet where Installed=1"),
+                      (ITCH_DB, "select 'k' || game_id from download_keys union all select 'c' || id from caves")):
+        try:
+            c = _sqlite(ruta)
+            if c:
+                partes.append("|".join(sorted(str(r[0]) for r in c.execute(sql))))
+                c.close()
+        except Exception:
+            pass
+    return "\n".join(partes)

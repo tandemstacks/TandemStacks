@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Logo de SantiStacks: cuadrado naranja industrial con una "S" blanca armada con bloques apilados
+# Logo de TasloStacks: cuadrado naranja industrial con una "S" blanca armada con bloques apilados
 # (tres barras horizontales unidas por dos verticales, estilo bloque/estantería).
-# Salida: santistacks-logo.png (256) y santistacks.ico (16-256 px).
+# Salida: taslostacks-logo.png (256) y taslostacks.ico (16-256 px).
 import os
 from PIL import Image, ImageDraw
 
@@ -32,6 +32,6 @@ bloque((x0, y_top, x0 + g, y_mid + g))                # unión izquierda (arriba
 bloque((x0, y_top, x1, y_top + g))                    # arriba
 
 png = img.resize((256, 256), Image.LANCZOS)
-png.save(os.path.join(BASE, "santistacks-logo.png"))
-png.save(os.path.join(BASE, "santistacks.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+png.save(os.path.join(BASE, "taslostacks-logo.png"))
+png.save(os.path.join(BASE, "taslostacks.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
 print("ok")

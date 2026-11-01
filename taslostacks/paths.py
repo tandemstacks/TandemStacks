@@ -1,19 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Carpetas y configuración. Nada se guarda junto al programa: todo va a %LOCALAPPDATA%\\SantiStacks."""
+"""Carpetas y configuración. Nada se guarda junto al programa: todo va a %LOCALAPPDATA%\\TasloStacks."""
 import os, sys, json
 
-APP = "SantiStacks"
+APP = "TasloStacks"
 DATA = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), APP)
 CACHE = os.path.join(DATA, "cache")
 CONFIG = os.path.join(os.environ.get("APPDATA", DATA), APP, "config.json")
 HTML = os.path.join(DATA, "biblioteca.html")
-LOG = os.path.join(DATA, "santistacks.log")
+LOG = os.path.join(DATA, "taslostacks.log")
 
 # assets: dentro del .exe (PyInstaller) o en el repo
 if getattr(sys, "frozen", False):
     ASSETS = os.path.join(sys._MEIPASS, "assets")
 else:
     ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
+
+# hasta la 1.1.2 la app se llamaba SantiStacks: se mudan sus carpetas (config, caché, visor) la primera vez
+for _base in {os.environ.get("LOCALAPPDATA", ""), os.environ.get("APPDATA", "")} - {""}:
+    _viejo, _nuevo = os.path.join(_base, "SantiStacks"), os.path.join(_base, APP)
+    if os.path.isdir(_viejo) and not os.path.exists(_nuevo):
+        try: os.rename(_viejo, _nuevo)
+        except OSError: pass
 
 for d in (DATA, CACHE, os.path.dirname(CONFIG)):
     os.makedirs(d, exist_ok=True)
@@ -25,8 +32,8 @@ DEFAULT = {
     "cerrar_launchers": True, # al cerrar el juego, cerrar el launcher que se abrió para jugarlo
     "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam
     "tema": "claro",          # "claro" u "oscuro"
-    "repo": "rullans/SantiStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
-    "desvinculadas": [],      # tiendas que el usuario sacó de SantiStacks (se pueden volver a vincular desde su tarjeta)
+    "repo": "taslostacks/TasloStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
+    "desvinculadas": [],      # tiendas que el usuario sacó de TasloStacks (se pueden volver a vincular desde su tarjeta)
     "primer_arranque": True,
 }
 
@@ -37,7 +44,7 @@ def cargar():
             cfg.update(json.load(f))
     except Exception:
         pass
-    if not cfg.get("repo"):  # configs guardadas antes de tener repo
+    if not cfg.get("repo") or cfg["repo"] == "rullans/SantiStacks":  # configs sin repo o con el repo viejo
         cfg["repo"] = DEFAULT["repo"]
     return cfg
 

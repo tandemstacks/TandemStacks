@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Ventana de SantiStacks (pywebview) + escaneo de bibliotecas en segundo plano + API que usa la página."""
+"""Ventana de TasloStacks (pywebview) + escaneo de bibliotecas en segundo plano + API que usa la página."""
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
@@ -176,9 +176,9 @@ class Nucleo:
     # ---------- versión nueva ----------
     @staticmethod
     def _link_setup(release):
-        """Link del instalador (SantiStacks-Setup-x.y.z.exe) dentro de una release de GitHub."""
+        """Link del instalador (TasloStacks-Setup-x.y.z.exe) dentro de una release de GitHub."""
         for a in release.get("assets") or []:
-            if re.match(r"SantiStacks-Setup-.*\.exe$", a.get("name", ""), re.I):
+            if re.match(r"(TasloStacks|SantiStacks)-Setup-.*\.exe$", a.get("name", ""), re.I):
                 return a.get("browser_download_url", "")
         return ""
 
@@ -196,7 +196,7 @@ class Nucleo:
                     b = r.read(256 * 1024)
                     if not b: break
                     f.write(b); self.estado["hecho"] += len(b)
-            self.estado.update(msg="Instalando la versión nueva: SantiStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
+            self.estado.update(msg="Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
             time.sleep(2)  # que la página llegue a mostrar el mensaje
             subprocess.Popen([destino, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"],
                              creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
@@ -280,7 +280,7 @@ class Api:
         return True
 
     def desinstalar_app(self):
-        """Lanza el desinstalador de Windows de SantiStacks (solo si se instaló con el Setup)."""
+        """Lanza el desinstalador de Windows de TasloStacks (solo si se instaló con el Setup)."""
         if getattr(sys, "frozen", False):
             carpeta = os.path.dirname(sys.executable)
             for n in ("unins000.exe", "unins001.exe"):
@@ -297,7 +297,7 @@ class Api:
         r = inicio.quitar_todos(); paths.log("quitar inicio:", r); return r
 
     def desvincular(self, nombre, fuera=True):
-        """Saca (o vuelve a poner) una tienda de SantiStacks. No toca nada del launcher."""
+        """Saca (o vuelve a poner) una tienda de TasloStacks. No toca nada del launcher."""
         d = set(NUC.cfg.get("desvinculadas") or [])
         (d.add if fuera else d.discard)(nombre)
         NUC.cfg["desvinculadas"] = sorted(d)
@@ -363,14 +363,14 @@ def _poner_icono(ventana, icono):
 def main():
     icono = os.path.join(paths.ASSETS, "icon.ico")
     try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("SantiStacks")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("TasloStacks")
     except Exception:
         pass
     # primera pantalla enseguida (con lo que haya en caché); el escaneo real arranca al abrir
     if not os.path.exists(paths.HTML):
         NUC.estado.update(fase="escaneando", msg="Preparando la biblioteca…")
         build.escribir([], [], NUC.cfg, NUC.estado)
-    v = webview.create_window("SantiStacks", pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
+    v = webview.create_window("TasloStacks", pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
     def arranque():

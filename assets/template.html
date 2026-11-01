@@ -34,7 +34,10 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .filafilt{display:flex;gap:10px;align-items:flex-start;margin-top:10px}
 .filafilt .chips{flex:1;margin-top:0}
 .ordgen{display:flex;gap:6px;align-items:center;margin-left:auto}
-.ordgen select{padding:5px 8px;font-size:13px}
+.ordgen select{padding:0 8px;font-size:12px;letter-spacing:.3px;text-transform:uppercase;box-shadow:var(--sh);cursor:pointer}
+/* misma altura para tiendas, orden y géneros: quedan alineados */
+.filafilt .chip,.ordgen select{height:28px;box-sizing:border-box;padding-top:0;padding-bottom:0}
+.ordgen .dd summary.chip{padding:0 11px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;letter-spacing:.3px;text-transform:uppercase;user-select:none;white-space:nowrap;box-shadow:var(--sh)}
 .chip:hover{background:var(--card)}
 .chip.on{background:var(--acc);color:#fff}

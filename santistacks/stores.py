@@ -118,6 +118,7 @@ def riot(exe):
                 g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta))
         if exe and os.path.exists(exe):
             g["launch"] = [exe, "--launch-product=" + prod, "--launch-patchline=live"]  # instala si falta, juega si está
+            g["uninstall"] = [exe, "--uninstall-product=" + prod, "--uninstall-patchline=live"]
         out.append(g)
     return out
 
@@ -204,5 +205,6 @@ def ubisoft():
             continue
         loc = str(e.get("InstallLocation", "")).strip('"')
         out.append({"id": "ubi_" + m.group(1), "name": str(e["DisplayName"]), "store": "Ubisoft", "installed": bool(loc and os.path.isdir(loc)), "dir": loc,
-                    "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1)})
+                    "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1),
+                    "uninstall": "uplay://uninstall/%s" % m.group(1)})
     return out

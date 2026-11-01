@@ -35,6 +35,10 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .chips.gen .chip.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
 .count{color:var(--mu);font-size:13px}
+.dd{position:relative}.dd summary{list-style:none;padding:9px 12px;font-size:12px}.dd summary::-webkit-details-marker{display:none}.dd[open] summary,.dd summary.on{background:var(--acc2);color:#fff}
+.dd .menu{position:absolute;top:calc(100% + 6px);left:0;z-index:7;background:var(--panel);box-shadow:0 10px 30px rgba(0,0,0,.22);border-radius:4px;border-top:4px solid var(--acc);padding:8px;min-width:260px;max-height:340px;overflow:auto}
+.dd .menu label{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 8px;border-radius:3px;cursor:pointer;white-space:nowrap}.dd .menu label:hover{background:var(--bg)}.dd .menu label.todos{border-bottom:1px solid var(--ln);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:12px}
+.dd .menu input{accent-color:var(--acc);width:15px;height:15px;margin:0}.dd .menu small{margin-left:auto;color:var(--mu)}
 .prog{display:none;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mu)}
 .prog.show{display:flex}
 .prog .pb{flex:1;height:6px;background:var(--card);border-radius:2px;overflow:hidden}.prog .pb i{display:block;height:100%;background:var(--acc);transition:width .4s}
@@ -128,10 +132,10 @@ main{padding:16px 22px 60px}
       <option value="peso">Más pesados</option>
       <option value="anio">Más nuevos</option>
     </select>
+    <details class="dd" id="ddgen"><summary class="chip" id="gensum">Géneros ▾</summary><div class="menu" id="generos"></div></details>
     <span class="count" id="count"></span>
   </div>
   <div class="chips" id="filtros"></div>
-  <div class="chips gen" id="generos"></div>
   <div class="prog" id="prog"><span id="progtxt"></span><div class="pb"><i id="progbar" style="width:0%"></i></div></div>
 </header>
 <div class="upd" id="upd"><span>Hay una versión nueva de SantiStacks: <b id="updtag"></b></span><a id="updlink">Descargar</a><a onclick="$('#upd').classList.remove('show')" style="margin-left:auto;color:#fff">✕</a></div>
@@ -186,8 +190,11 @@ function cabecera(){
   const tiendas=['todos',...TODAS.filter(s=>RAW.some(g=>g.store===s)),'inst'];
   $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}" data-t="${t}">${t==='todos'?'Todos':t==='inst'?'● Instalados':logo(t,SC[t],12)+' '+t}</span>`).join('');
   const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
-  const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,14);
-  $('#generos').innerHTML=topG.map(x=>`<span class="chip ${gens.has(x)?'on':''}" data-g="${esc(x)}">${esc(x)} <span style="opacity:.6">${cnt[x]}</span></span>`).join('');
+  const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
+  $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> Todos</label>`+
+    topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${gens.has(x)?'checked':''}> ${esc(x)}<small>${cnt[x]}</small></label>`).join('');
+  $('#gensum').textContent=gens.size?`Géneros: ${[...gens].slice(0,2).join(', ')}${gens.size>2?' +'+(gens.size-2):''} ▾`:'Géneros ▾';
+  $('#gensum').classList.toggle('on',gens.size>0);
 }
 const PAL=['#7c9cff','#b07cff','#ff7ca8','#ffa94d','#ffd43b','#69db7c','#38d9a9','#4dabf7','#e599f7','#ff8787','#a9e34b','#74c0fc'];
 function discos(){
@@ -214,7 +221,7 @@ const pulgar=p=>p>=60?'👍':'👎';
 function render(){
   let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
     &&(!texto||g.name.toLowerCase().includes(texto))
-    &&[...gens].every(x=>(g.genres||[]).includes(x)));
+    &&(!gens.size||[...gens].some(x=>(g.genres||[]).includes(x))));
   const by={nombre:(a,b)=>a.name.localeCompare(b.name,'es'),valor:(a,b)=>(b.revPct||0)-(a.revPct||0),peso:(a,b)=>peso(b)-peso(a),anio:(a,b)=>(b.anio||0)-(a.anio||0)};
   list.sort(by[orden]);
   const card=g=>`<div class="card${g.installed?'':' off'}" data-i="${J.indexOf(g)}">${img(g)}
@@ -249,7 +256,7 @@ function botonesDe(it,conTienda){
     const k=it.store;
     if(it.installed&&it.lanzable) b.push(`<button class="btn ok" onclick="accion('lanzar=${encodeURIComponent(it.id)}')">▶ Jugar${de}</button>`);
     b.push(`<button class="btn ${it.installed?'':'pri'}" onclick="accion('${!it.installed&&it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(k)}')">${it.installed?'Abrir '+k:(conTienda?'⬇ '+k:'⬇ Instalar en '+k)}</button>`);
-    if(it.installed) b.push(`<button class="btn del" onclick="accion('abrir=apps')" title="Desinstalar" aria-label="Desinstalar">🗑</button>`);
+    if(it.installed) b.push(`<button class="btn del" onclick="accion('desinstalar=${encodeURIComponent(it.id)}')" title="${it.desinst?'Desinstalar':'Desinstalar (abre Aplicaciones instaladas de Windows)'}" aria-label="Desinstalar">🗑</button>`);
   }
   return b;
 }
@@ -300,7 +307,10 @@ $('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
 $('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;
   if(t==='todos'){tsel.clear();soloInst=false;}else if(t==='inst'){soloInst=!soloInst;}else{tsel.has(t)?tsel.delete(t):tsel.add(t);}
   document.querySelectorAll('#filtros .chip').forEach(x=>{const k=x.dataset.t;x.classList.toggle('on',k==='todos'?(!tsel.size&&!soloInst):k==='inst'?soloInst:tsel.has(k));});render();});
-$('#generos').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const g=c.dataset.g;gens.has(g)?gens.delete(g):gens.add(g);c.classList.toggle('on');render();});
+$('#generos').addEventListener('change',e=>{const i=e.target;if(!i||!i.dataset.g)return;const g=i.dataset.g;
+  if(g==='__todos'){gens.clear();}else{i.checked?gens.add(g):gens.delete(g);}
+  cabecera();render();$('#ddgen').open=true;});
+document.addEventListener('click',e=>{const d=$('#ddgen');if(d&&d.open&&!e.target.closest('#ddgen'))d.open=false;});
 
 // ---------- configuración ----------
 function configuracion(primera){
@@ -329,14 +339,14 @@ $('#gear').onclick=()=>configuracion(false);
 
 // ---------- tarjeta de cada tienda: logo grande, descarga y pasos ----------
 const GUIA={
-  Steam:{launcher:'Steam',lee:'Juegos instalados siempre. Con una clave Web API (gratis), toda tu biblioteca.',pasos:['Bajá e instalá Steam desde el botón de la derecha.','Iniciá sesión con tu cuenta.','Opcional, para ver toda tu biblioteca: en ⚙ Configuración pegá tu clave Web API (link ahí mismo) y poné los detalles de juegos de tu perfil en público.','SantiStacks detecta todo solo; si no aparece, ⚙ → Volver a escanear.']},
-  Epic:{launcher:'Epic Games Launcher',lee:'Juegos instalados (la biblioteca completa de Epic no se puede leer sin iniciar sesión).',pasos:['Bajá e instalá el Epic Games Launcher.','Iniciá sesión con tu cuenta de Epic.','Instalá los juegos desde el launcher: van apareciendo acá solos.']},
-  EA:{launcher:'EA app',lee:'Juegos instalados (la biblioteca completa de EA no se puede leer).',pasos:['Bajá e instalá la EA app.','Iniciá sesión con tu cuenta de EA.','Instalá los juegos desde la app: aparecen acá cuando terminan.']},
-  Xbox:{launcher:'App Xbox (Microsoft Store)',lee:'Juegos instalados desde la app Xbox o la Microsoft Store (Game Pass incluido).',pasos:['Instalá la app Xbox desde la Microsoft Store (o el botón de la derecha).','Iniciá sesión con tu cuenta Microsoft.','Instalá juegos de Game Pass o de la Store: aparecen acá solos.']},
-  Riot:{launcher:'Riot Client',lee:'Los 5 juegos gratis de Riot (LoL, VALORANT, TFT, Legends of Runeterra, 2XKO) y cuáles tenés instalados.',pasos:['Bajá cualquier juego de Riot (instala el Riot Client).','Iniciá sesión con tu cuenta de Riot.','Desde acá podés instalar o jugar cualquiera de los 5: el botón abre el Riot Client en ese juego.','Aviso: LoL y VALORANT usan Vanguard (anti-trampas) y pueden pedir reiniciar.']},
-  'Battle.net':{launcher:'Battle.net',lee:'Los juegos gratis de Blizzard (Overwatch 2, Hearthstone, StarCraft II, Warcraft Rumble…) y los pagos que tengas instalados.',pasos:['Bajá e instalá la app Battle.net.','Iniciá sesión con tu cuenta de Blizzard.','Instalar / Jugar desde acá abre Battle.net en ese juego.']},
-  Rockstar:{launcher:'Rockstar Games Launcher',lee:'Los juegos de tu cuenta de Rockstar (los que el launcher conoce) y cuáles están instalados.',pasos:['Bajá e instalá el Rockstar Games Launcher.','Iniciá sesión con tu cuenta de Rockstar (Social Club).','Esperá un minuto: el launcher baja la lista de tus juegos y SantiStacks la lee sola.']},
-  Ubisoft:{launcher:'Ubisoft Connect',lee:'Juegos instalados (la biblioteca completa de Ubisoft no se puede leer).',pasos:['Bajá e instalá Ubisoft Connect.','Iniciá sesión con tu cuenta de Ubisoft.','Instalá los juegos desde Ubisoft Connect: aparecen acá cuando terminan.']},
+  Steam:{launcher:'Steam',lee:'Juegos instalados siempre. Con una clave Web API (gratis), toda tu biblioteca.',pasos:['Bajá e instalá Steam desde el botón de la derecha e iniciá sesión.','Opcional, para ver toda tu biblioteca: en ⚙ Configuración pegá tu clave Web API (link ahí mismo) y poné los detalles de juegos de tu perfil en público.','Desde acá instalás, jugás y desinstalás cualquier juego de Steam: SantiStacks le pide a Steam que lo haga y Steam te pide la confirmación.','Lo que instales o borres desde Steam también se refleja acá solo.']},
+  Epic:{launcher:'Epic Games Launcher',lee:'Juegos instalados (la biblioteca completa de Epic no se puede leer sin iniciar sesión).',pasos:['Bajá e instalá el Epic Games Launcher e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí el launcher desde acá (Epic no deja leer tu biblioteca sin iniciar sesión); cuando termine, aparece solo.']},
+  EA:{launcher:'EA app',lee:'Juegos instalados (la biblioteca completa de EA no se puede leer).',pasos:['Bajá e instalá la EA app e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí la EA app desde acá (EA no deja leer tu biblioteca); cuando termine, aparece solo.']},
+  Xbox:{launcher:'App Xbox (Microsoft Store)',lee:'Juegos instalados desde la app Xbox o la Microsoft Store (Game Pass incluido).',pasos:['Instalá la app Xbox desde la Microsoft Store (o el botón de la derecha) e iniciá sesión con tu cuenta Microsoft.','Lo que tengas instalado (Game Pass o Store) aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí la app Xbox desde acá; cuando termine, aparece solo.']},
+  Riot:{launcher:'Riot Client',lee:'Los 5 juegos gratis de Riot (LoL, VALORANT, TFT, Legends of Runeterra, 2XKO) y cuáles tenés instalados.',pasos:['Instalá el Riot Client (viene con cualquier juego de Riot) e iniciá sesión.','Desde acá instalás, jugás y desinstalás cualquiera de los 5: el botón abre el Riot Client en ese juego.','Aviso: LoL y VALORANT usan Vanguard (anti-trampas) y pueden pedir reiniciar.']},
+  'Battle.net':{launcher:'Battle.net',lee:'Los juegos gratis de Blizzard (Overwatch 2, Hearthstone, StarCraft II, Warcraft Rumble…) y los pagos que tengas instalados.',pasos:['Bajá e instalá la app Battle.net e iniciá sesión con tu cuenta de Blizzard.','Instalar y Jugar desde acá abren Battle.net en ese juego; los pagos que tengas instalados también aparecen.','Desinstalar abre Aplicaciones instaladas de Windows (Battle.net no tiene atajo).']},
+  Rockstar:{launcher:'Rockstar Games Launcher',lee:'Los juegos de tu cuenta de Rockstar (los que el launcher conoce) y cuáles están instalados.',pasos:['Bajá e instalá el Rockstar Games Launcher e iniciá sesión (Social Club).','Esperá un minuto: el launcher baja la lista de tus juegos y SantiStacks la lee sola.','Instalar abre el launcher; Jugar arranca el juego desde acá; Desinstalar abre Aplicaciones instaladas de Windows.']},
+  Ubisoft:{launcher:'Ubisoft Connect',lee:'Juegos instalados (la biblioteca completa de Ubisoft no se puede leer).',pasos:['Bajá e instalá Ubisoft Connect e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar (Ubisoft Connect hace el trabajo).','Para instalar un juego nuevo, abrí Ubisoft Connect desde acá (no deja leer tu biblioteca); cuando termine, aparece solo.']},
 };
 function tienda(t){
   const g=GUIA[t.n]||{launcher:t.n,lee:'',pasos:[]};

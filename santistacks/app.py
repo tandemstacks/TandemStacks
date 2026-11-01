@@ -239,6 +239,14 @@ class Api:
             return True
         if que == "apps":
             os.startfile("ms-settings:appsfeatures"); return True
+        des = q.get("desinstalar", [""])[0]
+        if des:  # desinstalar un juego de otra tienda: comando propio si la tienda lo tiene, si no Aplicaciones instaladas de Windows
+            g = next((x for x in NUC.juegos if x["id"] == des), None)
+            u = g.get("uninstall") if g else None
+            if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]))
+            elif u: os.startfile(u)
+            else: os.startfile("ms-settings:appsfeatures")
+            return True
         if que in NUC.launchers:
             os.startfile(NUC.launchers[que]["abrir"]); return True
         if lz:

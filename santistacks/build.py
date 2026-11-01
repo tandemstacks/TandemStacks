@@ -22,6 +22,7 @@ def publico(g):
     d = {k: g[k] for k in keys if g.get(k) not in (None, "", [])}
     d["installed"] = bool(g.get("installed"))
     d["lanzable"] = bool(g.get("launch"))
+    d["desinst"] = bool(g.get("uninstall"))
     return d
 
 def escribir(juegos, tiendas, cfg, estado):

@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SantiStacks</title>
 <style>
-:root{--bg:#f2f2ef;--panel:#ffffff;--card:#e6e6e2;--tx:#1a1a1a;--mu:#6e6e6a;--ln:#e4e4df;--acc:#ff6a00;--acc2:#1a1a1a;--ok:#1f9d55;--warn:#d08a00;--bad:#d9433b;--sh:0 2px 8px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.08)}
+:root{--bg:#f2f2ef;--panel:#ffffff;--card:#e6e6e2;--tx:#1a1a1a;--mu:#6e6e6a;--ln:#e4e4df;--acc:#ff6a00;--acc2:#1a1a1a;--ok:#1f9d55;--warn:#d08a00;--bad:#d9433b;--sh:0 2px 8px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.08);--tagbg:rgba(255,255,255,.92)}
+:root[data-tema="oscuro"]{--bg:#121316;--panel:#1b1d22;--card:#272a32;--tx:#eef0f5;--mu:#9aa0ad;--ln:#2d313b;--acc2:#ff6a00;--sh:0 2px 8px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.4);--tagbg:rgba(20,22,28,.9)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Bahnschrift,"Segoe UI",system-ui,sans-serif;min-height:100vh}
 a{color:inherit}
@@ -16,14 +17,12 @@ header{position:sticky;top:0;z-index:5;background:var(--panel);border-top:5px so
 .brand h1{margin:0;font-size:22px;letter-spacing:.2px;font-weight:700;text-transform:uppercase}.brand h1 span{color:var(--acc)}
 .brand small{display:block;color:var(--mu);font-size:12px;margin-top:-2px}
 .tiendas{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.tnd{display:flex;align-items:center;gap:6px;padding:5px 9px 5px 6px;border-radius:3px;background:var(--panel);box-shadow:var(--sh);font-size:12px;cursor:default}
+.tnd{display:flex;align-items:center;gap:6px;padding:5px 9px 5px 6px;border-radius:3px;background:var(--panel);box-shadow:var(--sh);font-size:12px;cursor:pointer}
+.tnd:hover{background:var(--card)}
 .tnd .ic{width:20px;height:20px;border-radius:2px;display:grid;place-items:center;font-weight:800;font-size:11px;color:#fff}
 .tnd .dot{width:7px;height:7px;border-radius:50%}
-.tnd{cursor:pointer}.tnd:hover{background:var(--card)}.tnd.no{opacity:.55}
-.tcard .big{width:150px;height:150px;flex:none;border-radius:4px;display:grid;place-items:center;box-shadow:var(--sh)}
-.tcard ol{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.55}.tcard ol li{margin-bottom:5px}
-.tcard .estado{font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:8px}
-.gear{border:none;background:var(--bg);box-shadow:var(--sh);border-radius:3px;width:34px;height:34px;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.tnd.no{opacity:.55}
+.gear{border:none;background:var(--bg);box-shadow:var(--sh);border-radius:3px;width:34px;height:34px;cursor:pointer;font-size:18px;display:grid;place-items:center;color:var(--tx)}
 .gear:hover{background:var(--card)}
 .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
 #q{flex:1;min-width:220px;font:inherit;padding:10px 14px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);outline:none;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
@@ -31,14 +30,20 @@ header{position:sticky;top:0;z-index:5;background:var(--panel);border-top:5px so
 select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;letter-spacing:.3px;text-transform:uppercase;user-select:none;white-space:nowrap;box-shadow:var(--sh)}
-.chip:hover{background:#e6e6e2}
-.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.chips.gen .chip.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.chip:hover{background:var(--card)}
+.chip.on{background:var(--acc);color:#fff}
 .count{color:var(--mu);font-size:13px}
-.dd{position:relative}.dd summary{list-style:none;padding:9px 12px;font-size:12px}.dd summary::-webkit-details-marker{display:none}.dd[open] summary,.dd summary.on{background:var(--acc2);color:#fff}
-.dd .menu{position:absolute;top:calc(100% + 6px);left:0;z-index:7;background:var(--panel);box-shadow:0 10px 30px rgba(0,0,0,.22);border-radius:4px;border-top:4px solid var(--acc);padding:8px;min-width:260px;max-height:340px;overflow:auto}
-.dd .menu label{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 8px;border-radius:3px;cursor:pointer;white-space:nowrap}.dd .menu label:hover{background:var(--bg)}.dd .menu label.todos{border-bottom:1px solid var(--ln);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:12px}
+/* desplegables (géneros, menú del engranaje) */
+.dd{position:relative}.dd summary{list-style:none;cursor:pointer}.dd summary::-webkit-details-marker{display:none}
+.dd summary.chip{padding:9px 12px;font-size:12px}.dd[open] summary.chip,.dd summary.chip.on{background:var(--acc2);color:#fff}
+.dd .menu{position:absolute;top:calc(100% + 6px);left:0;z-index:7;background:var(--panel);box-shadow:0 10px 30px rgba(0,0,0,.25);border-radius:4px;border-top:4px solid var(--acc);padding:8px;min-width:260px;max-height:340px;overflow:auto}
+.dd.der .menu{left:auto;right:0}
+.dd .menu label,.dd .menu .it{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 8px;border-radius:3px;cursor:pointer;white-space:nowrap;color:var(--tx)}
+.dd .menu label:hover,.dd .menu .it:hover{background:var(--bg)}
+.dd .menu label.todos{border-bottom:1px solid var(--ln);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:12px}
 .dd .menu input{accent-color:var(--acc);width:15px;height:15px;margin:0}.dd .menu small{margin-left:auto;color:var(--mu)}
+.dd .menu .sep{border-top:1px solid var(--ln);margin:6px 0}.dd .menu .it.mal{color:var(--bad)}
+.sw{margin-left:auto;width:34px;height:18px;border-radius:9px;background:var(--card);position:relative;flex:none}.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .15s}.sw.on{background:var(--acc)}.sw.on::after{left:18px}
 .prog{display:none;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mu)}
 .prog.show{display:flex}
 .prog .pb{flex:1;height:6px;background:var(--card);border-radius:2px;overflow:hidden}.prog .pb i{display:block;height:100%;background:var(--acc);transition:width .4s}
@@ -53,7 +58,7 @@ main{padding:16px 22px 60px}
 .dmini .lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:4px}
 .bar{height:9px;background:var(--card);border-radius:2px;overflow:hidden;display:flex}
 .bar i{display:block;height:100%}
-.bar .j{background:var(--acc)}.bar .o{background:#c5cbd8}
+.bar .o{background:#c5cbd8}
 .flecha{color:var(--mu);font-size:12px}
 .ddet{padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .dcard{background:var(--bg);border-radius:3px;padding:12px}
@@ -76,7 +81,7 @@ main{padding:16px 22px 60px}
 .ph{color:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;font-size:15px;line-height:1.2}
 .nm{position:absolute;left:0;right:0;bottom:0;padding:22px 9px 8px;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .15s}
 .card:hover .nm{opacity:1}
-.tag{position:absolute;top:7px;left:7px;display:flex;gap:6px;align-items:center;padding:5px 6px;border-radius:3px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,0,0,.3)}.lg{display:inline-block;flex:none;vertical-align:middle;position:relative;top:-1px}
+.tag{position:absolute;top:7px;left:7px;display:flex;gap:6px;align-items:center;padding:5px 6px;border-radius:3px;background:var(--tagbg);box-shadow:0 1px 4px rgba(0,0,0,.3)}.lg{display:inline-block;flex:none;vertical-align:middle;position:relative;top:-1px}
 .inst{position:absolute;top:7px;right:7px;width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(0,0,0,.6)}
 .rate{position:absolute;bottom:7px;right:7px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.75);color:#fff}
 .empty{color:var(--mu);text-align:center;padding:40px}
@@ -102,12 +107,15 @@ main{padding:16px 22px 60px}
 .btn.del:hover{filter:none;color:#fff;background:var(--bad)}
 .x{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--mu);font-size:26px;cursor:pointer}
 .nota{font-size:12px;color:var(--mu);margin-top:10px;min-height:1em}
+.tcard .big{width:150px;height:150px;flex:none;border-radius:4px;display:grid;place-items:center;box-shadow:var(--sh)}
+.tcard ol{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.55}.tcard ol li{margin-bottom:5px}
+.tcard .estado{font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:8px}
 /* configuración */
 .cfg{display:block;max-width:680px}
 .cfg h2{font-size:20px;margin-bottom:10px}
 .cfg p{font-size:13px;color:var(--mu);margin:4px 0 12px;line-height:1.5}
 .cfg label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--mu);margin:12px 0 4px}
-.cfg input[type=text]{width:100%;font:inherit;font-size:13px;padding:8px 10px;border:none;border-radius:3px;background:var(--bg);box-shadow:inset 0 1px 3px rgba(0,0,0,.12);outline:none}
+.cfg input[type=text]{width:100%;font:inherit;font-size:13px;padding:8px 10px;border:none;border-radius:3px;background:var(--bg);color:var(--tx);box-shadow:inset 0 1px 3px rgba(0,0,0,.12);outline:none}
 .cfg input[type=text]:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
 .cfg .row{display:flex;gap:10px;align-items:center}
 .cfg .lrow{display:grid;grid-template-columns:110px 1fr 90px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
@@ -122,27 +130,24 @@ main{padding:16px 22px 60px}
 <header>
   <div class="top">
     <div class="brand"><img class="logo" id="logo" alt=""><div><h1>Santi<span>Stacks</span></h1><small id="sub"></small></div></div>
-    <div class="tiendas"><span id="tiendas" style="display:contents"></span><button class="gear" id="gear" title="Configuración" aria-label="Configuración">⚙</button></div>
+    <div class="tiendas"><span id="tiendas" style="display:contents"></span>
+      <details class="dd der" id="ddmenu"><summary class="gear" id="gear" title="Menú">⚙</summary><div class="menu" id="menu"></div></details>
+    </div>
   </div>
   <div class="tools">
-    <input id="q" placeholder="Buscar juego..." autocomplete="off">
-    <select id="orden">
-      <option value="nombre">Orden: nombre</option>
-      <option value="valor">Mejor valorados</option>
-      <option value="peso">Más pesados</option>
-      <option value="anio">Más nuevos</option>
-    </select>
-    <details class="dd" id="ddgen"><summary class="chip" id="gensum">Géneros ▾</summary><div class="menu" id="generos"></div></details>
+    <input id="q" autocomplete="off">
+    <select id="orden"><option value="nombre"></option><option value="valor"></option><option value="peso"></option><option value="anio"></option></select>
+    <details class="dd" id="ddgen"><summary class="chip" id="gensum"></summary><div class="menu" id="generos"></div></details>
     <span class="count" id="count"></span>
   </div>
   <div class="chips" id="filtros"></div>
   <div class="prog" id="prog"><span id="progtxt"></span><div class="pb"><i id="progbar" style="width:0%"></i></div></div>
 </header>
-<div class="upd" id="upd"><span>Hay una versión nueva de SantiStacks: <b id="updtag"></b></span><a id="updlink">Descargar</a><a onclick="$('#upd').classList.remove('show')" style="margin-left:auto;color:#fff">✕</a></div>
+<div class="upd" id="upd"><span id="updtxt"></span><a id="updlink"></a><a onclick="$('#upd').classList.remove('show')" style="margin-left:auto;color:#fff">✕</a></div>
 <main>
   <details class="discos" id="discos"></details>
   <div id="grid"></div>
-  <div class="empty" id="empty" style="display:none">Sin resultados.</div>
+  <div class="empty" id="empty" style="display:none"></div>
 </main>
 <div id="bg"><div class="modal" id="modal"></div></div>
 <div id="cfgbg"><div class="modal cfg" id="cfg"></div></div>
@@ -152,10 +157,56 @@ main{padding:16px 22px 60px}
 <script>
 let RAW=window.JUEGOS||[], D=window.DISCOS||[], T=window.TIENDAS||[], CONF=window.CONF||{}, EST=window.ESTADO||{};
 if(window.LOGO) document.getElementById('logo').src='data:image/png;base64,'+window.LOGO;
+document.documentElement.dataset.tema=CONF.tema||'claro';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.api[fn])?window.pywebview.api[fn](...a):Promise.reject('sin api');
-// Juegos repetidos en varias tiendas -> una sola tarjeta (agrupa por nombre normalizado)
+
+// ---------- idioma ----------
+const TXT={
+ spanish:{buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',
+  vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
+  msgs:{'Buscando launchers y juegos…':'Buscando launchers y juegos…','Bajando fichas y portadas…':'Bajando fichas y portadas…','Preparando la biblioteca…':'Preparando la biblioteca…','Escaneando…':'Escaneando…'},
+  discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
+  jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ficha',desinstalar:'Desinstalar',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
+  loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
+  listo:'Listo: si hace falta confirmar, fijate en la ventana que se abrió.',noPudo:'No se pudo.',disco:'disco',
+  tLeida:'Leída',tParcial:'Parcial',tNo:'No instalada',clicCfg:'Clic para ver cómo configurarla',
+  detectado:'Launcher detectado',noDetectado:'Launcher no instalado',abrirL:'Abrir',descargar:'Descargar',reescanear:'Volver a escanear',claveSteam:'Clave de Steam',quitar:'Quitar',comoFunc:'Cómo funciona',paraEmpezar:'Para empezar',
+  otraCarpeta:'Si ya lo tenés instalado en otra carpeta, pegá la ruta del .exe en ⚙ Configuración.',queHacemos:'¿Qué hacemos con',desvincular:'Desvincular',volverVincular:'Volver a vincular',desinstalarL:'Desinstalar',
+  notaQuitar:'Desvincular: la tienda y sus juegos dejan de verse acá, sin tocar nada en tu PC (se revierte desde la misma tarjeta). Desinstalar: abre el desinstalador de Windows del launcher.',
+  mConfig:'Configuración',mOscuro:'Modo oscuro',mIdioma:'Idioma',mDesinst:'Desinstalar SantiStacks',mDatos:'Carpeta de datos',confDesinst:'¿Seguro que querés desinstalar SantiStacks de esta PC? Se abre el desinstalador de Windows.',noInstalador:'Esta copia no se instaló con el Setup: para quitarla, borrá la carpeta del programa.',
+  nueva:'Hay una versión nueva de SantiStacks:',bajarNueva:'Descargar',
+  cBienvenida:'¡Bienvenido a SantiStacks!',cTitulo:'Configuración',cIntro1:'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá.',
+  cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal o querés la biblioteca completa de Steam.',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
+  cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
+  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cDet:'✓ detectado',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)',
+  cGuardar:'Guardar y escanear',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
+ english:{buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',
+  vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
+  msgs:{'Buscando launchers y juegos…':'Looking for launchers and games…','Bajando fichas y portadas…':'Downloading details and covers…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
+  discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
+  jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'Store page',desinstalar:'Uninstall',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
+  loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',notaFicha:'Install and uninstall open the store; you confirm there.',
+  listo:'Done: if confirmation is needed, check the window that opened.',noPudo:'It didn\'t work.',disco:'disk',
+  tLeida:'Read',tParcial:'Partial',tNo:'Not installed',clicCfg:'Click to see how to set it up',
+  detectado:'Launcher detected',noDetectado:'Launcher not installed',abrirL:'Open',descargar:'Download',reescanear:'Rescan',claveSteam:'Steam key',quitar:'Remove',comoFunc:'How it works',paraEmpezar:'Getting started',
+  otraCarpeta:'If it\'s installed in another folder, paste the .exe path in ⚙ Settings.',queHacemos:'What do you want to do with',desvincular:'Unlink',volverVincular:'Link again',desinstalarL:'Uninstall',
+  notaQuitar:'Unlink: the store and its games stop showing here, nothing changes on your PC (reversible from this card). Uninstall: opens the launcher\'s Windows uninstaller.',
+  mConfig:'Settings',mOscuro:'Dark mode',mIdioma:'Language',mDesinst:'Uninstall SantiStacks',mDatos:'Data folder',confDesinst:'Uninstall SantiStacks from this PC? The Windows uninstaller will open.',noInstalador:'This copy wasn\'t installed with the Setup: delete the program folder to remove it.',
+  nueva:'A new SantiStacks version is available:',bajarNueva:'Download',
+  cBienvenida:'Welcome to SantiStacks!',cTitulo:'Settings',cIntro1:'All your games (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) in one screen. This is what I found on your PC; review and save.',
+  cIntro2:'Everything is detected automatically. Only change something if a path is wrong or you want your full Steam library.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
+  cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>santistacks</i>). Your profile must have <b>game details</b> set to public.',
+  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cDet:'✓ detected',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if SantiStacks opened it)',
+  cGuardar:'Save and scan',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
+};
+const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
+const L=TXT[IDIOMA];
+document.documentElement.lang=IDIOMA==='english'?'en':'es';
+$('#q').placeholder=L.buscar; [...$('#orden').options].forEach((o,i)=>o.textContent=L.orden[i]); $('#empty').textContent=L.sinRes; $('#updtxt').innerHTML=L.nueva+' <b id="updtag"></b>'; $('#updlink').textContent=L.bajarNueva;
+
+// ---------- juegos ----------
 const norm=n=>n.toLowerCase().replace(/[™®©]/g,'')
   .replace(/[-:–]?\s*(the )?(definitive|complete|special|celebration|game of the year|goty|enhanced|deluxe|remastered|director'?s cut|steam|legacy)( edition)?\b/g,'')
   .replace(/[^a-z0-9]+/g,' ').trim();
@@ -175,26 +226,29 @@ function agrupar(){
   });
 }
 const SC={Steam:'#1b6fb8',Epic:'#2a2a2a',Xbox:'#107c10',EA:'#e03a3a','Battle.net':'#148eff',Rockstar:'#e59e00',Riot:'#d13639',Ubisoft:'#0070ff'};
+const SCD={...SC,Epic:'#d0d0d0'};  // en modo oscuro el negro de Epic no se ve
+const sc=s=>(document.documentElement.dataset.tema==='oscuro'?SCD:SC)[s];
 const LOGO={"Steam": "M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z", "Epic": "M3.537 0C2.165 0 1.66.506 1.66 1.879V18.44a4.262 4.262 0 00.02.433c.031.3.037.59.316.92.027.033.311.245.311.245.153.075.258.13.43.2l8.335 3.491c.433.199.614.276.928.27h.002c.314.006.495-.071.928-.27l8.335-3.492c.172-.07.277-.124.43-.2 0 0 .284-.211.311-.243.28-.33.285-.621.316-.92a4.261 4.261 0 00.02-.434V1.879c0-1.373-.506-1.88-1.878-1.88zm13.366 3.11h.68c1.138 0 1.688.553 1.688 1.696v1.88h-1.374v-1.8c0-.369-.17-.54-.523-.54h-.235c-.367 0-.537.17-.537.539v5.81c0 .369.17.54.537.54h.262c.353 0 .523-.171.523-.54V8.619h1.373v2.143c0 1.144-.562 1.71-1.7 1.71h-.694c-1.138 0-1.7-.566-1.7-1.71V4.82c0-1.144.562-1.709 1.7-1.709zm-12.186.08h3.114v1.274H6.117v2.603h1.648v1.275H6.117v2.774h1.74v1.275h-3.14zm3.816 0h2.198c1.138 0 1.7.564 1.7 1.708v2.445c0 1.144-.562 1.71-1.7 1.71h-.799v3.338h-1.4zm4.53 0h1.4v9.201h-1.4zm-3.13 1.235v3.392h.575c.354 0 .523-.171.523-.54V4.965c0-.368-.17-.54-.523-.54zm-3.74 10.147a1.708 1.708 0 01.591.108 1.745 1.745 0 01.49.299l-.452.546a1.247 1.247 0 00-.308-.195.91.91 0 00-.363-.068.658.658 0 00-.28.06.703.703 0 00-.224.163.783.783 0 00-.151.243.799.799 0 00-.056.299v.008a.852.852 0 00.056.31.7.7 0 00.157.245.736.736 0 00.238.16.774.774 0 00.303.058.79.79 0 00.445-.116v-.339h-.548v-.565H7.37v1.255a2.019 2.019 0 01-.524.307 1.789 1.789 0 01-.683.123 1.642 1.642 0 01-.602-.107 1.46 1.46 0 01-.478-.3 1.371 1.371 0 01-.318-.455 1.438 1.438 0 01-.115-.58v-.008a1.426 1.426 0 01.113-.57 1.449 1.449 0 01.312-.46 1.418 1.418 0 01.474-.309 1.58 1.58 0 01.598-.111 1.708 1.708 0 01.045 0zm11.963.008a2.006 2.006 0 01.612.094 1.61 1.61 0 01.507.277l-.386.546a1.562 1.562 0 00-.39-.205 1.178 1.178 0 00-.388-.07.347.347 0 00-.208.052.154.154 0 00-.07.127v.008a.158.158 0 00.022.084.198.198 0 00.076.066.831.831 0 00.147.06c.062.02.14.04.236.061a3.389 3.389 0 01.43.122 1.292 1.292 0 01.328.17.678.678 0 01.207.24.739.739 0 01.071.337v.008a.865.865 0 01-.081.382.82.82 0 01-.229.285 1.032 1.032 0 01-.353.18 1.606 1.606 0 01-.46.061 2.16 2.16 0 01-.71-.116 1.718 1.718 0 01-.593-.346l.43-.514c.277.223.578.335.9.335a.457.457 0 00.236-.05.157.157 0 00.082-.142v-.008a.15.15 0 00-.02-.077.204.204 0 00-.073-.066.753.753 0 00-.143-.062 2.45 2.45 0 00-.233-.062 5.036 5.036 0 01-.413-.113 1.26 1.26 0 01-.331-.16.72.72 0 01-.222-.243.73.73 0 01-.082-.36v-.008a.863.863 0 01.074-.359.794.794 0 01.214-.283 1.007 1.007 0 01.34-.185 1.423 1.423 0 01.448-.066 2.006 2.006 0 01.025 0zm-9.358.025h.742l1.183 2.81h-.825l-.203-.499H8.623l-.198.498h-.81zm2.197.02h.814l.663 1.08.663-1.08h.814v2.79h-.766v-1.602l-.711 1.091h-.016l-.707-1.083v1.593h-.754zm3.469 0h2.235v.658h-1.473v.422h1.334v.61h-1.334v.442h1.493v.658h-2.255zm-5.3.897l-.315.793h.624zm-1.145 5.19h8.014l-4.09 1.348z", "EA": "M16.635 6.162l-5.928 9.377H4.24l1.508-2.3h4.024l1.474-2.335H2.264L.79 13.239h2.156L0 17.84h12.072l4.563-7.259 1.652 2.66h-1.401l-1.473 2.299h4.347l1.473 2.3H24zm-11.461.107L3.7 8.604l9.52-.035 1.474-2.3z", "Riot": "M13.458.86 0 7.093l3.353 12.761 2.552-.313-.701-8.024.838-.373 1.447 8.202 4.361-.535-.775-8.857.83-.37 1.591 9.025 4.412-.542-.849-9.708.84-.374 1.74 9.87L24 17.318V3.5Zm.316 19.356.222 1.256L24 23.14v-4.18l-10.22 1.256Z", "Battle.net": "M18.94 8.296C15.9 6.892 11.534 6 7.426 6.332c.206-1.36.714-2.308 1.548-2.508 1.148-.275 2.4.48 3.594 1.854.782.102 1.71.28 2.355.429C12.747 2.013 9.828-.282 7.607.565c-1.688.644-2.553 2.97-2.448 6.094-2.2.468-3.915 1.3-5.013 2.495-.056.065-.181.227-.137.305.034.058.146-.008.194-.04 1.274-.89 2.904-1.373 5.027-1.676.303 3.333 1.713 7.56 4.055 10.952-1.28.502-2.356.536-2.946-.087-.812-.856-.784-2.318-.19-4.04a26.764 26.764 0 0 1-.807-2.254c-2.459 3.934-2.986 7.61-1.143 9.11 1.402 1.14 3.847.725 6.502-.926 1.505 1.672 3.083 2.74 4.667 3.094.084.015.287.043.332-.034.034-.06-.08-.124-.131-.149-1.408-.657-2.64-1.828-3.964-3.515 2.735-1.929 5.691-5.263 7.457-8.988 1.076.86 1.64 1.773 1.398 2.595-.336 1.131-1.615 1.84-3.403 2.185a27.697 27.697 0 0 1-1.548 1.826c4.634.16 8.08-1.22 8.458-3.565.286-1.786-1.295-3.696-4.053-5.17.696-2.139.832-4.04.346-5.588-.029-.08-.106-.27-.196-.27-.068 0-.067.13-.063.187.135 1.547-.263 3.2-1.062 5.19zm-8.533 9.869c-1.96-3.145-3.09-6.849-3.082-10.594 3.702-.124 7.474.748 10.714 2.627-1.743 3.269-4.385 6.1-7.633 7.966h.001z", "Rockstar": "M5.971 6.816h3.241c1.469 0 2.741-.448 2.741-2.084 0-1.3-1.117-1.576-2.19-1.576H6.748l-.777 3.66Zm12.834 8.753h5.168l-4.664 3.228.755 5.087-4.041-3.07L10.599 24l2.536-5.392s-2.95-3.075-2.947-3.075c-.198-.262-.265-.936-.265-1.226 0-.367.024-.739.049-1.134.028-.451.058-.933.058-1.476 0-1.338-.59-2.038-2.036-2.038H5.283l-1.18 5.525H.026L3.269 0h7.672c2.852 0 5.027.702 5.027 3.936 0 2.276-1.12 3.894-3.592 4.233v.045c1.162.276 1.598 1.062 1.598 2.527 0 .585-.018 1.098-.034 1.581-.015.428-.03.834-.03 1.243 0 .525.137 1.382.48 1.968h.567l3.028-5.06.82 5.096Zm-1.233-2.948-2.187 3.654h-3.457l2.103 2.189-1.73 3.672 3.777-2.218 2.976 2.263-.553-3.731 3.093-2.139h-3.43l-.592-3.69Z", "Ubisoft": "M23.561 11.988C23.301-.304 6.954-4.89.656 6.634c.282.206.661.477.943.672a11.747 11.747 0 00-.976 3.067 11.885 11.885 0 00-.184 2.071C.439 18.818 5.621 24 12.005 24c6.385 0 11.556-5.17 11.556-11.556v-.455zm-20.27 2.06c-.152 1.246-.054 1.636-.054 1.788l-.282.098c-.108-.206-.37-.932-.488-1.908C2.163 10.308 4.7 6.96 8.57 6.33c3.544-.52 6.937 1.68 7.728 4.758l-.282.098c-.087-.087-.228-.336-.77-.878-4.281-4.281-11.002-2.32-11.956 3.74zm11.002 2.081a3.145 3.145 0 01-2.59 1.355 3.15 3.15 0 01-3.155-3.155 3.159 3.159 0 012.927-3.144c1.018-.043 1.972.51 2.416 1.398a2.58 2.58 0 01-.455 2.95c.293.205.575.4.856.595zm6.58.12c-1.669 3.782-5.106 5.766-8.77 5.712-7.034-.347-9.083-8.466-4.38-11.393l.207.206c-.076.108-.358.325-.791 1.182-.51 1.041-.672 2.081-.607 2.732.369 5.67 8.314 6.83 11.045 1.214C21.057 8.217 11.822.401 3.626 6.374l-.184-.184C5.599 2.808 9.816 1.3 13.837 2.309c6.147 1.55 9.453 7.956 7.035 13.94z", "Xbox": "M4.102 21.033A11.947 11.947 0 0 0 12 24a11.96 11.96 0 0 0 7.902-2.967c1.877-1.912-4.316-8.709-7.902-11.417-3.582 2.708-9.779 9.505-7.898 11.417zm11.16-14.406c2.5 2.961 7.484 10.313 6.076 12.912A11.942 11.942 0 0 0 24 12.004a11.95 11.95 0 0 0-3.57-8.536s-.027-.022-.082-.042a.847.847 0 0 0-.281-.045c-.592 0-1.985.434-4.805 3.246zM3.654 3.426c-.057.02-.082.041-.086.042A11.956 11.956 0 0 0 0 12.004c0 2.854.998 5.473 2.661 7.533-1.401-2.605 3.579-9.951 6.08-12.91-2.82-2.813-4.216-3.245-4.806-3.245a.725.725 0 0 0-.281.045zM12 4.662s-2.953-1.728-5.258-1.81h-.113c-.1.004-.228.013-.336.028-.092.014-.189.029-.305.058C7.04 2.165 9.431 0 12 0c2.572 0 4.986 2.199 6.018 2.958-.1-.023-.212-.045-.317-.059-.093-.012-.206-.021-.33-.028h-.102C14.953 2.934 12 4.662 12 4.662z"};
 const logo=(s,c,n)=>LOGO[s]?`<svg class="lg" viewBox="0 0 24 24" width="${n}" height="${n}" fill="${c}" aria-label="${esc(s)}"><title>${esc(s)}</title><path d="${LOGO[s]}"/></svg>`:`<b style="color:${c}">${esc(s)}</b>`;
 const BG={Steam:'#1b3a5c',Epic:'#3a3a3a',Xbox:'#1f4020',EA:'#5c2020','Battle.net':'#0f3a66',Rockstar:'#5c4310',Riot:'#5c1020',Ubisoft:'#10305c'};
 const peso=g=>g.installed?(g.sizeGB||0):(g.reqGB||0);
 let tsel=new Set(), soloInst=false, gens=new Set(), texto='', orden='nombre', abiertos=new Set();
-const ST={ok:['var(--ok)','Leída'],parcial:['var(--warn)','Parcial'],no:['var(--bad)','No instalada']};
+const ST={ok:['var(--ok)',L.tLeida],parcial:['var(--warn)',L.tParcial],no:['var(--bad)',L.tNo]};
 const TODAS=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft'];
 
 function cabecera(){
-  $('#tiendas').innerHTML=T.map((t,i)=>`<div class="tnd ${t.st==='no'?'no':''}" data-t="${i}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}. Clic para ver cómo configurarla">
+  $('#tiendas').innerHTML=T.map((t,i)=>`<div class="tnd ${t.st==='no'?'no':''}" data-t="${i}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}. ${L.clicCfg}">
     <span class="ic" style="background:${t.c}">${logo(t.n,'#fff',12)}</span>${esc(t.n)}<span class="dot" style="background:${ST[t.st][0]}"></span></div>`).join('');
-  $('#sub').textContent=`${J.length} juegos · ${J.filter(g=>g.installed).length} instalados`;
+  $('#sub').textContent=`${J.length} ${L.juegos} · ${J.filter(g=>g.installed).length} ${L.instalados.toLowerCase()}`;
   const tiendas=['todos',...TODAS.filter(s=>RAW.some(g=>g.store===s)),'inst'];
-  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}" data-t="${t}">${t==='todos'?'Todos':t==='inst'?'● Instalados':logo(t,SC[t],12)+' '+t}</span>`).join('');
+  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}" data-t="${t}">${t==='todos'?L.todos:t==='inst'?'● '+L.instalados:logo(t,sc(t),12)+' '+t}</span>`).join('');
   const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
   const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
-  $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> Todos</label>`+
+  $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> ${L.todos}</label>`+
     topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${gens.has(x)?'checked':''}> ${esc(x)}<small>${cnt[x]}</small></label>`).join('');
-  $('#gensum').textContent=gens.size?`Géneros: ${[...gens].slice(0,2).join(', ')}${gens.size>2?' +'+(gens.size-2):''} ▾`:'Géneros ▾';
+  $('#gensum').textContent=gens.size?`${L.generos}: ${[...gens].slice(0,2).join(', ')}${gens.size>2?' +'+(gens.size-2):''} ▾`:L.generos+' ▾';
   $('#gensum').classList.toggle('on',gens.size>0);
+  menu();
 }
 const PAL=['#7c9cff','#b07cff','#ff7ca8','#ffa94d','#ffd43b','#69db7c','#38d9a9','#4dabf7','#e599f7','#ff8787','#a9e34b','#74c0fc'];
 function discos(){
@@ -202,14 +256,14 @@ function discos(){
   $('#discos').style.display='';
   const alerta=D.filter(d=>d.libreGB/d.totalGB<0.1||d.libreGB<50);
   const mini=D.map(d=>{const o=(d.usadoGB-d.juegosGB)/d.totalGB*100, poco=alerta.includes(d);
-    return `<div class="dmini"><div class="lbl"><span><b style="color:var(--tx)">${d.letra}</b> · juegos ${d.juegosGB} GB</span><span style="${poco?'color:var(--bad);font-weight:700':''}">${poco?'⚠ ':''}${d.libreGB} GB libres de ${d.totalGB}</span></div>
-    <div class="bar">${d.juegos.map((x,i)=>`<i title="${esc(x.name)} · ${x.gb} GB" style="width:${x.gb/d.totalGB*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}<i class="o" style="width:${o}%" title="Otros archivos"></i></div></div>`}).join('');
-  const det=D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} juegos, ${d.juegosGB} GB</h3>
-    ${d.juegos.map((x,i)=>`<div class="jrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||'<div class="jrow"><span>Sin juegos</span><span></span></div>'}</div>`).join('');
+    return `<div class="dmini"><div class="lbl"><span><b style="color:var(--tx)">${d.letra}</b> · ${L.juegos} ${d.juegosGB} GB</span><span style="${poco?'color:var(--bad);font-weight:700':''}">${poco?'⚠ ':''}${d.libreGB} GB ${L.libres} ${d.totalGB}</span></div>
+    <div class="bar">${d.juegos.map((x,i)=>`<i title="${esc(x.name)} · ${x.gb} GB" style="width:${x.gb/d.totalGB*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}<i class="o" style="width:${o}%" title="${L.otros}"></i></div></div>`}).join('');
+  const det=D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} ${L.juegos}, ${d.juegosGB} GB</h3>
+    ${d.juegos.map((x,i)=>`<div class="jrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div>`).join('');
   const estaba=$('#discos').open;
-  $('#discos').innerHTML=`<summary><b>💾 Discos</b>${mini}<span class="flecha">ver juegos ▾</span></summary>
-    ${alerta.length?`<div style="margin:0 16px 10px;padding:8px 12px;border-radius:3px;background:rgba(229,83,75,.15);color:var(--bad);font-size:13px">⚠ Poco espacio en ${alerta.map(d=>d.letra).join(', ')}: conviene desinstalar algo que no juegues.</div>`:''}
-    <div class="ley" style="padding:0 16px 8px"><span>Cada color es un juego</span><span><i style="background:#c5cbd8"></i>Otros archivos</span><span><i style="background:var(--bg);border:1px solid var(--ln)"></i>Libre</span></div>
+  $('#discos').innerHTML=`<summary><b>💾 ${L.discos}</b>${mini}<span class="flecha">${L.verJuegos} ▾</span></summary>
+    ${alerta.length?`<div style="margin:0 16px 10px;padding:8px 12px;border-radius:3px;background:rgba(229,83,75,.15);color:var(--bad);font-size:13px">⚠ ${L.pocoEsp} ${alerta.map(d=>d.letra).join(', ')}: ${L.pocoEsp2}</div>`:''}
+    <div class="ley" style="padding:0 16px 8px"><span>${L.cadaColor}</span><span><i style="background:#c5cbd8"></i>${L.otros}</span><span><i style="background:var(--bg);border:1px solid var(--ln)"></i>${L.libre}</span></div>
     <div class="ddet">${det}</div>`;
   $('#discos').open=estaba;
 }
@@ -225,44 +279,71 @@ function render(){
   const by={nombre:(a,b)=>a.name.localeCompare(b.name,'es'),valor:(a,b)=>(b.revPct||0)-(a.revPct||0),peso:(a,b)=>peso(b)-peso(a),anio:(a,b)=>(b.anio||0)-(a.anio||0)};
   list.sort(by[orden]);
   const card=g=>`<div class="card${g.installed?'':' off'}" data-i="${J.indexOf(g)}">${img(g)}
-    <span class="tag">${g.stores.map(s=>logo(s,SC[s],20)).join('')}</span>${g.installed?'<span class="inst" title="Instalado"></span>':''}
+    <span class="tag">${g.stores.map(s=>logo(s,sc(s),20)).join('')}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
     ${g.revPct?`<span class="rate" style="color:${rcol(g.revPct)}">${pulgar(g.revPct)} ${g.revPct}%</span>`:''}<div class="nm">${esc(g.name)}</div></div>`;
   const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
-  let h=inst.length?`<h2 class="sec">✅ Instalados <span>${inst.length}</span></h2><div class="grid">${inst.map(card).join('')}</div>`:'';
-  if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>No instalados</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;
-  if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.':'Buscando tus juegos…'}</div>`;
+  let h=inst.length?`<h2 class="sec">✅ ${L.instalados} <span>${inst.length}</span></h2><div class="grid">${inst.map(card).join('')}</div>`:'';
+  if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>${L.noInst}</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;
+  if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?L.vacio:L.buscando}</div>`;
   $('#grid').innerHTML=h;
   $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{if(!texto)d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);}));
   $('#empty').style.display=list.length||!RAW.length?'none':'block';
-  $('#count').textContent=`${list.length} de ${J.length}`;
+  $('#count').textContent=`${list.length} ${L.de} ${J.length}`;
 }
 function progreso(){
   const p=$('#prog');
-  if(EST.fase&&EST.fase!=='listo'){p.classList.add('show');$('#progtxt').textContent=(EST.msg||'Trabajando…')+(EST.total?` ${EST.hecho}/${EST.total}`:'');$('#progbar').style.width=(EST.total?EST.hecho/EST.total*100:15)+'%';}
+  if(EST.fase&&EST.fase!=='listo'){p.classList.add('show');$('#progtxt').textContent=(L.msgs[EST.msg]||EST.msg||L.trabajando)+(EST.total?` ${EST.hecho}/${EST.total}`:'');$('#progbar').style.width=(EST.total?EST.hecho/EST.total*100:15)+'%';}
   else p.classList.remove('show');
 }
 function todo(){agrupar();cabecera();discos();render();progreso();}
 
-// acciones -> Python
-function accion(q){const fin=ok=>{const n=$('#nota');if(n)n.textContent=ok?'Listo: si hace falta confirmar, fijate en la ventana que se abrió.':'No se pudo.';};
+// ---------- menú del engranaje ----------
+function menu(){
+  const oscuro=document.documentElement.dataset.tema==='oscuro';
+  $('#menu').innerHTML=`
+    <div class="it" onclick="cerrarMenu();configuracion(false)">⚙ ${L.mConfig}</div>
+    <div class="it" onclick="tema()">🌙 ${L.mOscuro}<span class="sw ${oscuro?'on':''}"></span></div>
+    <div class="it" onclick="idioma()">🌐 ${L.mIdioma}<small>${IDIOMA==='english'?'English → Español':'Español → English'}</small></div>
+    <div class="it" onclick="cerrarMenu();api('abrir_datos')">📁 ${L.mDatos}</div>
+    <div class="sep"></div>
+    <div class="it mal" onclick="desinstalarApp()">🗑 ${L.mDesinst}</div>`;
+}
+function cerrarMenu(){$('#ddmenu').open=false;}
+function tema(){
+  const nuevo=document.documentElement.dataset.tema==='oscuro'?'claro':'oscuro';
+  document.documentElement.dataset.tema=nuevo; CONF.tema=nuevo; api('preferencia','tema',nuevo).catch(()=>{}); cabecera(); render();
+}
+function idioma(){
+  const nuevo=IDIOMA==='english'?'spanish':'english';
+  api('preferencia','idioma',nuevo).then(()=>location.reload()).catch(()=>{});
+}
+function desinstalarApp(){
+  cerrarMenu();
+  if(!confirm(L.confDesinst)) return;
+  api('desinstalar_app').then(ok=>{if(!ok)alert(L.noInstalador);}).catch(()=>alert(L.noInstalador));
+}
+window.tema=tema;window.idioma=idioma;window.desinstalarApp=desinstalarApp;window.cerrarMenu=cerrarMenu;
+
+// ---------- acciones -> Python ----------
+function accion(q){const fin=ok=>{const n=$('#nota');if(n)n.textContent=ok?L.listo:L.noPudo;};
   api('accion',q).then(fin).catch(()=>fin(false));}
 window.accion=accion;
 function botonesDe(it,conTienda){
   const a=it.appid,b=[],de=conTienda?` (${it.store})`:'';
   if(it.store==='Steam'&&a){
-    if(it.installed){b.push(`<button class="btn ok" onclick="accion('tipo=run&appid=${a}')">▶ Jugar${de}</button>`);b.push(`<button class="btn del" onclick="accion('tipo=uninstall&appid=${a}')" title="Desinstalar" aria-label="Desinstalar">🗑</button>`);}
-    else b.push(`<button class="btn pri" onclick="accion('tipo=install&appid=${a}')">⬇ ${conTienda?'Steam':'Instalar'}</button>`);
+    if(it.installed){b.push(`<button class="btn ok" onclick="accion('tipo=run&appid=${a}')">▶ ${L.jugar}${de}</button>`);b.push(`<button class="btn del" onclick="accion('tipo=uninstall&appid=${a}')" title="${L.desinstalar}" aria-label="${L.desinstalar}">🗑</button>`);}
+    else b.push(`<button class="btn pri" onclick="accion('tipo=install&appid=${a}')">⬇ ${conTienda?'Steam':L.instalar}</button>`);
   } else {
     const k=it.store;
-    if(it.installed&&it.lanzable) b.push(`<button class="btn ok" onclick="accion('lanzar=${encodeURIComponent(it.id)}')">▶ Jugar${de}</button>`);
-    b.push(`<button class="btn ${it.installed?'':'pri'}" onclick="accion('${!it.installed&&it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(k)}')">${it.installed?'Abrir '+k:(conTienda?'⬇ '+k:'⬇ Instalar en '+k)}</button>`);
-    if(it.installed) b.push(`<button class="btn del" onclick="accion('desinstalar=${encodeURIComponent(it.id)}')" title="${it.desinst?'Desinstalar':'Desinstalar (abre Aplicaciones instaladas de Windows)'}" aria-label="Desinstalar">🗑</button>`);
+    if(it.installed&&it.lanzable) b.push(`<button class="btn ok" onclick="accion('lanzar=${encodeURIComponent(it.id)}')">▶ ${L.jugar}${de}</button>`);
+    b.push(`<button class="btn ${it.installed?'':'pri'}" onclick="accion('${!it.installed&&it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(k)}')">${it.installed?L.abrir+' '+k:(conTienda?'⬇ '+k:'⬇ '+L.instalarEn+' '+k)}</button>`);
+    if(it.installed) b.push(`<button class="btn del" onclick="accion('desinstalar=${encodeURIComponent(it.id)}')" title="${it.desinst?L.desinstalar:L.desinstalarWin}" aria-label="${L.desinstalar}">🗑</button>`);
   }
   return b;
 }
 function elegir(){
-  $('#acts').innerHTML=`<span style="align-self:center;font-size:14px;color:var(--mu)">¿Desde dónde lo instalás?</span>`+
-    actual.items.map(it=>botonesDe(it,true).join('')).join('')+`<button class="btn" onclick="abrir(actual)">Cancelar</button>`;
+  $('#acts').innerHTML=`<span style="align-self:center;font-size:14px;color:var(--mu)">${L.desdeDonde}</span>`+
+    actual.items.map(it=>botonesDe(it,true).join('')).join('')+`<button class="btn" onclick="abrir(actual)">${L.cancelar}</button>`;
 }
 window.elegir=elegir;
 let actual=null;
@@ -270,29 +351,29 @@ function botones(g){
   const a=g.appid;let b=[];
   const inst=g.items.filter(x=>x.installed);
   if(inst.length) inst.forEach(it=>b.push(...botonesDe(it,g.items.length>1)));
-  else if(g.items.length>1) b.push(`<button class="btn pri" onclick="elegir()">⬇ Instalar…</button>`);
+  else if(g.items.length>1) b.push(`<button class="btn pri" onclick="elegir()">⬇ ${L.instalarPuntos}</button>`);
   else b=botonesDe(g.items[0],false);
-  if(a) b.push(`<button class="btn" onclick="api('abrir_url','https://store.steampowered.com/app/${a}')">Ficha</button>`);
+  if(a) b.push(`<button class="btn" onclick="api('abrir_url','https://store.steampowered.com/app/${a}')">${L.ficha}</button>`);
   return b.join('');
 }
 function abrir(g){
   actual=g; $('#modal').classList.remove('tcard');
   const tam=g.installed&&g.sizeGB?`${g.sizeGB} GB`:g.reqGB?`~${g.reqGB} GB`:'—';
-  const tamL=g.installed&&g.sizeGB?`Ocupa en ${g.drive||'disco'}`:g.reqGB?'Necesita (requisito)':'Ocupa';
+  const tamL=g.installed&&g.sizeGB?`${L.ocupaEn} ${g.drive||L.disco}`:g.reqGB?L.necesita:L.ocupa;
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
     <div class="cov">${img(g)}</div>
     <div style="flex:1;min-width:0">
       <h2>${esc(g.name)}</h2>
-      <div class="meta">${g.stores.length>1?'Lo tenés en ':''}${g.stores.map(s=>`<span style="color:${SC[s]};display:inline-flex;align-items:center;gap:5px;line-height:1">${logo(s,SC[s],13)}${s}</span>`).join(' ')}${g.anio?` · ${esc(g.anio)}`:''}${g.dev?` · ${esc(g.dev)}`:''} · ${g.installed?'<span style="color:var(--ok)">Instalado</span>':'No instalado'}</div>
+      <div class="meta">${g.stores.length>1?L.loTenes+' ':''}${g.stores.map(s=>`<span style="color:${sc(s)};display:inline-flex;align-items:center;gap:5px;line-height:1">${logo(s,sc(s),13)}${s}</span>`).join(' ')}${g.anio?` · ${esc(g.anio)}`:''}${g.dev?` · ${esc(g.dev)}`:''} · ${g.installed?`<span style="color:var(--ok)">${L.instalado}</span>`:L.noInstalado}</div>
       ${g.genres?`<div class="pills">${g.genres.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div>`:''}
       <div class="stats">
         <div class="st"><b>${tam}</b>${tamL}</div>
-        <div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revTxt?esc(g.revTxt):'Reseñas Steam'}${g.revN?` (${g.revN.toLocaleString('es')})`:''}</div>
+        <div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revTxt?esc(g.revTxt):L.resenas}${g.revN?` (${g.revN.toLocaleString(IDIOMA==='english'?'en':'es')})`:''}</div>
         <div class="st"><b>${g.meta||'—'}</b>Metacritic</div>
       </div>
       ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:''}
       <div class="acts" id="acts">${botones(g)}</div>
-      <div class="nota" id="nota">Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.</div>
+      <div class="nota" id="nota">${L.notaFicha}</div>
     </div>`;
   $('#bg').classList.add('show');
 }
@@ -301,7 +382,7 @@ const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove
 $('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)abrir(J[+c.dataset.i]);});
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});
 $('#q').addEventListener('input',e=>{texto=e.target.value.toLowerCase().trim();render();});
 $('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
 $('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;
@@ -310,35 +391,11 @@ $('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(
 $('#generos').addEventListener('change',e=>{const i=e.target;if(!i||!i.dataset.g)return;const g=i.dataset.g;
   if(g==='__todos'){gens.clear();}else{i.checked?gens.add(g):gens.delete(g);}
   cabecera();render();$('#ddgen').open=true;});
-document.addEventListener('click',e=>{const d=$('#ddgen');if(d&&d.open&&!e.target.closest('#ddgen'))d.open=false;});
+document.addEventListener('click',e=>{for(const id of ['ddgen','ddmenu']){const d=document.getElementById(id);if(d&&d.open&&!e.target.closest('#'+id))d.open=false;}});
 
-// ---------- configuración ----------
-function configuracion(primera){
-  api('config').then(c=>{
-    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,SC[l.n],14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||'no encontrado · pegá la ruta del .exe si lo tenés instalado')}"><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?'✓ detectado':'✗ no está'}</span></div>`).join('');
-    $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
-      <h2>${primera?'¡Bienvenido a SantiStacks!':'Configuración'}</h2>
-      <p>${primera?'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá.':'Todo se detecta solo. Solo tocá algo si una ruta está mal o querés la biblioteca completa de Steam.'}</p>
-      <label>Cuenta de Steam</label>
-      <div class="row"><input type="text" id="c_sid" value="${esc(c.steam_id||'')}" placeholder="SteamID64 (17 dígitos)" style="max-width:260px"><span style="font-size:13px;color:var(--mu)">${c.steam_user?'detectada: <b>'+esc(c.steam_user)+'</b>':'no encontré un usuario de Steam en esta PC'}</span></div>
-      <label>Clave Web API de Steam (opcional)</label>
-      <input type="text" id="c_key" value="${esc(c.steam_api_key||'')}" placeholder="32 caracteres">
-      <p>Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto: <a onclick="api('abrir_url','https://steamcommunity.com/dev/apikey')">steamcommunity.com/dev/apikey</a> (en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.</p>
-      <label>Launchers</label>${filas}
-      <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)</label>
-      <div class="acts"><button class="btn pri" id="c_guardar">💾 Guardar y escanear</button><button class="btn" onclick="api('reescanear');cerrar()">↻ Volver a escanear</button><button class="btn" onclick="api('abrir_datos')">📁 Carpeta de datos</button></div>
-      <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · software libre (MIT) · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>`;
-    $('#c_guardar').onclick=()=>{
-      const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});
-      api('guardar_config',{steam_api_key:$('#c_key').value.trim(),steam_id:$('#c_sid').value.trim(),cerrar_launchers:$('#c_cerrar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
-    };
-    $('#cfgbg').classList.add('show');
-  }).catch(()=>{$('#cfg').innerHTML='<button class="x">×</button><h2>Configuración</h2><p>Solo disponible dentro de la aplicación.</p>';$('#cfgbg').classList.add('show');});
-}
-$('#gear').onclick=()=>configuracion(false);
-
-// ---------- tarjeta de cada tienda: logo grande, descarga y pasos ----------
+// ---------- tarjeta de cada tienda ----------
 const GUIA={
+ spanish:{
   Steam:{launcher:'Steam',lee:'Juegos instalados siempre. Con una clave Web API (gratis), toda tu biblioteca.',pasos:['Bajá e instalá Steam desde el botón de la derecha e iniciá sesión.','Opcional, para ver toda tu biblioteca: en ⚙ Configuración pegá tu clave Web API (link ahí mismo) y poné los detalles de juegos de tu perfil en público.','Desde acá instalás, jugás y desinstalás cualquier juego de Steam: SantiStacks le pide a Steam que lo haga y Steam te pide la confirmación.','Lo que instales o borres desde Steam también se refleja acá solo.']},
   Epic:{launcher:'Epic Games Launcher',lee:'Juegos instalados (la biblioteca completa de Epic no se puede leer sin iniciar sesión).',pasos:['Bajá e instalá el Epic Games Launcher e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí el launcher desde acá (Epic no deja leer tu biblioteca sin iniciar sesión); cuando termine, aparece solo.']},
   EA:{launcher:'EA app',lee:'Juegos instalados (la biblioteca completa de EA no se puede leer).',pasos:['Bajá e instalá la EA app e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí la EA app desde acá (EA no deja leer tu biblioteca); cuando termine, aparece solo.']},
@@ -346,42 +403,75 @@ const GUIA={
   Riot:{launcher:'Riot Client',lee:'Los 5 juegos gratis de Riot (LoL, VALORANT, TFT, Legends of Runeterra, 2XKO) y cuáles tenés instalados.',pasos:['Instalá el Riot Client (viene con cualquier juego de Riot) e iniciá sesión.','Desde acá instalás, jugás y desinstalás cualquiera de los 5: el botón abre el Riot Client en ese juego.','Aviso: LoL y VALORANT usan Vanguard (anti-trampas) y pueden pedir reiniciar.']},
   'Battle.net':{launcher:'Battle.net',lee:'Los juegos gratis de Blizzard (Overwatch 2, Hearthstone, StarCraft II, Warcraft Rumble…) y los pagos que tengas instalados.',pasos:['Bajá e instalá la app Battle.net e iniciá sesión con tu cuenta de Blizzard.','Instalar y Jugar desde acá abren Battle.net en ese juego; los pagos que tengas instalados también aparecen.','Desinstalar abre Aplicaciones instaladas de Windows (Battle.net no tiene atajo).']},
   Rockstar:{launcher:'Rockstar Games Launcher',lee:'Los juegos de tu cuenta de Rockstar (los que el launcher conoce) y cuáles están instalados.',pasos:['Bajá e instalá el Rockstar Games Launcher e iniciá sesión (Social Club).','Esperá un minuto: el launcher baja la lista de tus juegos y SantiStacks la lee sola.','Instalar abre el launcher; Jugar arranca el juego desde acá; Desinstalar abre Aplicaciones instaladas de Windows.']},
-  Ubisoft:{launcher:'Ubisoft Connect',lee:'Juegos instalados (la biblioteca completa de Ubisoft no se puede leer).',pasos:['Bajá e instalá Ubisoft Connect e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar (Ubisoft Connect hace el trabajo).','Para instalar un juego nuevo, abrí Ubisoft Connect desde acá (no deja leer tu biblioteca); cuando termine, aparece solo.']},
+  Ubisoft:{launcher:'Ubisoft Connect',lee:'Juegos instalados (la biblioteca completa de Ubisoft no se puede leer).',pasos:['Bajá e instalá Ubisoft Connect e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar (Ubisoft Connect hace el trabajo).','Para instalar un juego nuevo, abrí Ubisoft Connect desde acá (no deja leer tu biblioteca); cuando termine, aparece solo.']}},
+ english:{
+  Steam:{launcher:'Steam',lee:'Installed games always. With a (free) Web API key, your whole library.',pasos:['Download and install Steam from the button on the right and sign in.','Optional, to see your whole library: paste your Web API key in ⚙ Settings (link there) and set your profile\'s game details to public.','Install, play and uninstall any Steam game from here: SantiStacks asks Steam to do it and Steam asks you to confirm.','Whatever you install or remove from Steam shows up here too.']},
+  Epic:{launcher:'Epic Games Launcher',lee:'Installed games (Epic\'s full library can\'t be read without signing in).',pasos:['Download and install the Epic Games Launcher and sign in.','Whatever you have installed shows here with Play and Uninstall.','To install a new game, open the launcher from here (Epic doesn\'t expose your library); when it finishes, it shows up here.']},
+  EA:{launcher:'EA app',lee:'Installed games (EA\'s full library can\'t be read).',pasos:['Download and install the EA app and sign in.','Whatever you have installed shows here with Play and Uninstall.','To install a new game, open the EA app from here; when it finishes, it shows up here.']},
+  Xbox:{launcher:'Xbox app (Microsoft Store)',lee:'Games installed from the Xbox app or the Microsoft Store (Game Pass included).',pasos:['Install the Xbox app from the Microsoft Store (or the button on the right) and sign in with your Microsoft account.','Whatever you have installed (Game Pass or Store) shows here with Play and Uninstall.','To install a new game, open the Xbox app from here; when it finishes, it shows up here.']},
+  Riot:{launcher:'Riot Client',lee:'Riot\'s 5 free games (LoL, VALORANT, TFT, Legends of Runeterra, 2XKO) and which ones you have installed.',pasos:['Install the Riot Client (it comes with any Riot game) and sign in.','Install, play and uninstall any of the 5 from here: the button opens the Riot Client on that game.','Note: LoL and VALORANT use Vanguard (anti-cheat) and may ask to restart.']},
+  'Battle.net':{launcher:'Battle.net',lee:'Blizzard\'s free games (Overwatch 2, Hearthstone, StarCraft II, Warcraft Rumble…) plus any paid ones you have installed.',pasos:['Download and install the Battle.net app and sign in with your Blizzard account.','Install and Play from here open Battle.net on that game; installed paid games show up too.','Uninstall opens Windows Installed apps (Battle.net has no shortcut).']},
+  Rockstar:{launcher:'Rockstar Games Launcher',lee:'The games in your Rockstar account (the ones the launcher knows) and which are installed.',pasos:['Download and install the Rockstar Games Launcher and sign in (Social Club).','Wait a minute: the launcher downloads your game list and SantiStacks reads it.','Install opens the launcher; Play starts the game from here; Uninstall opens Windows Installed apps.']},
+  Ubisoft:{launcher:'Ubisoft Connect',lee:'Installed games (Ubisoft\'s full library can\'t be read).',pasos:['Download and install Ubisoft Connect and sign in.','Whatever you have installed shows here with Play and Uninstall (Ubisoft Connect does the work).','To install a new game, open Ubisoft Connect from here; when it finishes, it shows up here.']}}
 };
 function tienda(t){
-  const g=GUIA[t.n]||{launcher:t.n,lee:'',pasos:[]};
+  const g=GUIA[IDIOMA][t.n]||{launcher:t.n,lee:'',pasos:[]};
   const cuantos=RAW.filter(x=>x.store===t.n).length, inst=RAW.filter(x=>x.store===t.n&&x.installed).length;
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
     <div class="big" style="background:${t.c}">${logo(t.n,'#fff',96)}</div>
     <div style="flex:1;min-width:0">
       <h2>${esc(t.n)}</h2>
-      <div class="estado" style="color:${ST[t.st][0]}">● ${t.ok?'Launcher detectado':'Launcher no instalado'}${t.ok?` · ${cuantos} juegos · ${inst} instalados`:''}</div>
+      <div class="estado" style="color:${ST[t.st][0]}">● ${t.ok?L.detectado:L.noDetectado}${t.ok?` · ${cuantos} ${L.juegos} · ${inst} ${L.instalados.toLowerCase()}`:''}</div>
       <p style="margin:0 0 6px;font-size:14px;color:var(--mu)">${esc(g.lee)}</p>
       <div class="acts" style="margin:10px 0 6px" id="tacts">
-        ${t.fuera?`<button class="btn pri" onclick="api('desvincular','${esc(t.n)}',false);cerrar()">🔗 Volver a vincular</button>`:
-          t.ok?`<button class="btn ok" onclick="accion('abrir=${encodeURIComponent(t.n)}')">▶ Abrir ${esc(g.launcher)}</button>`:`<button class="btn pri" onclick="api('abrir_url','${esc(t.bajar)}')">⬇ Descargar ${esc(g.launcher)}</button>`}
-        <button class="btn" onclick="api('reescanear');cerrar()">↻ Volver a escanear</button>
-        ${t.n==='Steam'&&!t.fuera?`<button class="btn" onclick="cerrar();configuracion(false)">⚙ Clave de Steam</button>`:''}
-        ${t.ok&&!t.fuera?`<button class="btn del" title="Quitar" onclick="quitarTienda(${T.indexOf(t)})">🗑</button>`:''}
+        ${t.fuera?`<button class="btn pri" onclick="api('desvincular','${esc(t.n)}',false);cerrar()">🔗 ${L.volverVincular}</button>`:
+          t.ok?`<button class="btn ok" onclick="accion('abrir=${encodeURIComponent(t.n)}')">▶ ${L.abrirL} ${esc(g.launcher)}</button>`:`<button class="btn pri" onclick="api('abrir_url','${esc(t.bajar)}')">⬇ ${L.descargar} ${esc(g.launcher)}</button>`}
+        <button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button>
+        ${t.n==='Steam'&&!t.fuera?`<button class="btn" onclick="cerrar();configuracion(false)">⚙ ${L.claveSteam}</button>`:''}
+        ${t.ok&&!t.fuera?`<button class="btn del" title="${L.quitar}" onclick="quitarTienda(${T.indexOf(t)})">🗑</button>`:''}
       </div>
-      <b style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu)">${t.ok?'Cómo funciona':'Para empezar'}</b>
+      <b style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu)">${t.ok?L.comoFunc:L.paraEmpezar}</b>
       <ol>${g.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
-      <div class="nota" id="nota">${t.ok?'':'Si ya lo tenés instalado en otra carpeta, pegá la ruta del .exe en ⚙ Configuración.'}</div>
+      <div class="nota" id="nota">${t.ok?'':L.otraCarpeta}</div>
     </div>`;
   $('#modal').classList.add('tcard');
   $('#bg').classList.add('show');
 }
 $('#tiendas').addEventListener('click',e=>{const d=e.target.closest('.tnd');if(d&&T[+d.dataset.t])tienda(T[+d.dataset.t]);});
-// papelera de la tarjeta: ¿desinstalar el launcher de Windows o solo sacarlo de SantiStacks?
 function quitarTienda(i){
-  const t=T[i], g=GUIA[t.n]||{launcher:t.n};
-  $('#tacts').innerHTML=`<span style="align-self:center;font-size:14px;color:var(--mu)">¿Qué hacemos con ${esc(t.n)}?</span>
-    <button class="btn" onclick="api('desvincular','${esc(t.n)}',true);cerrar()">🔗 Desvincular</button>
-    ${t.desinstalable||t.n==='Xbox'?`<button class="btn del" style="order:0;margin-left:0;filter:none;color:#fff;background:var(--bad)" onclick="api('desinstalar_launcher','${esc(t.n)}');cerrar()">🗑 Desinstalar ${esc(g.launcher)}</button>`:''}
-    <button class="btn" onclick="tienda(T[${i}])">Cancelar</button>`;
-  $('#nota').textContent='Desvincular: la tienda y sus juegos dejan de verse acá, sin tocar nada en tu PC (se revierte desde la misma tarjeta). Desinstalar: abre el desinstalador de Windows del launcher.';
+  const t=T[i], g=GUIA[IDIOMA][t.n]||{launcher:t.n};
+  $('#tacts').innerHTML=`<span style="align-self:center;font-size:14px;color:var(--mu)">${L.queHacemos} ${esc(t.n)}?</span>
+    <button class="btn" onclick="api('desvincular','${esc(t.n)}',true);cerrar()">🔗 ${L.desvincular}</button>
+    ${t.desinstalable||t.n==='Xbox'?`<button class="btn del" style="order:0;margin-left:0;filter:none;color:#fff;background:var(--bad)" onclick="api('desinstalar_launcher','${esc(t.n)}');cerrar()">🗑 ${L.desinstalarL} ${esc(g.launcher)}</button>`:''}
+    <button class="btn" onclick="tienda(T[${i}])">${L.cancelar}</button>`;
+  $('#nota').textContent=L.notaQuitar;
 }
 window.quitarTienda=quitarTienda;
+
+// ---------- configuración ----------
+function configuracion(primera){
+  api('config').then(c=>{
+    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||L.cRuta)}"><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span></div>`).join('');
+    $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
+      <h2>${primera?L.cBienvenida:L.cTitulo}</h2>
+      <p>${primera?L.cIntro1:L.cIntro2}</p>
+      <label>${L.cCuenta}</label>
+      <div class="row"><input type="text" id="c_sid" value="${esc(c.steam_id||'')}" placeholder="${L.cSid}" style="max-width:260px"><span style="font-size:13px;color:var(--mu)">${c.steam_user?L.cDetectada+' <b>'+esc(c.steam_user)+'</b>':L.cSinUser}</span></div>
+      <label>${L.cClave}</label>
+      <input type="text" id="c_key" value="${esc(c.steam_api_key||'')}" placeholder="32 caracteres">
+      <p>${L.cClaveTxt} <a onclick="api('abrir_url','https://steamcommunity.com/dev/apikey')">steamcommunity.com/dev/apikey</a> ${L.cClaveTxt2}</p>
+      <label>${L.cLaunchers}</label>${filas}
+      <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> ${L.cCerrar}</label>
+      <div class="acts"><button class="btn pri" id="c_guardar">💾 ${L.cGuardar}</button><button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button><button class="btn" onclick="api('abrir_datos')">📁 ${L.mDatos}</button></div>
+      <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · ${L.cLibre} · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>`;
+    $('#c_guardar').onclick=()=>{
+      const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});
+      api('guardar_config',{steam_api_key:$('#c_key').value.trim(),steam_id:$('#c_sid').value.trim(),cerrar_launchers:$('#c_cerrar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
+    };
+    $('#cfgbg').classList.add('show');
+  }).catch(()=>{$('#cfg').innerHTML=`<button class="x">×</button><h2>${L.cTitulo}</h2><p>${L.cSoloApp}</p>`;$('#cfgbg').classList.add('show');});
+}
+window.configuracion=configuracion;
 
 // ---------- datos en vivo desde Python ----------
 let versionVista=EST.version||0;

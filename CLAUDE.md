@@ -18,6 +18,14 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - `assets/template.html`: toda la UI (CSS + JS sin frameworks). La página no se recarga: cada 4 s pide `estado()` y si cambió `version` pide `datos()` y re-renderiza manteniendo filtros. Primer arranque (`CONF.primer_arranque`) abre la Configuración con bienvenida. Juegos repetidos entre tiendas se agrupan por nombre normalizado en una tarjeta. Filtro de tiendas multiselección; "Instalados" se combina. Logos de tiendas: SVG inline de Simple Icons (Xbox dibujado a mano).
 - Estética (pedida por el dueño): industrial, naranja `#ff6a00` + blanco, sin bordes, sombras, radios 3–5 px, fuente Bahnschrift, títulos en mayúsculas con barra naranja. Logo: `assets/hacer-logo.py` → `logo.png` / `icon.ico` (cuadrado naranja con una S de bloques).
 
+## Agregado el 01/11/2026 (después de la v1.0.0, sin publicar todavía)
+
+- Tarjeta por tienda: clic en la barra de tiendas abre logo grande + estado + Descargar/Abrir launcher + pasos; papelera que pregunta **Desvincular** (`cfg["desvinculadas"]`, oculta la tienda y sus juegos; reversible) o **Desinstalar** el launcher (`detect.comando_desinstalar` → UninstallString de Programas instalados).
+- Géneros en desplegable con checkboxes (Todos + multiselección, filtro OR).
+- Desinstalar juegos de otras tiendas: `accion('desinstalar=<id>')` usa `g["uninstall"]` (Riot: `--uninstall-product`, Ubisoft: `uplay://uninstall/<id>`); si no hay, abre Aplicaciones instaladas de Windows.
+- Menú del engranaje (arriba a la derecha): Configuración, **Modo oscuro** (`cfg["tema"]`, CSS `:root[data-tema="oscuro"]`), **Idioma** español/inglés (`cfg["idioma"]`; la UI usa el diccionario `TXT` y las guías `GUIA[idioma]` de la plantilla; cambiarlo borra la caché de fichas de Steam y reescanea), Carpeta de datos, **Desinstalar SantiStacks** (`unins000.exe` junto al exe; si no está instalado con el Setup avisa).
+- `Api.preferencia(clave, valor)` guarda tema/idioma/cerrar_launchers sin reescanear (salvo idioma).
+
 ## Armar y publicar
 
 - Requisitos: Python 3.12, `pip install -r requirements.txt pyinstaller`, Inno Setup 6 (`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe` o Program Files (x86)).

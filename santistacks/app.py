@@ -202,6 +202,35 @@ class Api:
     def version_nueva(self):
         return NUC.version_nueva()
 
+    def preferencia(self, clave, valor):
+        """Guarda una preferencia suelta. Cambiar el idioma rehace las fichas de Steam (vienen traducidas de la tienda)."""
+        if clave not in ("tema", "idioma", "cerrar_launchers"):
+            return False
+        cambio_idioma = clave == "idioma" and valor != NUC.cfg.get("idioma")
+        NUC.cfg[clave] = valor
+        paths.guardar({k: v for k, v in NUC.cfg.items() if not k.startswith("_")})
+        if cambio_idioma:
+            for f in glob.glob(os.path.join(steam.CACHE_STEAM, "*.json")):
+                try: os.remove(f)
+                except OSError: pass
+            for g in NUC.juegos:
+                for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN", "revTxt"):
+                    g.pop(k, None)
+            threading.Thread(target=NUC.escanear, daemon=True).start()
+        else:
+            NUC._publicar()
+        return True
+
+    def desinstalar_app(self):
+        """Lanza el desinstalador de Windows de SantiStacks (solo si se instaló con el Setup)."""
+        if getattr(sys, "frozen", False):
+            carpeta = os.path.dirname(sys.executable)
+            for n in ("unins000.exe", "unins001.exe"):
+                u = os.path.join(carpeta, n)
+                if os.path.exists(u):
+                    subprocess.Popen([u]); return True
+        os.startfile("ms-settings:appsfeatures"); return False
+
     def desvincular(self, nombre, fuera=True):
         """Saca (o vuelve a poner) una tienda de SantiStacks. No toca nada del launcher."""
         d = set(NUC.cfg.get("desvinculadas") or [])

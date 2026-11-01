@@ -33,7 +33,8 @@ def escribir(juegos, tiendas, cfg, estado):
         logo = ""
     conf = {"version": VERSION, "repo": cfg.get("repo", ""), "primer_arranque": cfg.get("primer_arranque", True),
             "steam_user": cfg.get("_steam_user", ""), "steam_id": cfg.get("steam_id", ""), "tiene_key": bool(cfg.get("steam_api_key")),
-            "cerrar_launchers": cfg.get("cerrar_launchers", True), "launchers": cfg.get("_launchers_vista", []), "data_dir": paths.DATA}
+            "cerrar_launchers": cfg.get("cerrar_launchers", True), "tema": cfg.get("tema", "claro"), "idioma": cfg.get("idioma", "spanish"),
+            "instalado": bool(getattr(__import__("sys"), "frozen", False)), "launchers": cfg.get("_launchers_vista", []), "data_dir": paths.DATA}
     js = "window.JUEGOS=%s;window.DISCOS=%s;window.TIENDAS=%s;window.CONF=%s;window.ESTADO=%s;window.LOGO=%s;" % tuple(
         json.dumps(x, ensure_ascii=False) for x in ([publico(g) for g in juegos], discos(juegos), tiendas, conf, estado, logo))
     html = tpl.replace("/*DATA*/", js)

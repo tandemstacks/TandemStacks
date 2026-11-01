@@ -24,7 +24,8 @@ DEFAULT = {
     "steam_id": "",           # se detecta solo del último usuario que entró a Steam
     "launchers": {},          # {"Steam": {"exe": "..."}} para corregir una ruta a mano
     "cerrar_launchers": True, # al cerrar el juego, cerrar el launcher que se abrió para jugarlo
-    "idioma": "spanish",
+    "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam
+    "tema": "claro",          # "claro" u "oscuro"
     "repo": "rullans/SantiStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
     "desvinculadas": [],      # tiendas que el usuario sacó de SantiStacks (se pueden volver a vincular desde su tarjeta)
     "primer_arranque": True,

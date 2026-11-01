@@ -63,7 +63,7 @@ Python 3.12 + [pywebview](https://pywebview.flowrl.com/) (ventana con WebView2),
 
 ## Contacto
 
-Dudas, errores o ideas: **stackssanti@gmail.com** o abrí un [issue](../../issues).
+Dudas, errores o ideas: abrí un [issue](../../issues).
 
 ## Licencia
 

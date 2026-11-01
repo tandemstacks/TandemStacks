@@ -68,6 +68,7 @@ header{background:var(--osc);color:#fff}
 .logos{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
 .logos span{display:inline-flex;align-items:center;gap:8px;background:var(--card);box-shadow:var(--sh);border-radius:3px;padding:9px 14px;font:700 14px 'Barlow Condensed',Bahnschrift,sans-serif;letter-spacing:.8px;text-transform:uppercase}
 .logos svg{width:18px;height:18px}
+.logos .mas{background:none;box-shadow:inset 0 0 0 2px var(--acc);color:var(--acc)}
 
 /* secciones */
 section.bloque{padding:72px 0}
@@ -164,7 +165,7 @@ footer a{color:var(--mu)}
     <div class="grid">
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div><h3>Todo junto</h3><p>Instalados y no instalados de 8 tiendas (y vienen más) en una grilla. Si un juego está en dos tiendas, aparece una sola vez.</p></div>
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div><h3>Jugar con un clic</h3><p>Botón Jugar o Instalar: abre la tienda que corresponde y lanza el juego. No hace falta buscarlo en cada launcher.</p></div>
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg></div><h3>Nada corriendo de más</h3><p>Cuando terminás de jugar, cierra el launcher que abrió. Y te deja sacar los launchers del inicio de Windows.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg></div><h3>Nada corriendo de más</h3><p>Con todos los launchers abiertos se van <b>más de 3,5 GB de RAM</b> (lo medimos). TasloStacks abre solo el que hace falta para jugar y lo cierra al terminar. Y te deja sacarlos del inicio de Windows.</p></div>
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg></div><h3>Tus discos a la vista</h3><p>Cuánto ocupa cada juego y en qué disco está, para saber qué borrar cuando te quedás sin espacio.</p></div>
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4"/></svg></div><h3>Filtros y reseñas</h3><p>Filtrá por tienda, género o instalados, y ordená por el puntaje que le dio la comunidad, peso o año.</p></div>
       <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Gratis y open source</h3><p>No te pide contraseñas: lee lo que los launchers ya guardan en tu PC. Sin publicidad, y el código está en GitHub para quien quiera revisarlo.</p></div>
@@ -241,7 +242,8 @@ const LOGO={"Steam": "M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.3
 const SC={Steam:'#1b6fb8',Epic:'#2a2a2a',Xbox:'#107c10',EA:'#e03a3a','Battle.net':'#148eff',Rockstar:'#e59e00',Riot:'#d13639',Ubisoft:'#0070ff'};
 const oscuro=matchMedia('(prefers-color-scheme: dark)').matches;
 document.getElementById('logos').innerHTML=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft'].map(s=>
-  `<span><svg viewBox="0 0 24 24" fill="${s==='Epic'&&oscuro?'#ddd':SC[s]}" aria-hidden="true"><path d="${LOGO[s]}"/></svg>${s}</span>`).join('');
+  `<span><svg viewBox="0 0 24 24" fill="${s==='Epic'&&oscuro?'#ddd':SC[s]}" aria-hidden="true"><path d="${LOGO[s]}"/></svg>${s}</span>`).join('')+
+  '<span class="mas">+ más tiendas en camino</span>';
 
 document.querySelectorAll('.discord').forEach(a=>{
   if(DISCORD){a.href=DISCORD;a.target='_blank';a.rel='noopener';}

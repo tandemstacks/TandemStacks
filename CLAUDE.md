@@ -18,7 +18,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - `assets/template.html`: toda la UI (CSS + JS sin frameworks). La página no se recarga: cada 4 s pide `estado()` y si cambió `version` pide `datos()` y re-renderiza manteniendo filtros. Primer arranque (`CONF.primer_arranque`) abre la Configuración con bienvenida. Juegos repetidos entre tiendas se agrupan por nombre normalizado en una tarjeta. Filtro de tiendas multiselección; "Instalados" se combina. Logos de tiendas: SVG inline de Simple Icons (Xbox dibujado a mano).
 - Estética (pedida por el dueño): industrial, naranja `#ff6a00` + blanco, sin bordes, sombras, radios 3–5 px, fuente Bahnschrift, títulos en mayúsculas con barra naranja. Logo: `assets/hacer-logo.py` → `logo.png` / `icon.ico` (cuadrado naranja con una S de bloques).
 
-## Agregado el 01/11/2026 (después de la v1.0.0, sin publicar todavía)
+## Agregado el 01/11/2026 (publicado en la v1.1.0)
 
 - Tarjeta por tienda: clic en la barra de tiendas abre logo grande + estado + Descargar/Abrir launcher + pasos; botón **Desvincular** (`cfg["desvinculadas"]`: oculta la tienda y sus juegos, no toca nada en la PC; se revierte desde Configuración → › de la tienda). El dueño pidió que las tarjetas de tienda NO ofrezcan desinstalar el launcher.
 - Géneros en desplegable con checkboxes (Todos + multiselección, filtro OR).
@@ -30,7 +30,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 ## Armar y publicar
 
 - Requisitos: Python 3.12, `pip install -r requirements.txt pyinstaller`, Inno Setup 6 (`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe` o Program Files (x86)).
-- `.\build.ps1` → `dist\SantiStacks\SantiStacks.exe` y `installer\Output\SantiStacks-Setup-<versión>.exe` (~26 MB). PyInstaller loguea por stderr: el script no usa `$ErrorActionPreference = "Stop"` a propósito.
+- `.\build.ps1` → `dist\SantiStacks\SantiStacks.exe` y `installer\Output\SantiStacks-Setup-<versión>.exe` (~16 MB). PyInstaller loguea por stderr: el script no usa `$ErrorActionPreference = "Stop"` a propósito.
 - Versión: solo en `santistacks/__init__.py` (`VERSION`); build.ps1 y el .iss la leen de ahí.
 - Publicar: `git tag vX.Y.Z && git push origin vX.Y.Z && gh release create vX.Y.Z installer\Output\SantiStacks-Setup-X.Y.Z.exe --title "SantiStacks X.Y.Z" --notes "..."`. La app compara `tag_name` (sin la v) con `VERSION`.
 - El instalador no está firmado: SmartScreen avisa la primera vez.

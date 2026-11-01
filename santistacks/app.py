@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Ventana de SantiStacks (pywebview) + escaneo de bibliotecas en segundo plano + API que usa la página."""
-import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse
+import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
 from . import paths, steam, stores, covers, detect, build, watch, inicio, VERSION
@@ -174,6 +174,39 @@ class Nucleo:
                 paths.log("vigilar", e)
 
     # ---------- versión nueva ----------
+    @staticmethod
+    def _link_setup(release):
+        """Link del instalador (SantiStacks-Setup-x.y.z.exe) dentro de una release de GitHub."""
+        for a in release.get("assets") or []:
+            if re.match(r"SantiStacks-Setup-.*\.exe$", a.get("name", ""), re.I):
+                return a.get("browser_download_url", "")
+        return ""
+
+    def actualizar(self):
+        """Baja el instalador nuevo mostrando el avance, lo corre en silencio y cierra la app (el instalador la vuelve a abrir)."""
+        try:
+            j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % self.cfg.get("repo"), 15)
+            url = self._link_setup(j)
+            if not url: raise RuntimeError("la release no tiene instalador")
+            destino = os.path.join(os.environ.get("TEMP", paths.DATA), os.path.basename(urllib.parse.urlparse(url).path))
+            self.estado.update(fase="actualizando", msg="Descargando la actualización…", de="", hecho=0, total=0)
+            with urllib.request.urlopen(urllib.request.Request(url, headers=steam.UA), timeout=30) as r, open(destino, "wb") as f:
+                self.estado["total"] = int(r.headers.get("Content-Length") or 0)
+                while True:
+                    b = r.read(256 * 1024)
+                    if not b: break
+                    f.write(b); self.estado["hecho"] += len(b)
+            self.estado.update(msg="Instalando la versión nueva: SantiStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
+            time.sleep(2)  # que la página llegue a mostrar el mensaje
+            subprocess.Popen([destino, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"],
+                             creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
+            time.sleep(1)
+            os._exit(0)
+        except Exception as e:
+            paths.log("actualizar", e)
+            self.estado.update(fase="listo", msg="", de="", hecho=0, total=0)
+            os.startfile("https://github.com/%s/releases/latest" % self.cfg.get("repo"))  # plan B: la página de descarga
+
     def version_nueva(self):
         # solo avisa si la de GitHub es MÁS nueva (no alcanza con que sea distinta: la caché puede tener una vieja)
         num = lambda t: tuple(int(x) for x in re.findall(r"\d+", t or ""))
@@ -188,7 +221,7 @@ class Nucleo:
         try:
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % repo, 15)
             tag = j.get("tag_name", "")
-            json.dump({"ts": time.time(), "tag": tag}, open(cache, "w"))
+            json.dump({"ts": time.time(), "tag": tag, "setup": self._link_setup(j)}, open(cache, "w"))
             return mas_nueva(tag)
         except Exception:
             return None
@@ -272,6 +305,13 @@ class Api:
         threading.Thread(target=NUC.escanear, daemon=True).start()
         return True
 
+
+    def actualizar(self):
+        """Botón Actualizar del aviso. Con el programa instalado baja e instala solo; corriendo desde el código abre la página."""
+        if not getattr(sys, "frozen", False):
+            os.startfile("https://github.com/%s/releases/latest" % NUC.cfg.get("repo")); return "web"
+        threading.Thread(target=NUC.actualizar, daemon=True).start()
+        return "ok"
 
     def abrir_url(self, url):
         if re.match(r"https?://", url): os.startfile(url)

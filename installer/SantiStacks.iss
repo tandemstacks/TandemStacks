@@ -23,6 +23,8 @@ UninstallDisplayIcon={app}\{#AppName}.exe
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+; la app se cierra sola antes de actualizar; que el instalador no la reabra por su cuenta (lo hace [Run])
+RestartApplications=no
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 
@@ -41,7 +43,8 @@ Name: "{group}\{#AppName}"; Filename: "{app}\{#AppName}.exe"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppName}.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; sin skipifsilent: cuando la app se actualiza sola (instalador en silencio) se vuelve a abrir al terminar
+Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\{#AppName}"

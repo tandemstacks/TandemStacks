@@ -15,7 +15,7 @@ Gratis y de código abierto (licencia MIT). Hecho para Windows 10/11.
 - **Epic**: toda tu biblioteca (la lee del catálogo que guarda el launcher, sin pedir login).
 - **EA, Xbox, Ubisoft**: lo instalado (sus bibliotecas no se pueden leer desde la PC; Ubisoft las guarda cifradas).
 - Un juego que tenés en varias tiendas aparece **una sola vez**, con los logos de todas.
-- Fichas (descripción, géneros, año, estudio, reseñas de Steam, Metacritic) se bajan solas y quedan en caché. Las portadas son links directos a cada tienda: la app no guarda imágenes.
+- Fichas (descripción, géneros, año, estudio, porcentaje de reseñas de la comunidad de Steam) se bajan solas y quedan en caché. Las portadas son links directos a cada tienda: la app no guarda imágenes.
 - **No deja nada corriendo**: ningún launcher se abre al iniciar Windows por culpa de TasloStacks y, si abrís un juego desde acá, el launcher que se abrió se cierra cuando terminás (configurable).
 - Botón para **sacar los launchers del inicio de Windows** (los deshabilita como el Administrador de tareas).
 - Menú ⚙ con modo oscuro, español / inglés y desinstalar.

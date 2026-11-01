@@ -107,7 +107,7 @@ main{padding:16px 22px 60px}
 .meta{color:var(--mu);font-size:13px;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;line-height:1.3}
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .pill{font-size:12px;padding:3px 9px;border-radius:3px;background:var(--bg);text-transform:uppercase;letter-spacing:.3px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
 .st{background:var(--bg);border-radius:3px;border-left:3px solid var(--acc);padding:8px 10px;font-size:12px;color:var(--mu)}
 .st b{display:block;font-size:17px;color:var(--tx)}
 .desc{font-size:14px;line-height:1.55;margin-bottom:14px}
@@ -202,7 +202,7 @@ const TXT={
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
-  msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
+  msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
   jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'Store page',desinstalar:'Uninstall',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
   loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',rev:['Overwhelmingly positive','Very positive','Mostly positive','Mixed','Mostly negative','Very negative'],notaFicha:'Install and uninstall open the store; you confirm there.',
@@ -418,7 +418,6 @@ function abrir(g){
       <div class="stats">
         <div class="st"><b>${tam}</b>${tamL}</div>
         <div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revPct?resTxt(g.revPct):L.resenas}${g.revN?` (${g.revN.toLocaleString(IDIOMA==='english'?'en':'es')})`:''}</div>
-        <div class="st"><b>${g.meta||'—'}</b>Metacritic</div>
       </div>
       ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:''}
       <div class="acts" id="acts">${botones(g)}</div>

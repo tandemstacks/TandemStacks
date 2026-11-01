@@ -73,7 +73,7 @@ class Nucleo:
             self.estado.update(msg="Armando la biblioteca…", de="")
             # fichas ya cacheadas + portadas ya bajadas (instantáneo)
             for g in juegos:
-                f = steam.ficha_cacheada(g.get("appid") or g.get("steam_hint") or "")
+                f = steam.ficha_cacheada(g.get("appid") or g.get("steam_hint") or "", self.cfg.get("idioma", "spanish"))
                 if f: self._aplicar_ficha(g, f)
                 g["cover"] = covers.rapida(g)  # link, sin descargar
             juegos = [g for g in juegos if g.get("tipo", "game") in ("game", "")]  # fuera DLC, demos, bandas sonoras, herramientas
@@ -98,7 +98,7 @@ class Nucleo:
             threading.Thread(target=self._fichas, daemon=True).start()
 
     def _aplicar_ficha(self, g, f):
-        for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN", "tipo"):
+        for k in ("desc", "genres", "anio", "dev", "reqGB", "revPct", "revN", "tipo"):
             if f.get(k) not in (None, "", []) and g.get(k) in (None, "", []):
                 g[k] = f[k]
 
@@ -117,7 +117,7 @@ class Nucleo:
         ultimo = [time.time()]
         def uno(g):
             if stop.is_set(): return
-            self.estado.update(msg="Bajando ficha y portada de %s…", de=g.get("name") or "")
+            self.estado.update(msg="Bajando ficha de %s…" if g.get("cover") else "Bajando ficha y portada de %s…", de=g.get("name") or "")
             try:
                 if not g.get("appid") and not g.get("steam_hint") and g["store"] not in ("Riot",):
                     g["steam_hint"] = steam.buscar_appid(g["name"])
@@ -268,12 +268,10 @@ class Api:
         NUC.cfg[clave] = valor
         paths.guardar({k: v for k, v in NUC.cfg.items() if not k.startswith("_")})
         if cambio_idioma:
-            for f in glob.glob(os.path.join(steam.CACHE_STEAM, "*.json")):
-                try: os.remove(f)
-                except OSError: pass
-            for g in NUC.juegos:
-                for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN"):
+            for g in NUC.juegos:  # las fichas del otro idioma quedan en su caché; acá se sacan los textos viejos
+                for k in ("desc", "genres", "anio", "dev", "reqGB", "revPct", "revN"):
                     g.pop(k, None)
+            NUC._publicar()  # la página recarga enseguida: que ya encuentre el idioma nuevo (si no, el interruptor salta)
             threading.Thread(target=NUC.escanear, daemon=True).start()
         else:
             NUC._publicar()

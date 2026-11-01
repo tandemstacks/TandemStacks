@@ -87,12 +87,15 @@ def biblioteca(api_key, steamid):
         return None
 
 # ---------- fichas ----------
-def _cache(appid):
-    return os.path.join(CACHE_STEAM, "%s.json" % appid)
+def _cache(appid, idioma="spanish"):
+    """Una caché por idioma: cambiar de idioma no borra la otra y volver es instantáneo (español queda en la raíz, como antes)."""
+    carpeta = CACHE_STEAM if idioma == "spanish" else os.path.join(CACHE_STEAM, idioma)
+    os.makedirs(carpeta, exist_ok=True)
+    return os.path.join(carpeta, "%s.json" % appid)
 
-def ficha_cacheada(appid):
+def ficha_cacheada(appid, idioma="spanish"):
     try:
-        d = json.load(open(_cache(appid), encoding="utf-8"))
+        d = json.load(open(_cache(appid, idioma), encoding="utf-8"))
         if time.time() - d.get("_ts", 0) < 30 * 86400:
             return d
     except Exception:
@@ -100,8 +103,8 @@ def ficha_cacheada(appid):
     return None
 
 def ficha(appid, idioma="spanish"):
-    """Datos de la tienda (descripción, géneros, año, estudio, GB requeridos, Metacritic) + reseñas (SteamSpy). Con caché de 30 días."""
-    d = ficha_cacheada(appid)
+    """Datos de la tienda (descripción, géneros, año, estudio, GB requeridos) + % de reseñas de la comunidad (SteamSpy). Con caché de 30 días."""
+    d = ficha_cacheada(appid, idioma)
     if d:
         return d
     d = {"_ts": time.time()}
@@ -118,7 +121,6 @@ def ficha(appid, idioma="spanish"):
             d["anio"] = (re.search(r"\d{4}", a.get("release_date", {}).get("date", "")) or [None, ""])[0] or ""
             d["dev"] = ", ".join(a.get("developers", [])[:2])
             d["tipo"] = a.get("type", "")
-            if a.get("metacritic"): d["meta"] = a["metacritic"].get("score")
             pcr = a.get("pc_requirements")  # algunos juegos lo mandan como lista vacía
             req = re.sub(r"<[^>]+>", " ", str(pcr.get("minimum", "") if isinstance(pcr, dict) else ""))
             m = re.search(r"(\d+(?:[.,]\d+)?)\s*(GB|MB)\s*(?:de\s+)?(?:espacio|available|disponible|free|storage)", req, re.I) or \
@@ -141,7 +143,7 @@ def ficha(appid, idioma="spanish"):
     if not fallo:
         try:
             with _lock:
-                json.dump(d, open(_cache(appid), "w", encoding="utf-8"), ensure_ascii=False)
+                json.dump(d, open(_cache(appid, idioma), "w", encoding="utf-8"), ensure_ascii=False)
         except Exception:
             pass
     return d

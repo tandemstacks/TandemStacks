@@ -80,8 +80,7 @@ class Nucleo:
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
-                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera,
-                                     "desinstalable": bool(detect.comando_desinstalar(n)) if l["ok"] else False})
+                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera})
             self.cfg["_launchers_vista"] = [{"n": n, "exe": self.launchers[n]["exe"], "ok": self.launchers[n]["ok"], "manual": self.launchers[n]["manual"]} for n in ORDEN_TIENDAS]
             self.estado.update(fase="listo", msg="")
             self._publicar()
@@ -240,14 +239,6 @@ class Api:
         threading.Thread(target=NUC.escanear, daemon=True).start()
         return True
 
-    def desinstalar_launcher(self, nombre):
-        """Abre el desinstalador del launcher (el de Windows). Xbox y lo que no se encuentre: Aplicaciones instaladas."""
-        cmd = detect.comando_desinstalar(nombre)
-        if cmd:
-            subprocess.Popen(cmd, shell=True)
-        else:
-            os.startfile("ms-settings:appsfeatures")
-        return True
 
     def abrir_url(self, url):
         if re.match(r"https?://", url): os.startfile(url)

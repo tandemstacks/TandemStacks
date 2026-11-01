@@ -20,7 +20,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 
 ## Agregado el 01/11/2026 (después de la v1.0.0, sin publicar todavía)
 
-- Tarjeta por tienda: clic en la barra de tiendas abre logo grande + estado + Descargar/Abrir launcher + pasos; papelera que pregunta **Desvincular** (`cfg["desvinculadas"]`, oculta la tienda y sus juegos; reversible) o **Desinstalar** el launcher (`detect.comando_desinstalar` → UninstallString de Programas instalados).
+- Tarjeta por tienda: clic en la barra de tiendas abre logo grande + estado + Descargar/Abrir launcher + pasos; botón **Desvincular** (`cfg["desvinculadas"]`: oculta la tienda y sus juegos, no toca nada en la PC; se revierte desde Configuración → › de la tienda). El dueño pidió que las tarjetas de tienda NO ofrezcan desinstalar el launcher.
 - Géneros en desplegable con checkboxes (Todos + multiselección, filtro OR).
 - Desinstalar juegos de otras tiendas: `accion('desinstalar=<id>')` usa `g["uninstall"]` (Riot: `--uninstall-product`, Ubisoft: `uplay://uninstall/<id>`); si no hay, abre Aplicaciones instaladas de Windows.
 - Menú del engranaje (arriba a la derecha): Configuración, **Modo oscuro** (`cfg["tema"]`, CSS `:root[data-tema="oscuro"]`), **Idioma** español/inglés (`cfg["idioma"]`; la UI usa el diccionario `TXT` y las guías `GUIA[idioma]` de la plantilla; cambiarlo borra la caché de fichas de Steam y reescanea), Carpeta de datos, **Desinstalar SantiStacks** (`unins000.exe` junto al exe; si no está instalado con el Setup avisa).

@@ -36,6 +36,23 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - Publicar: `git tag vX.Y.Z && git push origin vX.Y.Z && gh release create vX.Y.Z installer\Output\TasloStacks-Setup-X.Y.Z.exe --title "TasloStacks X.Y.Z" --notes "..."`. La app compara `tag_name` (sin la v) con `VERSION`.
 - El instalador no está firmado: SmartScreen avisa la primera vez.
 
+## Pilares (regla del dueño)
+
+El proyecto tiene **4 pilares** que se mantienen **al día juntos y enlazados entre sí**:
+
+| Pilar | Dónde | Qué tiene |
+|---|---|---|
+| GitHub | github.com/taslostacks/TasloStacks | código, releases, README con links a los otros 3 |
+| Landing | taslostacks.github.io/TasloStacks (`docs/`) | descarga (busca el último instalador sola), botones de Discord e Instagram, link a GitHub |
+| Discord | discord.gg/CKqByMZ2m | #bienvenida (links), #anuncios (versiones), soporte |
+| Instagram | @taslostacks | posts de novedades, link a la landing en la bio |
+
+Checklist en cada cambio relevante:
+- **Versión nueva:** release en GitHub → confirmar que la landing ofrece la nueva → anuncio en Discord #anuncios → post o historia en Instagram.
+- **Cambia un dato** (nombre, logo, link, cantidad de tiendas, tamaño del instalador, requisitos): actualizarlo en los 4.
+- **Cada pilar enlaza a los otros 3.** Si uno no se pudo actualizar, avisarlo.
+- Material de Instagram en `instagram/` (fuera de git): `hacer-posts.py` arma las imágenes.
+
 ## Decisiones tomadas (no volver a discutir)
 
 - **Regla principal: la app funciona 100 % sin IA.** Es una aplicación normal: nada de llamadas a modelos de IA (Claude, OpenAI, etc.) ni funciones que dependan de una. Todo sale de archivos locales, el registro de Windows y APIs públicas de las tiendas. Claude solo se usa para programarla.

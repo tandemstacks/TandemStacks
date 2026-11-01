@@ -83,7 +83,7 @@ main{padding:16px 22px 60px}
 .ph{color:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;font-size:15px;line-height:1.2}
 .nm{position:absolute;left:0;right:0;bottom:0;padding:22px 9px 8px;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .15s}
 .card:hover .nm{opacity:1}
-.tag{position:absolute;top:7px;left:7px;display:flex;gap:6px;align-items:center;padding:5px 6px;border-radius:3px;background:var(--tagbg);box-shadow:0 1px 4px rgba(0,0,0,.3)}.lg{display:inline-block;flex:none;vertical-align:middle;position:relative;top:-1px}
+.tag{position:absolute;top:7px;left:7px;display:flex;gap:6px;align-items:center;padding:5px 6px;border-radius:3px;background:var(--tagbg);box-shadow:0 1px 4px rgba(0,0,0,.3)}.integ{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}.integ span{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.25)}.lg{display:inline-block;flex:none;vertical-align:middle;position:relative;top:-1px}
 .inst{position:absolute;top:7px;right:7px;width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(0,0,0,.6)}
 .empty{color:var(--mu);text-align:center;padding:40px}
 #bg,#cfgbg{position:fixed;inset:0;background:rgba(20,24,40,.5);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
@@ -181,7 +181,7 @@ const TXT={
   notaQuitar:'La tienda y sus juegos dejan de verse en SantiStacks. No se toca nada en tu PC: el launcher y los juegos quedan instalados. Para volver a vincularla: ⚙ Configuración → flecha › de la tienda.',
   mConfig:'Configuración',mOscuro:'Modo oscuro',mIdioma:'Idioma',mDesinst:'Desinstalar SantiStacks',mDatos:'Carpeta de datos',confDesinst:'¿Seguro que querés desinstalar SantiStacks de esta PC? Se abre el desinstalador de Windows.',noInstalador:'Esta copia no se instaló con el Setup: para quitarla, borrá la carpeta del programa.',
   nueva:'Hay una versión nueva de SantiStacks:',bajarNueva:'Descargar',
-  cBienvenida:'¡Bienvenido a SantiStacks!',cTitulo:'Configuración',cIntro1:'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá. Para ver toda tu biblioteca de Steam, entrá a la flecha › de Steam.',
+  cBienvenida:'¡Bienvenido a SantiStacks!',cTitulo:'Configuración',cIntro0:'Junta todos tus juegos en una sola pantalla:',cIntro1:'Detecté esto en tu PC; revisalo y guardá. Para ver toda tu biblioteca de Steam, entrá a la flecha › de Steam.',
   cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal. Para ver toda tu biblioteca de Steam, entrá a la flecha › de Steam.',guardar:'Guardar',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)',
@@ -199,7 +199,7 @@ const TXT={
   notaQuitar:'The store and its games stop showing in SantiStacks. Nothing changes on your PC: the launcher and games stay installed. To link it again: ⚙ Settings → the store\'s › arrow.',
   mConfig:'Settings',mOscuro:'Dark mode',mIdioma:'Language',mDesinst:'Uninstall SantiStacks',mDatos:'Data folder',confDesinst:'Uninstall SantiStacks from this PC? The Windows uninstaller will open.',noInstalador:'This copy wasn\'t installed with the Setup: delete the program folder to remove it.',
   nueva:'A new SantiStacks version is available:',bajarNueva:'Download',
-  cBienvenida:'Welcome to SantiStacks!',cTitulo:'Settings',cIntro1:'All your games (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) in one screen. This is what I found on your PC; review and save. For your full Steam library, open the › arrow next to Steam.',
+  cBienvenida:'Welcome to SantiStacks!',cTitulo:'Settings',cIntro0:'All your games in one screen:',cIntro1:'This is what I found on your PC; review and save. For your full Steam library, open the › arrow next to Steam.',
   cIntro2:'Everything is detected automatically. Only change something if a path is wrong. For your full Steam library, open the › arrow next to Steam.',guardar:'Save',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
   cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>santistacks</i>). Your profile must have <b>game details</b> set to public.',
   cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if SantiStacks opened it)',
@@ -477,6 +477,7 @@ function configuracion(primera){
     const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||(l.n==='Xbox'&&l.ok?L.cXbox:L.cRuta))}" ${l.n==='Xbox'?'disabled':''}>${(T.find(x=>x.n===l.n)||{}).fuera?`<span class="estado" style="color:var(--warn)">${L.cDesv}</span>`:`<span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span>`}<button class="info" title="${esc(l.n)}" onclick="cerrar();const t=T.find(x=>x.n==='${esc(l.n)}');if(t)tienda(t)">›</button></div>`).join('');
     $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
       <h2>${primera?L.cBienvenida:L.cTitulo}</h2>
+      ${primera?`<p>${L.cIntro0}</p><div class="integ">${(c.launchers_vista||[]).map(l=>`<span title="${esc(l.n)}" style="background:${SC[l.n]}">${logo(l.n,'#fff',22)}</span>`).join('')}</div>`:''}
       <p>${primera?L.cIntro1:L.cIntro2}</p>
       <label>${L.cLaunchers}</label>${filas}
       <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> ${L.cCerrar}</label>

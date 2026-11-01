@@ -28,6 +28,7 @@ SolidCompression=yes
 WizardStyle=modern
 ; la app se cierra sola antes de actualizar; que el instalador no la reabra por su cuenta (lo hace [Run])
 RestartApplications=no
+CloseApplications=force
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 
@@ -57,3 +58,25 @@ Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; 
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\{#AppName}"
+
+[Code]
+// Si la app está abierta, Windows no deja reemplazar ni borrar sus archivos y la instalación
+// (o la desinstalación) queda a medias. Se cierra antes de tocar nada.
+procedure CerrarApp();
+var Codigo: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppName}.exe', '', SW_HIDE, ewWaitUntilTerminated, Codigo);
+  Sleep(800);
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  CerrarApp();
+  Result := True;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  CerrarApp();
+  Result := True;
+end;

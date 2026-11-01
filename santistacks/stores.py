@@ -127,7 +127,7 @@ $out | ConvertTo-Json -Compress'''
         loc = p.get("Dir", "")
         out.append({"id": "xbox_" + re.sub(r"[^A-Za-z0-9]", "", p.get("Family", nombre))[:40], "name": nombre, "store": "Xbox", "installed": True,
                     "dir": loc, "drive": drive(loc), "sizeGB": tam_gb(loc), "launch": "shell:AppsFolder\\%s!%s" % (p.get("Family"), p.get("AppId")),
-                    "cover_builtin": "minecraft.jpg" if "minecraft" in nombre.lower() else None})
+                    "family": p.get("Family", "")})
     return out
 
 # ---------------- Riot ----------------

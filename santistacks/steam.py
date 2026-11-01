@@ -140,6 +140,8 @@ def ficha(appid, idioma="spanish"):
 
 # ---------- buscar en Steam un juego de otra tienda (para portada y ficha) ----------
 nrm = lambda n: re.sub(r"[^a-z0-9]+", " ", n.lower().replace("™", "").replace("®", "")).strip()
+# versiones de prueba, servidores, bandas sonoras: no son juegos (se ocultan si no están instaladas)
+NO_JUEGO = re.compile(r"public test|test server|test branch|staging branch|\bpts\b|playtest|dedicated server|\bsdk\b|soundtrack|benchmark|ctb beta", re.I)
 _busq_file = os.path.join(paths.CACHE, "busquedas.json")
 try:
     _busq = json.load(open(_busq_file, encoding="utf-8"))

@@ -4,7 +4,6 @@ import os, sys, json
 
 APP = "SantiStacks"
 DATA = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), APP)
-COVERS = os.path.join(DATA, "covers")
 CACHE = os.path.join(DATA, "cache")
 CONFIG = os.path.join(os.environ.get("APPDATA", DATA), APP, "config.json")
 HTML = os.path.join(DATA, "biblioteca.html")
@@ -16,7 +15,7 @@ if getattr(sys, "frozen", False):
 else:
     ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
 
-for d in (DATA, COVERS, CACHE, os.path.dirname(CONFIG)):
+for d in (DATA, CACHE, os.path.dirname(CONFIG)):
     os.makedirs(d, exist_ok=True)
 
 DEFAULT = {

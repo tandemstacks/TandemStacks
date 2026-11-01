@@ -36,6 +36,8 @@ class Nucleo:
             bib = steam.biblioteca(self.cfg.get("steam_api_key"), self.cfg.get("steam_id")) if self.launchers["Steam"]["ok"] or inst else None
             vistos = set()
             for aid, nombre in (bib or []):
+                if aid not in inst and steam.NO_JUEGO.search(nombre or ""):
+                    continue
                 g = {"id": aid, "appid": aid, "name": nombre, "store": "Steam", "installed": False, "launch": "steam://run/" + aid}
                 if aid in inst:
                     g.update(installed=True, sizeGB=inst[aid]["gb"], drive=inst[aid]["drive"], dir=inst[aid]["dir"])
@@ -63,8 +65,7 @@ class Nucleo:
             for g in juegos:
                 f = steam.ficha_cacheada(g.get("appid") or g.get("steam_hint") or "")
                 if f: self._aplicar_ficha(g, f)
-                dest = os.path.join(paths.COVERS, g["id"] + ".jpg")
-                g["cover"] = "covers/%s.jpg" % g["id"] if os.path.exists(dest) else ""
+                g["cover"] = covers.rapida(g)  # link, sin descargar
             juegos = [g for g in juegos if g.get("tipo", "game") in ("game", "")]  # fuera DLC, demos, bandas sonoras, herramientas
             fuera = set(self.cfg.get("desvinculadas") or [])
             juegos = [g for g in juegos if g["store"] not in fuera]
@@ -97,6 +98,13 @@ class Nucleo:
         self._stop_fichas = threading.Event(); stop = self._stop_fichas
         pend = [g for g in self.juegos if not g.get("cover") or (not g.get("desc") and (g.get("appid") or g.get("steam_hint") or g["store"] not in ("Riot", "Battle.net")))]
         self.estado.update(fase="fichas", hecho=0, total=len(pend), msg="Bajando fichas y portadas…")
+        try:  # portadas exactas de Steam: pocos pedidos para toda la biblioteca
+            covers.steam_exactas([g.get("appid") or g.get("steam_hint") for g in self.juegos])
+            for g in self.juegos:
+                g["cover"] = covers.rapida(g) or g.get("cover", "")
+            self._publicar()
+        except Exception as e:
+            paths.log("steam_exactas", e)
         ultimo = [time.time()]
         def uno(g):
             if stop.is_set(): return
@@ -106,7 +114,9 @@ class Nucleo:
                 aid = g.get("appid") or g.get("steam_hint")
                 if aid and not g.get("desc"):
                     self._aplicar_ficha(g, steam.ficha(aid, self.cfg.get("idioma", "spanish")))
-                if not g.get("cover"):
+                if g.get("steam_hint") and "steam:%s" % g["steam_hint"] not in covers._links:
+                    covers.steam_exactas([g["steam_hint"]])
+                if not g.get("cover") or g.get("steam_hint"):
                     covers.asegurar(g)
             except Exception as e:
                 paths.log("ficha", g.get("name"), e)
@@ -306,4 +316,7 @@ def main():
     def arranque():
         NUC.escanear()
         threading.Thread(target=NUC.vigilar, daemon=True).start()
-    webview.start(lambda: threading.Thread(target=arranque, daemon=True).start(), icon=icono)
+    covers.limpiar_descargadas()
+    # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones
+    webview.start(lambda: threading.Thread(target=arranque, daemon=True).start(), icon=icono,
+                  private_mode=False, storage_path=os.path.join(paths.DATA, "visor"))

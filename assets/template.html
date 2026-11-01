@@ -273,7 +273,12 @@ function discos(){
   $('#discos').open=estaba;
 }
 const ph=g=>`<div class="ph" style="background:linear-gradient(145deg,${BG[g.store]||'#333'},#15161c)">${esc(g.name)}</div>`;
-const img=g=>g.cover?`<img loading="lazy" src="${g.cover}?v=${EST.version||0}" alt="">`:ph(g);
+const img=g=>g.cover?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(g.cover)}" alt="" data-n="${esc(g.name)}" data-s="${esc(g.store)}" onerror="sinPortada(this)">`:ph(g);
+// si un link falla: Steam sin portada vertical -> imagen horizontal; si tampoco, el nombre sobre color
+function sinPortada(el){const s=el.getAttribute('src')||'';
+  if(s.includes('/library_600x900.jpg')&&!el.dataset.h){el.dataset.h='1';el.src=s.replace('library_600x900.jpg','header.jpg');return;}
+  el.outerHTML=ph({store:el.dataset.s,name:el.dataset.n});}
+window.sinPortada=sinPortada;
 const rcol=p=>p>=80?'var(--ok)':p>=60?'var(--warn)':'var(--bad)';
 const pulgar=p=>p>=60?'👍':'👎';
 

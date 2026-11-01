@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Arma biblioteca.html (plantilla + datos embebidos) en %LOCALAPPDATA%\\SantiStacks. Las portadas quedan al lado, en covers/."""
+"""Arma biblioteca.html (plantilla + datos embebidos) en %LOCALAPPDATA%\\SantiStacks. Las portadas son links (ver covers.py)."""
 import os, io, json, base64, shutil
 from . import paths, VERSION
 

@@ -24,6 +24,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - Géneros en desplegable con checkboxes (Todos + multiselección, filtro OR).
 - Desinstalar juegos de otras tiendas: `accion('desinstalar=<id>')` usa `g["uninstall"]` (Riot: `--uninstall-product`, Ubisoft: `uplay://uninstall/<id>`); si no hay, abre Aplicaciones instaladas de Windows.
 - Menú del engranaje (arriba a la derecha): Configuración, **Modo oscuro** (`cfg["tema"]`, CSS `:root[data-tema="oscuro"]`), **Idioma** español/inglés (`cfg["idioma"]`; la UI usa el diccionario `TXT` y las guías `GUIA[idioma]` de la plantilla; cambiarlo borra la caché de fichas de Steam y reescanea), Carpeta de datos, **Desinstalar SantiStacks** (`unins000.exe` junto al exe; si no está instalado con el Setup avisa).
+- **Quitar launchers del inicio de Windows** (Configuración → Inicio de Windows): `santistacks/inicio.py` busca launchers en `Run` (HKCU y HKLM) y los deshabilita como el Administrador de tareas (`StartupApproved\Run` = `03` + FILETIME); no borra nada. Nunca toca Riot Vanguard. Las de HKLM sin permisos se informan al usuario.
 - `Api.preferencia(clave, valor)` guarda tema/idioma/cerrar_launchers sin reescanear (salvo idioma).
 
 ## Armar y publicar

@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, VERSION
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft"]
 
@@ -239,6 +239,13 @@ class Api:
                 if os.path.exists(u):
                     subprocess.Popen([u]); return True
         os.startfile("ms-settings:appsfeatures"); return False
+
+    def inicio_estado(self):
+        """Launchers que arrancan con Windows (activos o ya deshabilitados)."""
+        return inicio.estado()
+
+    def quitar_inicio(self):
+        r = inicio.quitar_todos(); paths.log("quitar inicio:", r); return r
 
     def desvincular(self, nombre, fuera=True):
         """Saca (o vuelve a poner) una tienda de SantiStacks. No toca nada del launcher."""

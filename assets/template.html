@@ -185,7 +185,7 @@ const TXT={
   cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal o querés la biblioteca completa de Steam.',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)',
-  cGuardar:'Guardar y escanear',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
+  cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Buscando launchers y juegos…':'Looking for launchers and games…','Bajando fichas y portadas…':'Downloading details and covers…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
@@ -203,7 +203,7 @@ const TXT={
   cIntro2:'Everything is detected automatically. Only change something if a path is wrong or you want your full Steam library.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
   cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>santistacks</i>). Your profile must have <b>game details</b> set to public.',
   cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if SantiStacks opened it)',
-  cGuardar:'Save and scan',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
+  cGuardar:'Save and scan',cInicio:'Windows startup',cInicioBtn:'Remove launchers from startup',cInicioAct:'start with Windows',cInicioOk:'No launcher starts with Windows',cInicioAdmin:'These are set for all users and need administrator rights (remove them from Task Manager → Startup):',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
 };
 const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
 const L=TXT[IDIOMA];
@@ -475,12 +475,19 @@ function configuracion(primera){
       <p>${L.cClaveTxt} <a onclick="api('abrir_url','https://steamcommunity.com/dev/apikey')">steamcommunity.com/dev/apikey</a> ${L.cClaveTxt2}</p>
       <label>${L.cLaunchers}</label>${filas}
       <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> ${L.cCerrar}</label>
+      <label>${L.cInicio}</label>
+      <div class="row"><button class="btn" id="c_inicio">🚫 ${L.cInicioBtn}</button><span id="c_inicio_txt" style="font-size:13px;color:var(--mu)"></span></div>
       <div class="acts"><button class="btn pri" id="c_guardar">💾 ${L.cGuardar}</button><button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button><button class="btn" onclick="api('abrir_datos')">📁 ${L.mDatos}</button></div>
       <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · ${L.cLibre} · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>`;
     $('#c_guardar').onclick=()=>{
       const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});
       api('guardar_config',{steam_api_key:$('#c_key').value.trim(),steam_id:$('#c_sid').value.trim(),cerrar_launchers:$('#c_cerrar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
     };
+    const pintarInicio=()=>api('inicio_estado').then(l=>{const act=l.filter(x=>x.activa);
+      $('#c_inicio_txt').innerHTML=act.length?`<b style="color:var(--warn)">${act.length} ${L.cInicioAct}</b>: ${act.map(x=>esc(x.nombre)).join(', ')}`:`<span style="color:var(--ok)">✓ ${L.cInicioOk}</span>`;
+      $('#c_inicio').disabled=!act.length; $('#c_inicio').style.opacity=act.length?1:.5;}).catch(()=>{});
+    $('#c_inicio').onclick=()=>api('quitar_inicio').then(r=>{pintarInicio();if(r.sin_permiso&&r.sin_permiso.length)alert(L.cInicioAdmin+' '+r.sin_permiso.join(', '));});
+    pintarInicio();
     $('#cfgbg').classList.add('show');
   }).catch(()=>{$('#cfg').innerHTML=`<button class="x">×</button><h2>${L.cTitulo}</h2><p>${L.cSoloApp}</p>`;$('#cfgbg').classList.add('show');});
 }

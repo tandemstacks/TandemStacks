@@ -347,10 +347,12 @@ function tienda(t){
       <h2>${esc(t.n)}</h2>
       <div class="estado" style="color:${ST[t.st][0]}">● ${t.ok?'Launcher detectado':'Launcher no instalado'}${t.ok?` · ${cuantos} juegos · ${inst} instalados`:''}</div>
       <p style="margin:0 0 6px;font-size:14px;color:var(--mu)">${esc(g.lee)}</p>
-      <div class="acts" style="margin:10px 0 6px">
-        ${t.ok?`<button class="btn ok" onclick="accion('abrir=${encodeURIComponent(t.n)}')">▶ Abrir ${esc(g.launcher)}</button>`:`<button class="btn pri" onclick="api('abrir_url','${esc(t.bajar)}')">⬇ Descargar ${esc(g.launcher)}</button>`}
+      <div class="acts" style="margin:10px 0 6px" id="tacts">
+        ${t.fuera?`<button class="btn pri" onclick="api('desvincular','${esc(t.n)}',false);cerrar()">🔗 Volver a vincular</button>`:
+          t.ok?`<button class="btn ok" onclick="accion('abrir=${encodeURIComponent(t.n)}')">▶ Abrir ${esc(g.launcher)}</button>`:`<button class="btn pri" onclick="api('abrir_url','${esc(t.bajar)}')">⬇ Descargar ${esc(g.launcher)}</button>`}
         <button class="btn" onclick="api('reescanear');cerrar()">↻ Volver a escanear</button>
-        ${t.n==='Steam'?`<button class="btn" onclick="cerrar();configuracion(false)">⚙ Clave de Steam</button>`:''}
+        ${t.n==='Steam'&&!t.fuera?`<button class="btn" onclick="cerrar();configuracion(false)">⚙ Clave de Steam</button>`:''}
+        ${t.ok&&!t.fuera?`<button class="btn del" title="Quitar" onclick="quitarTienda(${T.indexOf(t)})">🗑</button>`:''}
       </div>
       <b style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu)">${t.ok?'Cómo funciona':'Para empezar'}</b>
       <ol>${g.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
@@ -360,6 +362,16 @@ function tienda(t){
   $('#bg').classList.add('show');
 }
 $('#tiendas').addEventListener('click',e=>{const d=e.target.closest('.tnd');if(d&&T[+d.dataset.t])tienda(T[+d.dataset.t]);});
+// papelera de la tarjeta: ¿desinstalar el launcher de Windows o solo sacarlo de SantiStacks?
+function quitarTienda(i){
+  const t=T[i], g=GUIA[t.n]||{launcher:t.n};
+  $('#tacts').innerHTML=`<span style="align-self:center;font-size:14px;color:var(--mu)">¿Qué hacemos con ${esc(t.n)}?</span>
+    <button class="btn" onclick="api('desvincular','${esc(t.n)}',true);cerrar()">🔗 Desvincular</button>
+    ${t.desinstalable||t.n==='Xbox'?`<button class="btn del" style="order:0;margin-left:0;filter:none;color:#fff;background:var(--bad)" onclick="api('desinstalar_launcher','${esc(t.n)}');cerrar()">🗑 Desinstalar ${esc(g.launcher)}</button>`:''}
+    <button class="btn" onclick="tienda(T[${i}])">Cancelar</button>`;
+  $('#nota').textContent='Desvincular: la tienda y sus juegos dejan de verse acá, sin tocar nada en tu PC (se revierte desde la misma tarjeta). Desinstalar: abre el desinstalador de Windows del launcher.';
+}
+window.quitarTienda=quitarTienda;
 
 // ---------- datos en vivo desde Python ----------
 let versionVista=EST.version||0;

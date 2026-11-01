@@ -109,6 +109,18 @@ LAUNCHERS = {
     },
 }
 
+DESINSTALAR = {  # cómo figura cada launcher en Programas instalados de Windows
+    "Steam": ("steam",), "Epic": ("epic games launcher",), "EA": ("ea app", "ea desktop"), "Riot": ("riot client",),
+    "Battle.net": ("battle.net",), "Rockstar": ("rockstar games launcher",), "Ubisoft": ("ubisoft connect",),
+}
+
+def comando_desinstalar(nombre):
+    """UninstallString del launcher (o '' si no está / es app de la Store)."""
+    for e in uninstall_entries():
+        if str(e.get("DisplayName", "")).strip().lower() in DESINSTALAR.get(nombre, ()):
+            return str(e.get("QuietUninstallString") or e.get("UninstallString") or "")
+    return ""
+
 def _primero(*rutas):
     """La primera ruta que exista (o la primera de la lista si ninguna existe)."""
     return next((r for r in rutas if r and os.path.exists(r)), rutas[0] if rutas else "")

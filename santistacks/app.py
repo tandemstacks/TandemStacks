@@ -66,6 +66,8 @@ class Nucleo:
                 dest = os.path.join(paths.COVERS, g["id"] + ".jpg")
                 g["cover"] = "covers/%s.jpg" % g["id"] if os.path.exists(dest) else ""
             juegos = [g for g in juegos if g.get("tipo", "game") in ("game", "")]  # fuera DLC, demos, bandas sonoras, herramientas
+            fuera = set(self.cfg.get("desvinculadas") or [])
+            juegos = [g for g in juegos if g["store"] not in fuera]
             self.juegos = juegos
             # resumen de tiendas
             cuenta = lambda s: sum(1 for g in juegos if g["store"] == s)
@@ -77,7 +79,9 @@ class Nucleo:
                 elif n in solo_inst: info, st = ("%d instalados (la tienda no deja leer la biblioteca completa)" % cuenta(n)), ("parcial" if l["ok"] else "no")
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
-                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"]})
+                if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
+                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera,
+                                     "desinstalable": bool(detect.comando_desinstalar(n)) if l["ok"] else False})
             self.cfg["_launchers_vista"] = [{"n": n, "exe": self.launchers[n]["exe"], "ok": self.launchers[n]["ok"], "manual": self.launchers[n]["manual"]} for n in ORDEN_TIENDAS]
             self.estado.update(fase="listo", msg="")
             self._publicar()
@@ -197,6 +201,24 @@ class Api:
 
     def version_nueva(self):
         return NUC.version_nueva()
+
+    def desvincular(self, nombre, fuera=True):
+        """Saca (o vuelve a poner) una tienda de SantiStacks. No toca nada del launcher."""
+        d = set(NUC.cfg.get("desvinculadas") or [])
+        (d.add if fuera else d.discard)(nombre)
+        NUC.cfg["desvinculadas"] = sorted(d)
+        paths.guardar({k: v for k, v in NUC.cfg.items() if not k.startswith("_")})
+        threading.Thread(target=NUC.escanear, daemon=True).start()
+        return True
+
+    def desinstalar_launcher(self, nombre):
+        """Abre el desinstalador del launcher (el de Windows). Xbox y lo que no se encuentre: Aplicaciones instaladas."""
+        cmd = detect.comando_desinstalar(nombre)
+        if cmd:
+            subprocess.Popen(cmd, shell=True)
+        else:
+            os.startfile("ms-settings:appsfeatures")
+        return True
 
     def abrir_url(self, url):
         if re.match(r"https?://", url): os.startfile(url)

@@ -26,6 +26,7 @@ DEFAULT = {
     "cerrar_launchers": True, # al cerrar el juego, cerrar el launcher que se abrió para jugarlo
     "idioma": "spanish",
     "repo": "rullans/SantiStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
+    "desvinculadas": [],      # tiendas que el usuario sacó de SantiStacks (se pueden volver a vincular desde su tarjeta)
     "primer_arranque": True,
 }
 

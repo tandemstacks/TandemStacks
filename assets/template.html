@@ -258,10 +258,10 @@ function cabecera(){
   $('#tiendas').innerHTML=T.map((t,i)=>`<div class="tnd ${t.st==='no'?'no':''}" data-t="${i}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}. ${L.clicCfg}">
     <span class="ic" style="background:${t.c}">${logo(t.n,'#fff',12)}</span>${esc(t.n)}<span class="dot" style="background:${ST[t.st][0]}"></span></div>`).join('');
   $('#sub').textContent=`${J.length} ${L.juegos} · ${J.filter(g=>g.installed).length} ${L.instalados.toLowerCase()}`;
-  const cuenta=s=>RAW.filter(g=>g.store===s).length;
+  const cuenta=s=>RAW.filter(g=>g.store===s).length, cuentaInst=s=>RAW.filter(g=>g.store===s&&g.installed).length;
   const visibles=TODAS.filter(s=>cuenta(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera));
   const tiendas=['todos',...visibles,'inst'];
-  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?'● '+L.instalados:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55">${cuenta(t)}</span>`}</span>`).join('');
+  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?'● '+L.instalados:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55" title="${cuentaInst(t)} ${L.instalados.toLowerCase()} ${L.de} ${cuenta(t)}">${cuentaInst(t)}/${cuenta(t)}</span>`}</span>`).join('');
   const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
   const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
   $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> ${L.todos}</label>`+

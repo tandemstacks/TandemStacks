@@ -175,18 +175,21 @@ class Nucleo:
 
     # ---------- versión nueva ----------
     def version_nueva(self):
+        # solo avisa si la de GitHub es MÁS nueva (no alcanza con que sea distinta: la caché puede tener una vieja)
+        num = lambda t: tuple(int(x) for x in re.findall(r"\d+", t or ""))
+        mas_nueva = lambda tag: tag if tag and num(tag) > num(VERSION) else None
         repo = self.cfg.get("repo")
         if not repo: return None
         cache = os.path.join(paths.CACHE, "version_remota.json")
         try:
             d = json.load(open(cache))
-            if time.time() - d.get("ts", 0) < 86400: return d.get("tag") if d.get("tag") and d["tag"].lstrip("v") != VERSION else None
+            if time.time() - d.get("ts", 0) < 86400: return mas_nueva(d.get("tag"))
         except Exception: pass
         try:
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % repo, 15)
             tag = j.get("tag_name", "")
             json.dump({"ts": time.time(), "tag": tag}, open(cache, "w"))
-            return tag if tag and tag.lstrip("v") != VERSION else None
+            return mas_nueva(tag)
         except Exception:
             return None
 

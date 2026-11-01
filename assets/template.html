@@ -118,19 +118,20 @@ main{padding:16px 22px 60px}
 .cfg input[type=text]{width:100%;font:inherit;font-size:13px;padding:8px 10px;border:none;border-radius:3px;background:var(--bg);color:var(--tx);box-shadow:inset 0 1px 3px rgba(0,0,0,.12);outline:none}
 .cfg input[type=text]:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
 .cfg .row{display:flex;gap:10px;align-items:center}
-.cfg .lrow{display:grid;grid-template-columns:110px 1fr 90px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.cfg .lrow{display:grid;grid-template-columns:110px 1fr 90px 34px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.cfg .lrow .info{border:none;background:var(--bg);box-shadow:var(--sh);border-radius:3px;width:30px;height:30px;cursor:pointer;color:var(--tx);font-size:15px}.cfg .lrow .info:hover{background:var(--card)}
 .cfg .lrow .estado{font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:700}
 .cfg .chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:14px;text-transform:none;letter-spacing:0;color:var(--tx)}
 .cfg .acts{margin-top:18px}
 .cfg a{color:var(--acc);cursor:pointer}
-@media (max-width:640px){.modal{flex-direction:column}.modal .cov{width:150px}.stats{grid-template-columns:1fr 1fr}.tiendas{margin-left:0}.cfg .lrow{grid-template-columns:90px 1fr 70px}}
+@media (max-width:640px){.modal{flex-direction:column}.modal .cov{width:150px}.stats{grid-template-columns:1fr 1fr}.tiendas{margin-left:0}.cfg .lrow{grid-template-columns:90px 1fr 70px 34px}}
 </style>
 </head>
 <body>
 <header>
   <div class="top">
     <div class="brand"><img class="logo" id="logo" alt=""><div><h1>Santi<span>Stacks</span></h1><small id="sub"></small></div></div>
-    <div class="tiendas"><span id="tiendas" style="display:contents"></span>
+    <div class="tiendas"><span id="tiendas" style="display:none"></span>
       <details class="dd der" id="ddmenu"><summary class="gear" id="gear" title="Menú">⚙</summary><div class="menu" id="menu"></div></details>
     </div>
   </div>
@@ -451,7 +452,7 @@ window.quitarTienda=quitarTienda;
 // ---------- configuración ----------
 function configuracion(primera){
   api('config').then(c=>{
-    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||L.cRuta)}"><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span></div>`).join('');
+    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||L.cRuta)}"><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span><button class="info" title="${esc(l.n)}" onclick="cerrar();const t=T.find(x=>x.n==='${esc(l.n)}');if(t)tienda(t)">›</button></div>`).join('');
     $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
       <h2>${primera?L.cBienvenida:L.cTitulo}</h2>
       <p>${primera?L.cIntro1:L.cIntro2}</p>

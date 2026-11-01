@@ -233,12 +233,12 @@ class Nucleo:
         cache = os.path.join(paths.CACHE, "version_remota.json")
         try:
             d = json.load(open(cache))
-            if time.time() - d.get("ts", 0) < 86400: return mas_nueva(d.get("tag"))
+            if d.get("repo") == repo and time.time() - d.get("ts", 0) < 86400: return mas_nueva(d.get("tag"))
         except Exception: pass
         try:
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % repo, 15)
             tag = j.get("tag_name", "")
-            json.dump({"ts": time.time(), "tag": tag, "setup": self._link_setup(j)}, open(cache, "w"))
+            json.dump({"ts": time.time(), "repo": repo, "tag": tag, "setup": self._link_setup(j)}, open(cache, "w"))
             return mas_nueva(tag)
         except Exception:
             return None

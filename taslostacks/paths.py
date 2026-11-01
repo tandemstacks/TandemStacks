@@ -44,8 +44,7 @@ def cargar():
             cfg.update(json.load(f))
     except Exception:
         pass
-    if not cfg.get("repo") or cfg["repo"] == "rullans/SantiStacks":  # configs sin repo o con el repo viejo
-        cfg["repo"] = DEFAULT["repo"]
+    cfg["repo"] = DEFAULT["repo"]  # siempre el oficial: configs viejas traían repos que ya no existen (SantiStacks, StacksSanti)
     return cfg
 
 def guardar(cfg):

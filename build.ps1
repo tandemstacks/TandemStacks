@@ -1,0 +1,24 @@
+# Arma SantiStacks.exe (PyInstaller, carpeta dist\SantiStacks) y el instalador (Inno Setup, installer\Output).
+# Uso: .\build.ps1          (desde la carpeta del proyecto, con Python 3.12 y "pip install -r requirements.txt pyinstaller")
+$ErrorActionPreference = "Continue"  # PyInstaller escribe su log en stderr; con "Stop" PowerShell lo toma como error
+Set-Location $PSScriptRoot
+$version = (Select-String -Path "santistacks\__init__.py" -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+Write-Host "SantiStacks $version" -ForegroundColor Cyan
+
+# 1) exe
+if (Test-Path dist) { Remove-Item dist -Recurse -Force }
+if (Test-Path build) { Remove-Item build -Recurse -Force }
+python -m PyInstaller --noconfirm --clean --windowed --name SantiStacks --icon assets\icon.ico `
+    --add-data "assets;assets" `
+    --hidden-import webview.platforms.edgechromium --hidden-import webview.platforms.winforms --hidden-import clr `
+    --collect-all webview --collect-submodules psutil `
+    SantiStacks.pyw 2>&1 | ForEach-Object { "$_" } | Select-String -Pattern "ERROR|WARNING: Hidden|completed successfully|Building EXE" 
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path "dist\SantiStacks\SantiStacks.exe")) { throw "PyInstaller falló (código $LASTEXITCODE)" }
+Write-Host "exe listo: dist\SantiStacks\SantiStacks.exe" -ForegroundColor Green
+
+# 2) instalador
+$iscc = @("C:\Program Files (x86)\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $iscc) { Write-Warning "No encontré Inno Setup 6 (ISCC.exe): queda solo la carpeta dist\SantiStacks"; exit 0 }
+& $iscc "/DAppVersion=$version" "installer\SantiStacks.iss" 2>&1 | Select-Object -Last 3
+if ($LASTEXITCODE -ne 0) { throw "Inno Setup falló (código $LASTEXITCODE)" }
+Write-Host "instalador listo: installer\Output\SantiStacks-Setup-$version.exe" -ForegroundColor Green

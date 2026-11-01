@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SantiStacks</title>
+<style>
+:root{--bg:#f2f2ef;--panel:#ffffff;--card:#e6e6e2;--tx:#1a1a1a;--mu:#6e6e6a;--ln:#e4e4df;--acc:#ff6a00;--acc2:#1a1a1a;--ok:#1f9d55;--warn:#d08a00;--bad:#d9433b;--sh:0 2px 8px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Bahnschrift,"Segoe UI",system-ui,sans-serif;min-height:100vh}
+a{color:inherit}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-top:5px solid var(--acc);box-shadow:0 3px 12px rgba(0,0,0,.10);padding:12px 22px 12px}
+.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:3px;display:block;box-shadow:var(--sh)}
+.brand h1{margin:0;font-size:22px;letter-spacing:.2px;font-weight:700;text-transform:uppercase}.brand h1 span{color:var(--acc)}
+.brand small{display:block;color:var(--mu);font-size:12px;margin-top:-2px}
+.tiendas{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tnd{display:flex;align-items:center;gap:6px;padding:5px 9px 5px 6px;border-radius:3px;background:var(--panel);box-shadow:var(--sh);font-size:12px;cursor:default}
+.tnd .ic{width:20px;height:20px;border-radius:2px;display:grid;place-items:center;font-weight:800;font-size:11px;color:#fff}
+.tnd .dot{width:7px;height:7px;border-radius:50%}
+.tnd.no{opacity:.45}
+.gear{border:none;background:var(--bg);box-shadow:var(--sh);border-radius:3px;width:34px;height:34px;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.gear:hover{background:var(--card)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+#q{flex:1;min-width:220px;font:inherit;padding:10px 14px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);outline:none;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+#q:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
+select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;letter-spacing:.3px;text-transform:uppercase;user-select:none;white-space:nowrap;box-shadow:var(--sh)}
+.chip:hover{background:#e6e6e2}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.chips.gen .chip.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.count{color:var(--mu);font-size:13px}
+.prog{display:none;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mu)}
+.prog.show{display:flex}
+.prog .pb{flex:1;height:6px;background:var(--card);border-radius:2px;overflow:hidden}.prog .pb i{display:block;height:100%;background:var(--acc);transition:width .4s}
+.upd{display:none;background:var(--acc2);color:#fff;padding:8px 22px;font-size:13px;align-items:center;gap:12px}.upd.show{display:flex}
+.upd a{color:#ffb070;cursor:pointer;font-weight:700}
+main{padding:16px 22px 60px}
+.discos{background:var(--panel);border-radius:4px;box-shadow:var(--sh);margin-bottom:18px}
+.discos summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.discos summary::-webkit-details-marker{display:none}
+.discos summary b{font-size:14px}
+.dmini{flex:1;min-width:200px}
+.dmini .lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:4px}
+.bar{height:9px;background:var(--card);border-radius:2px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .j{background:var(--acc)}.bar .o{background:#c5cbd8}
+.flecha{color:var(--mu);font-size:12px}
+.ddet{padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.dcard{background:var(--bg);border-radius:3px;padding:12px}
+.dcard h3{margin:0 0 6px;font-size:14px}
+.jrow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--ln)}
+.jrow span:last-child{color:var(--mu)}
+.ley{font-size:12px;color:var(--mu);display:flex;gap:12px;margin-top:6px}
+.ley i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.sec{font-size:14px;margin:4px 0 12px;text-transform:uppercase;letter-spacing:1px;border-left:4px solid var(--acc);padding-left:9px;line-height:1.2}.sec span,.grupo summary span{color:var(--mu);font-weight:400}
+.grupo{margin-top:16px;border-radius:4px;background:var(--panel);box-shadow:var(--sh)}
+.grupo summary{cursor:pointer;list-style:none;padding:12px 16px;font-size:14px;text-transform:uppercase;letter-spacing:1px;display:flex;gap:6px;align-items:center;border-left:4px solid var(--mu)}
+.grupo summary::-webkit-details-marker{display:none}.grupo summary .flecha{margin-left:auto;transition:transform .2s}
+.grupo[open] summary .flecha{transform:rotate(180deg)}.grupo .grid{padding:0 16px 16px}
+.card{position:relative;border-radius:3px;overflow:hidden;cursor:pointer;background:var(--card);aspect-ratio:2/3;transition:transform .15s,box-shadow .15s;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 28px rgba(0,0,0,.28)}
+.card img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .2s}
+.card.off img,.card.off .ph{filter:grayscale(.75) brightness(.8)}
+.card.off:hover img,.card.off:hover .ph{filter:none}
+.ph{color:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;font-size:15px;line-height:1.2}
+.nm{position:absolute;left:0;right:0;bottom:0;padding:22px 9px 8px;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .15s}
+.card:hover .nm{opacity:1}
+.tag{position:absolute;top:7px;left:7px;display:flex;gap:6px;align-items:center;padding:5px 6px;border-radius:3px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,0,0,.3)}.lg{display:inline-block;flex:none;vertical-align:middle;position:relative;top:-1px}
+.inst{position:absolute;top:7px;right:7px;width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(0,0,0,.6)}
+.rate{position:absolute;bottom:7px;right:7px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.75);color:#fff}
+.empty{color:var(--mu);text-align:center;padding:40px}
+#bg,#cfgbg{position:fixed;inset:0;background:rgba(20,24,40,.5);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#bg.show,#cfgbg.show{display:flex}
+.modal{background:var(--panel);border-radius:5px;border-top:5px solid var(--acc);box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:720px;width:100%;max-height:92vh;overflow:auto;display:flex;gap:20px;padding:20px;position:relative}
+.modal .cov{width:210px;flex:none;border-radius:3px;box-shadow:var(--sh);overflow:hidden;aspect-ratio:2/3;align-self:flex-start}
+.modal .cov img{width:100%;height:100%;object-fit:cover}
+.modal h2{margin:0 0 4px;font-size:24px;padding-right:30px;text-transform:uppercase;letter-spacing:.3px}
+.meta{color:var(--mu);font-size:13px;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;line-height:1.3}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.pill{font-size:12px;padding:3px 9px;border-radius:3px;background:var(--bg);text-transform:uppercase;letter-spacing:.3px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.st{background:var(--bg);border-radius:3px;border-left:3px solid var(--acc);padding:8px 10px;font-size:12px;color:var(--mu)}
+.st b{display:block;font-size:17px;color:var(--tx)}
+.desc{font-size:14px;line-height:1.55;margin-bottom:14px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.btn{display:inline-flex;align-items:center;justify-content:center;line-height:1.2;padding:9px 14px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font:inherit;font-size:13px;text-transform:uppercase;letter-spacing:.4px;text-decoration:none;box-shadow:var(--sh)}
+.btn:hover{filter:brightness(.95)}
+.btn.pri{background:var(--acc);color:#fff}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.del{order:9;margin-left:auto;color:var(--mu);background:var(--card);font-size:17px;padding-left:12px;padding-right:12px;filter:grayscale(1)}
+.btn.del:hover{filter:none;color:#fff;background:var(--bad)}
+.x{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--mu);font-size:26px;cursor:pointer}
+.nota{font-size:12px;color:var(--mu);margin-top:10px;min-height:1em}
+/* configuración */
+.cfg{display:block;max-width:680px}
+.cfg h2{font-size:20px;margin-bottom:10px}
+.cfg p{font-size:13px;color:var(--mu);margin:4px 0 12px;line-height:1.5}
+.cfg label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--mu);margin:12px 0 4px}
+.cfg input[type=text]{width:100%;font:inherit;font-size:13px;padding:8px 10px;border:none;border-radius:3px;background:var(--bg);box-shadow:inset 0 1px 3px rgba(0,0,0,.12);outline:none}
+.cfg input[type=text]:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
+.cfg .row{display:flex;gap:10px;align-items:center}
+.cfg .lrow{display:grid;grid-template-columns:110px 1fr 90px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.cfg .lrow .estado{font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:700}
+.cfg .chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:14px;text-transform:none;letter-spacing:0;color:var(--tx)}
+.cfg .acts{margin-top:18px}
+.cfg a{color:var(--acc);cursor:pointer}
+@media (max-width:640px){.modal{flex-direction:column}.modal .cov{width:150px}.stats{grid-template-columns:1fr 1fr}.tiendas{margin-left:0}.cfg .lrow{grid-template-columns:90px 1fr 70px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand"><img class="logo" id="logo" alt=""><div><h1>Santi<span>Stacks</span></h1><small id="sub"></small></div></div>
+    <div class="tiendas"><span id="tiendas" style="display:contents"></span><button class="gear" id="gear" title="Configuración" aria-label="Configuración">⚙</button></div>
+  </div>
+  <div class="tools">
+    <input id="q" placeholder="Buscar juego..." autocomplete="off">
+    <select id="orden">
+      <option value="nombre">Orden: nombre</option>
+      <option value="valor">Mejor valorados</option>
+      <option value="peso">Más pesados</option>
+      <option value="anio">Más nuevos</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="chips" id="filtros"></div>
+  <div class="chips gen" id="generos"></div>
+  <div class="prog" id="prog"><span id="progtxt"></span><div class="pb"><i id="progbar" style="width:0%"></i></div></div>
+</header>
+<div class="upd" id="upd"><span>Hay una versión nueva de SantiStacks: <b id="updtag"></b></span><a id="updlink">Descargar</a><a onclick="$('#upd').classList.remove('show')" style="margin-left:auto;color:#fff">✕</a></div>
+<main>
+  <details class="discos" id="discos"></details>
+  <div id="grid"></div>
+  <div class="empty" id="empty" style="display:none">Sin resultados.</div>
+</main>
+<div id="bg"><div class="modal" id="modal"></div></div>
+<div id="cfgbg"><div class="modal cfg" id="cfg"></div></div>
+<script>
+/*DATA*/
+</script>
+<script>
+let RAW=window.JUEGOS||[], D=window.DISCOS||[], T=window.TIENDAS||[], CONF=window.CONF||{}, EST=window.ESTADO||{};
+if(window.LOGO) document.getElementById('logo').src='data:image/png;base64,'+window.LOGO;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.api[fn])?window.pywebview.api[fn](...a):Promise.reject('sin api');
+// Juegos repetidos en varias tiendas -> una sola tarjeta (agrupa por nombre normalizado)
+const norm=n=>n.toLowerCase().replace(/[™®©]/g,'')
+  .replace(/[-:–]?\s*(the )?(definitive|complete|special|celebration|game of the year|goty|enhanced|deluxe|remastered|director'?s cut|steam|legacy)( edition)?\b/g,'')
+  .replace(/[^a-z0-9]+/g,' ').trim();
+const PRIO={Steam:0,Epic:1,EA:2,Xbox:3,'Battle.net':4,Rockstar:5,Riot:6,Ubisoft:7};
+let J=[];
+function agrupar(){
+  const grupos={};
+  RAW.forEach(g=>(grupos[norm(g.name)]=grupos[norm(g.name)]||[]).push(g));
+  J=Object.values(grupos).map(items=>{
+    items.sort((a,b)=>(b.installed-a.installed)||(!!b.cover-!!a.cover)||(PRIO[a.store]-PRIO[b.store]));
+    const p={...items[0]};
+    for(const k of ['desc','genres','anio','dev','revPct','revN','revTxt','meta','reqGB','appid','cover'])
+      if(p[k]==null||p[k]==='') p[k]=(items.find(x=>x[k]!=null&&x[k]!=='')||{})[k];
+    p.items=items; p.stores=[...new Set(items.map(x=>x.store))];
+    p.installed=items.some(x=>x.installed);
+    return p;
+  });
+}
+const SC={Steam:'#1b6fb8',Epic:'#2a2a2a',Xbox:'#107c10',EA:'#e03a3a','Battle.net':'#148eff',Rockstar:'#e59e00',Riot:'#d13639',Ubisoft:'#0070ff'};
+const LOGO={"Steam": "M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z", "Epic": "M3.537 0C2.165 0 1.66.506 1.66 1.879V18.44a4.262 4.262 0 00.02.433c.031.3.037.59.316.92.027.033.311.245.311.245.153.075.258.13.43.2l8.335 3.491c.433.199.614.276.928.27h.002c.314.006.495-.071.928-.27l8.335-3.492c.172-.07.277-.124.43-.2 0 0 .284-.211.311-.243.28-.33.285-.621.316-.92a4.261 4.261 0 00.02-.434V1.879c0-1.373-.506-1.88-1.878-1.88zm13.366 3.11h.68c1.138 0 1.688.553 1.688 1.696v1.88h-1.374v-1.8c0-.369-.17-.54-.523-.54h-.235c-.367 0-.537.17-.537.539v5.81c0 .369.17.54.537.54h.262c.353 0 .523-.171.523-.54V8.619h1.373v2.143c0 1.144-.562 1.71-1.7 1.71h-.694c-1.138 0-1.7-.566-1.7-1.71V4.82c0-1.144.562-1.709 1.7-1.709zm-12.186.08h3.114v1.274H6.117v2.603h1.648v1.275H6.117v2.774h1.74v1.275h-3.14zm3.816 0h2.198c1.138 0 1.7.564 1.7 1.708v2.445c0 1.144-.562 1.71-1.7 1.71h-.799v3.338h-1.4zm4.53 0h1.4v9.201h-1.4zm-3.13 1.235v3.392h.575c.354 0 .523-.171.523-.54V4.965c0-.368-.17-.54-.523-.54zm-3.74 10.147a1.708 1.708 0 01.591.108 1.745 1.745 0 01.49.299l-.452.546a1.247 1.247 0 00-.308-.195.91.91 0 00-.363-.068.658.658 0 00-.28.06.703.703 0 00-.224.163.783.783 0 00-.151.243.799.799 0 00-.056.299v.008a.852.852 0 00.056.31.7.7 0 00.157.245.736.736 0 00.238.16.774.774 0 00.303.058.79.79 0 00.445-.116v-.339h-.548v-.565H7.37v1.255a2.019 2.019 0 01-.524.307 1.789 1.789 0 01-.683.123 1.642 1.642 0 01-.602-.107 1.46 1.46 0 01-.478-.3 1.371 1.371 0 01-.318-.455 1.438 1.438 0 01-.115-.58v-.008a1.426 1.426 0 01.113-.57 1.449 1.449 0 01.312-.46 1.418 1.418 0 01.474-.309 1.58 1.58 0 01.598-.111 1.708 1.708 0 01.045 0zm11.963.008a2.006 2.006 0 01.612.094 1.61 1.61 0 01.507.277l-.386.546a1.562 1.562 0 00-.39-.205 1.178 1.178 0 00-.388-.07.347.347 0 00-.208.052.154.154 0 00-.07.127v.008a.158.158 0 00.022.084.198.198 0 00.076.066.831.831 0 00.147.06c.062.02.14.04.236.061a3.389 3.389 0 01.43.122 1.292 1.292 0 01.328.17.678.678 0 01.207.24.739.739 0 01.071.337v.008a.865.865 0 01-.081.382.82.82 0 01-.229.285 1.032 1.032 0 01-.353.18 1.606 1.606 0 01-.46.061 2.16 2.16 0 01-.71-.116 1.718 1.718 0 01-.593-.346l.43-.514c.277.223.578.335.9.335a.457.457 0 00.236-.05.157.157 0 00.082-.142v-.008a.15.15 0 00-.02-.077.204.204 0 00-.073-.066.753.753 0 00-.143-.062 2.45 2.45 0 00-.233-.062 5.036 5.036 0 01-.413-.113 1.26 1.26 0 01-.331-.16.72.72 0 01-.222-.243.73.73 0 01-.082-.36v-.008a.863.863 0 01.074-.359.794.794 0 01.214-.283 1.007 1.007 0 01.34-.185 1.423 1.423 0 01.448-.066 2.006 2.006 0 01.025 0zm-9.358.025h.742l1.183 2.81h-.825l-.203-.499H8.623l-.198.498h-.81zm2.197.02h.814l.663 1.08.663-1.08h.814v2.79h-.766v-1.602l-.711 1.091h-.016l-.707-1.083v1.593h-.754zm3.469 0h2.235v.658h-1.473v.422h1.334v.61h-1.334v.442h1.493v.658h-2.255zm-5.3.897l-.315.793h.624zm-1.145 5.19h8.014l-4.09 1.348z", "EA": "M16.635 6.162l-5.928 9.377H4.24l1.508-2.3h4.024l1.474-2.335H2.264L.79 13.239h2.156L0 17.84h12.072l4.563-7.259 1.652 2.66h-1.401l-1.473 2.299h4.347l1.473 2.3H24zm-11.461.107L3.7 8.604l9.52-.035 1.474-2.3z", "Riot": "M13.458.86 0 7.093l3.353 12.761 2.552-.313-.701-8.024.838-.373 1.447 8.202 4.361-.535-.775-8.857.83-.37 1.591 9.025 4.412-.542-.849-9.708.84-.374 1.74 9.87L24 17.318V3.5Zm.316 19.356.222 1.256L24 23.14v-4.18l-10.22 1.256Z", "Battle.net": "M18.94 8.296C15.9 6.892 11.534 6 7.426 6.332c.206-1.36.714-2.308 1.548-2.508 1.148-.275 2.4.48 3.594 1.854.782.102 1.71.28 2.355.429C12.747 2.013 9.828-.282 7.607.565c-1.688.644-2.553 2.97-2.448 6.094-2.2.468-3.915 1.3-5.013 2.495-.056.065-.181.227-.137.305.034.058.146-.008.194-.04 1.274-.89 2.904-1.373 5.027-1.676.303 3.333 1.713 7.56 4.055 10.952-1.28.502-2.356.536-2.946-.087-.812-.856-.784-2.318-.19-4.04a26.764 26.764 0 0 1-.807-2.254c-2.459 3.934-2.986 7.61-1.143 9.11 1.402 1.14 3.847.725 6.502-.926 1.505 1.672 3.083 2.74 4.667 3.094.084.015.287.043.332-.034.034-.06-.08-.124-.131-.149-1.408-.657-2.64-1.828-3.964-3.515 2.735-1.929 5.691-5.263 7.457-8.988 1.076.86 1.64 1.773 1.398 2.595-.336 1.131-1.615 1.84-3.403 2.185a27.697 27.697 0 0 1-1.548 1.826c4.634.16 8.08-1.22 8.458-3.565.286-1.786-1.295-3.696-4.053-5.17.696-2.139.832-4.04.346-5.588-.029-.08-.106-.27-.196-.27-.068 0-.067.13-.063.187.135 1.547-.263 3.2-1.062 5.19zm-8.533 9.869c-1.96-3.145-3.09-6.849-3.082-10.594 3.702-.124 7.474.748 10.714 2.627-1.743 3.269-4.385 6.1-7.633 7.966h.001z", "Rockstar": "M5.971 6.816h3.241c1.469 0 2.741-.448 2.741-2.084 0-1.3-1.117-1.576-2.19-1.576H6.748l-.777 3.66Zm12.834 8.753h5.168l-4.664 3.228.755 5.087-4.041-3.07L10.599 24l2.536-5.392s-2.95-3.075-2.947-3.075c-.198-.262-.265-.936-.265-1.226 0-.367.024-.739.049-1.134.028-.451.058-.933.058-1.476 0-1.338-.59-2.038-2.036-2.038H5.283l-1.18 5.525H.026L3.269 0h7.672c2.852 0 5.027.702 5.027 3.936 0 2.276-1.12 3.894-3.592 4.233v.045c1.162.276 1.598 1.062 1.598 2.527 0 .585-.018 1.098-.034 1.581-.015.428-.03.834-.03 1.243 0 .525.137 1.382.48 1.968h.567l3.028-5.06.82 5.096Zm-1.233-2.948-2.187 3.654h-3.457l2.103 2.189-1.73 3.672 3.777-2.218 2.976 2.263-.553-3.731 3.093-2.139h-3.43l-.592-3.69Z", "Ubisoft": "M23.561 11.988C23.301-.304 6.954-4.89.656 6.634c.282.206.661.477.943.672a11.747 11.747 0 00-.976 3.067 11.885 11.885 0 00-.184 2.071C.439 18.818 5.621 24 12.005 24c6.385 0 11.556-5.17 11.556-11.556v-.455zm-20.27 2.06c-.152 1.246-.054 1.636-.054 1.788l-.282.098c-.108-.206-.37-.932-.488-1.908C2.163 10.308 4.7 6.96 8.57 6.33c3.544-.52 6.937 1.68 7.728 4.758l-.282.098c-.087-.087-.228-.336-.77-.878-4.281-4.281-11.002-2.32-11.956 3.74zm11.002 2.081a3.145 3.145 0 01-2.59 1.355 3.15 3.15 0 01-3.155-3.155 3.159 3.159 0 012.927-3.144c1.018-.043 1.972.51 2.416 1.398a2.58 2.58 0 01-.455 2.95c.293.205.575.4.856.595zm6.58.12c-1.669 3.782-5.106 5.766-8.77 5.712-7.034-.347-9.083-8.466-4.38-11.393l.207.206c-.076.108-.358.325-.791 1.182-.51 1.041-.672 2.081-.607 2.732.369 5.67 8.314 6.83 11.045 1.214C21.057 8.217 11.822.401 3.626 6.374l-.184-.184C5.599 2.808 9.816 1.3 13.837 2.309c6.147 1.55 9.453 7.956 7.035 13.94z", "Xbox": "M4.102 21.033A11.947 11.947 0 0 0 12 24a11.96 11.96 0 0 0 7.902-2.967c1.877-1.912-4.316-8.709-7.902-11.417-3.582 2.708-9.779 9.505-7.898 11.417zm11.16-14.406c2.5 2.961 7.484 10.313 6.076 12.912A11.942 11.942 0 0 0 24 12.004a11.95 11.95 0 0 0-3.57-8.536s-.027-.022-.082-.042a.847.847 0 0 0-.281-.045c-.592 0-1.985.434-4.805 3.246zM3.654 3.426c-.057.02-.082.041-.086.042A11.956 11.956 0 0 0 0 12.004c0 2.854.998 5.473 2.661 7.533-1.401-2.605 3.579-9.951 6.08-12.91-2.82-2.813-4.216-3.245-4.806-3.245a.725.725 0 0 0-.281.045zM12 4.662s-2.953-1.728-5.258-1.81h-.113c-.1.004-.228.013-.336.028-.092.014-.189.029-.305.058C7.04 2.165 9.431 0 12 0c2.572 0 4.986 2.199 6.018 2.958-.1-.023-.212-.045-.317-.059-.093-.012-.206-.021-.33-.028h-.102C14.953 2.934 12 4.662 12 4.662z"};
+const logo=(s,c,n)=>LOGO[s]?`<svg class="lg" viewBox="0 0 24 24" width="${n}" height="${n}" fill="${c}" aria-label="${esc(s)}"><title>${esc(s)}</title><path d="${LOGO[s]}"/></svg>`:`<b style="color:${c}">${esc(s)}</b>`;
+const BG={Steam:'#1b3a5c',Epic:'#3a3a3a',Xbox:'#1f4020',EA:'#5c2020','Battle.net':'#0f3a66',Rockstar:'#5c4310',Riot:'#5c1020',Ubisoft:'#10305c'};
+const peso=g=>g.installed?(g.sizeGB||0):(g.reqGB||0);
+let tsel=new Set(), soloInst=false, gens=new Set(), texto='', orden='nombre', abiertos=new Set();
+const ST={ok:['var(--ok)','Leída'],parcial:['var(--warn)','Parcial'],no:['var(--bad)','No instalada']};
+const TODAS=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft'];
+
+function cabecera(){
+  $('#tiendas').innerHTML=T.map(t=>`<div class="tnd ${t.st==='no'?'no':''}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}">
+    <span class="ic" style="background:${t.c}">${logo(t.n,'#fff',12)}</span>${esc(t.n)}<span class="dot" style="background:${ST[t.st][0]}"></span></div>`).join('');
+  $('#sub').textContent=`${J.length} juegos · ${J.filter(g=>g.installed).length} instalados`;
+  const tiendas=['todos',...TODAS.filter(s=>RAW.some(g=>g.store===s)),'inst'];
+  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}" data-t="${t}">${t==='todos'?'Todos':t==='inst'?'● Instalados':logo(t,SC[t],12)+' '+t}</span>`).join('');
+  const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
+  const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,14);
+  $('#generos').innerHTML=topG.map(x=>`<span class="chip ${gens.has(x)?'on':''}" data-g="${esc(x)}">${esc(x)} <span style="opacity:.6">${cnt[x]}</span></span>`).join('');
+}
+const PAL=['#7c9cff','#b07cff','#ff7ca8','#ffa94d','#ffd43b','#69db7c','#38d9a9','#4dabf7','#e599f7','#ff8787','#a9e34b','#74c0fc'];
+function discos(){
+  if(!D.length){$('#discos').style.display='none';return;}
+  $('#discos').style.display='';
+  const alerta=D.filter(d=>d.libreGB/d.totalGB<0.1||d.libreGB<50);
+  const mini=D.map(d=>{const o=(d.usadoGB-d.juegosGB)/d.totalGB*100, poco=alerta.includes(d);
+    return `<div class="dmini"><div class="lbl"><span><b style="color:var(--tx)">${d.letra}</b> · juegos ${d.juegosGB} GB</span><span style="${poco?'color:var(--bad);font-weight:700':''}">${poco?'⚠ ':''}${d.libreGB} GB libres de ${d.totalGB}</span></div>
+    <div class="bar">${d.juegos.map((x,i)=>`<i title="${esc(x.name)} · ${x.gb} GB" style="width:${x.gb/d.totalGB*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}<i class="o" style="width:${o}%" title="Otros archivos"></i></div></div>`}).join('');
+  const det=D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} juegos, ${d.juegosGB} GB</h3>
+    ${d.juegos.map((x,i)=>`<div class="jrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||'<div class="jrow"><span>Sin juegos</span><span></span></div>'}</div>`).join('');
+  const estaba=$('#discos').open;
+  $('#discos').innerHTML=`<summary><b>💾 Discos</b>${mini}<span class="flecha">ver juegos ▾</span></summary>
+    ${alerta.length?`<div style="margin:0 16px 10px;padding:8px 12px;border-radius:3px;background:rgba(229,83,75,.15);color:var(--bad);font-size:13px">⚠ Poco espacio en ${alerta.map(d=>d.letra).join(', ')}: conviene desinstalar algo que no juegues.</div>`:''}
+    <div class="ley" style="padding:0 16px 8px"><span>Cada color es un juego</span><span><i style="background:#c5cbd8"></i>Otros archivos</span><span><i style="background:var(--bg);border:1px solid var(--ln)"></i>Libre</span></div>
+    <div class="ddet">${det}</div>`;
+  $('#discos').open=estaba;
+}
+const ph=g=>`<div class="ph" style="background:linear-gradient(145deg,${BG[g.store]||'#333'},#15161c)">${esc(g.name)}</div>`;
+const img=g=>g.cover?`<img loading="lazy" src="${g.cover}?v=${EST.version||0}" alt="">`:ph(g);
+const rcol=p=>p>=80?'var(--ok)':p>=60?'var(--warn)':'var(--bad)';
+const pulgar=p=>p>=60?'👍':'👎';
+
+function render(){
+  let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
+    &&(!texto||g.name.toLowerCase().includes(texto))
+    &&[...gens].every(x=>(g.genres||[]).includes(x)));
+  const by={nombre:(a,b)=>a.name.localeCompare(b.name,'es'),valor:(a,b)=>(b.revPct||0)-(a.revPct||0),peso:(a,b)=>peso(b)-peso(a),anio:(a,b)=>(b.anio||0)-(a.anio||0)};
+  list.sort(by[orden]);
+  const card=g=>`<div class="card${g.installed?'':' off'}" data-i="${J.indexOf(g)}">${img(g)}
+    <span class="tag">${g.stores.map(s=>logo(s,SC[s],20)).join('')}</span>${g.installed?'<span class="inst" title="Instalado"></span>':''}
+    ${g.revPct?`<span class="rate" style="color:${rcol(g.revPct)}">${pulgar(g.revPct)} ${g.revPct}%</span>`:''}<div class="nm">${esc(g.name)}</div></div>`;
+  const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
+  let h=inst.length?`<h2 class="sec">✅ Instalados <span>${inst.length}</span></h2><div class="grid">${inst.map(card).join('')}</div>`:'';
+  if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>No instalados</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;
+  if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.':'Buscando tus juegos…'}</div>`;
+  $('#grid').innerHTML=h;
+  $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{if(!texto)d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);}));
+  $('#empty').style.display=list.length||!RAW.length?'none':'block';
+  $('#count').textContent=`${list.length} de ${J.length}`;
+}
+function progreso(){
+  const p=$('#prog');
+  if(EST.fase&&EST.fase!=='listo'){p.classList.add('show');$('#progtxt').textContent=(EST.msg||'Trabajando…')+(EST.total?` ${EST.hecho}/${EST.total}`:'');$('#progbar').style.width=(EST.total?EST.hecho/EST.total*100:15)+'%';}
+  else p.classList.remove('show');
+}
+function todo(){agrupar();cabecera();discos();render();progreso();}
+
+// acciones -> Python
+function accion(q){const fin=ok=>{const n=$('#nota');if(n)n.textContent=ok?'Listo: si hace falta confirmar, fijate en la ventana que se abrió.':'No se pudo.';};
+  api('accion',q).then(fin).catch(()=>fin(false));}
+window.accion=accion;
+function botonesDe(it,conTienda){
+  const a=it.appid,b=[],de=conTienda?` (${it.store})`:'';
+  if(it.store==='Steam'&&a){
+    if(it.installed){b.push(`<button class="btn ok" onclick="accion('tipo=run&appid=${a}')">▶ Jugar${de}</button>`);b.push(`<button class="btn del" onclick="accion('tipo=uninstall&appid=${a}')" title="Desinstalar" aria-label="Desinstalar">🗑</button>`);}
+    else b.push(`<button class="btn pri" onclick="accion('tipo=install&appid=${a}')">⬇ ${conTienda?'Steam':'Instalar'}</button>`);
+  } else {
+    const k=it.store;
+    if(it.installed&&it.lanzable) b.push(`<button class="btn ok" onclick="accion('lanzar=${encodeURIComponent(it.id)}')">▶ Jugar${de}</button>`);
+    b.push(`<button class="btn ${it.installed?'':'pri'}" onclick="accion('${!it.installed&&it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(k)}')">${it.installed?'Abrir '+k:(conTienda?'⬇ '+k:'⬇ Instalar en '+k)}</button>`);
+    if(it.installed) b.push(`<button class="btn del" onclick="accion('abrir=apps')" title="Desinstalar" aria-label="Desinstalar">🗑</button>`);
+  }
+  return b;
+}
+function elegir(){
+  $('#acts').innerHTML=`<span style="align-self:center;font-size:14px;color:var(--mu)">¿Desde dónde lo instalás?</span>`+
+    actual.items.map(it=>botonesDe(it,true).join('')).join('')+`<button class="btn" onclick="abrir(actual)">Cancelar</button>`;
+}
+window.elegir=elegir;
+let actual=null;
+function botones(g){
+  const a=g.appid;let b=[];
+  const inst=g.items.filter(x=>x.installed);
+  if(inst.length) inst.forEach(it=>b.push(...botonesDe(it,g.items.length>1)));
+  else if(g.items.length>1) b.push(`<button class="btn pri" onclick="elegir()">⬇ Instalar…</button>`);
+  else b=botonesDe(g.items[0],false);
+  if(a) b.push(`<button class="btn" onclick="api('abrir_url','https://store.steampowered.com/app/${a}')">Ficha</button>`);
+  return b.join('');
+}
+function abrir(g){
+  actual=g;
+  const tam=g.installed&&g.sizeGB?`${g.sizeGB} GB`:g.reqGB?`~${g.reqGB} GB`:'—';
+  const tamL=g.installed&&g.sizeGB?`Ocupa en ${g.drive||'disco'}`:g.reqGB?'Necesita (requisito)':'Ocupa';
+  $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
+    <div class="cov">${img(g)}</div>
+    <div style="flex:1;min-width:0">
+      <h2>${esc(g.name)}</h2>
+      <div class="meta">${g.stores.length>1?'Lo tenés en ':''}${g.stores.map(s=>`<span style="color:${SC[s]};display:inline-flex;align-items:center;gap:5px;line-height:1">${logo(s,SC[s],13)}${s}</span>`).join(' ')}${g.anio?` · ${esc(g.anio)}`:''}${g.dev?` · ${esc(g.dev)}`:''} · ${g.installed?'<span style="color:var(--ok)">Instalado</span>':'No instalado'}</div>
+      ${g.genres?`<div class="pills">${g.genres.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div>`:''}
+      <div class="stats">
+        <div class="st"><b>${tam}</b>${tamL}</div>
+        <div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revTxt?esc(g.revTxt):'Reseñas Steam'}${g.revN?` (${g.revN.toLocaleString('es')})`:''}</div>
+        <div class="st"><b>${g.meta||'—'}</b>Metacritic</div>
+      </div>
+      ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:''}
+      <div class="acts" id="acts">${botones(g)}</div>
+      <div class="nota" id="nota">Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.</div>
+    </div>`;
+  $('#bg').classList.add('show');
+}
+window.abrir=abrir;
+const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove('show');};
+$('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)abrir(J[+c.dataset.i]);});
+$('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
+$('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar();});
+$('#q').addEventListener('input',e=>{texto=e.target.value.toLowerCase().trim();render();});
+$('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
+$('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;
+  if(t==='todos'){tsel.clear();soloInst=false;}else if(t==='inst'){soloInst=!soloInst;}else{tsel.has(t)?tsel.delete(t):tsel.add(t);}
+  document.querySelectorAll('#filtros .chip').forEach(x=>{const k=x.dataset.t;x.classList.toggle('on',k==='todos'?(!tsel.size&&!soloInst):k==='inst'?soloInst:tsel.has(k));});render();});
+$('#generos').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const g=c.dataset.g;gens.has(g)?gens.delete(g):gens.add(g);c.classList.toggle('on');render();});
+
+// ---------- configuración ----------
+function configuracion(primera){
+  api('config').then(c=>{
+    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,SC[l.n],14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||'no encontrado · pegá la ruta del .exe si lo tenés instalado')}"><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?'✓ detectado':'✗ no está'}</span></div>`).join('');
+    $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
+      <h2>${primera?'¡Bienvenido a SantiStacks!':'Configuración'}</h2>
+      <p>${primera?'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá.':'Todo se detecta solo. Solo tocá algo si una ruta está mal o querés la biblioteca completa de Steam.'}</p>
+      <label>Cuenta de Steam</label>
+      <div class="row"><input type="text" id="c_sid" value="${esc(c.steam_id||'')}" placeholder="SteamID64 (17 dígitos)" style="max-width:260px"><span style="font-size:13px;color:var(--mu)">${c.steam_user?'detectada: <b>'+esc(c.steam_user)+'</b>':'no encontré un usuario de Steam en esta PC'}</span></div>
+      <label>Clave Web API de Steam (opcional)</label>
+      <input type="text" id="c_key" value="${esc(c.steam_api_key||'')}" placeholder="32 caracteres">
+      <p>Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto: <a onclick="api('abrir_url','https://steamcommunity.com/dev/apikey')">steamcommunity.com/dev/apikey</a> (en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.</p>
+      <label>Launchers</label>${filas}
+      <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)</label>
+      <div class="acts"><button class="btn pri" id="c_guardar">💾 Guardar y escanear</button><button class="btn" onclick="api('reescanear');cerrar()">↻ Volver a escanear</button><button class="btn" onclick="api('abrir_datos')">📁 Carpeta de datos</button></div>
+      <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · software libre (MIT) · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>`;
+    $('#c_guardar').onclick=()=>{
+      const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});
+      api('guardar_config',{steam_api_key:$('#c_key').value.trim(),steam_id:$('#c_sid').value.trim(),cerrar_launchers:$('#c_cerrar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
+    };
+    $('#cfgbg').classList.add('show');
+  }).catch(()=>{$('#cfg').innerHTML='<button class="x">×</button><h2>Configuración</h2><p>Solo disponible dentro de la aplicación.</p>';$('#cfgbg').classList.add('show');});
+}
+$('#gear').onclick=()=>configuracion(false);
+
+// ---------- datos en vivo desde Python ----------
+let versionVista=EST.version||0;
+function sincronizar(){
+  api('estado').then(e=>{
+    const cambio=e.version!==versionVista; EST=e; progreso();
+    if(cambio){versionVista=e.version; api('datos').then(d=>{RAW=d.juegos;D=d.discos;T=d.tiendas;EST=d.estado;todo();});}
+  }).catch(()=>{});
+}
+todo();
+function alArrancar(){
+  sincronizar(); setInterval(sincronizar,4000);
+  if(CONF.primer_arranque) setTimeout(()=>configuracion(true),800);
+  setTimeout(()=>api('version_nueva').then(tag=>{if(tag){$('#updtag').textContent=tag;$('#updlink').onclick=()=>api('abrir_url','https://github.com/'+CONF.repo+'/releases/latest');$('#upd').classList.add('show');}}).catch(()=>{}),3000);
+}
+if(window.pywebview&&window.pywebview.api) alArrancar(); else window.addEventListener('pywebviewready',alArrancar);
+</script>
+</body>
+</html>

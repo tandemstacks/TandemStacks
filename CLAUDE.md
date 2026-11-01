@@ -38,6 +38,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 
 - Bibliotecas **automáticas sin logins**: Steam completa solo con clave Web API del usuario (se pide en Configuración, link a steamcommunity.com/dev/apikey); **Epic completa desde `C:\ProgramData\Epic\EpicGamesLauncher\Data\Catalog\catcache.bin`** (base64 de JSON que guarda el launcher; base = `mainGameItem.id` vacío, se filtran extras por nombre con `EPIC_NO_JUEGO`; portada `DieselGameBoxTall`; la URI `com.epicgames.launcher://apps/ns%3Aitem%3Aapp?action=launch` instala o juega); Riot y Battle.net = catálogo gratis + instalados; EA/Xbox/Ubisoft = solo instalados; Rockstar = manifiestos. Se descartó integrar logins de Epic/EA (frágil, mucho trabajo).
 - Formato: instalador .exe (no portable). Publicación: GitHub público con releases y aviso de versión nueva.
+- **Ubisoft = solo instalados, a propósito** (decisión del dueño 01/11/2026): `%LOCALAPPDATA%\Ubisoft Game Launcher\cache\ownership\*.vdat` y `configurations.vdat` están cifrados; no leer tokens de `ConnectSecureStorage.dat`. La app lo explica en la tarjeta de Ubisoft y cuando se filtra una tienda con 0 juegos.
 - `steamcommunity.com/profiles/<id>/games?xml=1` ya no sirve para leer la biblioteca: no insistir.
 - Epic GraphQL (`store.epicgames.com/graphql`) está detrás de Cloudflare: no sirve desde Python; usar el endpoint de contenido por slug.
 

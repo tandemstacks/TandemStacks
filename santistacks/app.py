@@ -76,7 +76,7 @@ class Nucleo:
             for n in ORDEN_TIENDAS:
                 l = self.launchers[n]
                 if n == "Steam": info, st = steam_info, ("ok" if bib is not None else "parcial") if l["ok"] else "no"
-                elif n in solo_inst: info, st = ("%d instalados (la tienda no deja leer la biblioteca completa)" % cuenta(n)), ("parcial" if l["ok"] else "no")
+                elif n in solo_inst: info, st = ("%d instalados (%s)" % (cuenta(n), "Ubisoft guarda tu biblioteca cifrada: solo se ven los instalados" if n == "Ubisoft" else "la tienda no deja leer la biblioteca completa")), ("parcial" if l["ok"] else "no")
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"

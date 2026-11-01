@@ -15,8 +15,6 @@ class Nucleo:
         self.tiendas = []
         self.estado = {"fase": "inicio", "hecho": 0, "total": 0, "version": 0, "msg": ""}
         self.lock = threading.Lock()
-        self.ventana = None
-        self._pool = None
         self._stop_fichas = threading.Event()
 
     # ---------- escaneo ----------
@@ -89,7 +87,7 @@ class Nucleo:
             threading.Thread(target=self._fichas, daemon=True).start()
 
     def _aplicar_ficha(self, g, f):
-        for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN", "revTxt", "tipo"):
+        for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN", "tipo"):
             if f.get(k) not in (None, "", []) and g.get(k) in (None, "", []):
                 g[k] = f[k]
 
@@ -140,7 +138,10 @@ class Nucleo:
     # ---------- vigilancia de cambios (instalar/desinstalar fuera de la app) ----------
     def huella(self):
         partes = [steam.huella_instalados()]
-        partes += sorted(glob.glob(r"C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests\*.item"))
+        partes += sorted(glob.glob(os.path.join(stores.EPIC_DATA, "Manifests", "*.item")))
+        try: partes.append("epic|%s" % os.path.getmtime(os.path.join(stores.EPIC_DATA, "Catalog", "catcache.bin")))  # juegos nuevos en la cuenta
+        except OSError: pass
+        partes.append("xbox|" + "|".join(sorted(detect.reg_hijas(detect.HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root"))))
         try: partes.append("riot|" + "|".join(sorted(os.listdir(r"C:\Riot Games"))))
         except OSError: pass
         for ruta in (r"SOFTWARE\WOW6432Node\Blizzard Entertainment", r"SOFTWARE\WOW6432Node\Rockstar Games"):
@@ -182,7 +183,7 @@ NUC = Nucleo()
 class Api:
     """Lo que llama la página por window.pywebview.api.*"""
     def datos(self):
-        return {"juegos": [build.publico(g) for g in NUC.juegos], "discos": build.discos(NUC.juegos), "tiendas": NUC.tiendas, "estado": NUC.estado}
+        return {"juegos": [build.publico(g, NUC.cfg.get("idioma", "spanish")) for g in NUC.juegos], "discos": build.discos(NUC.juegos), "tiendas": NUC.tiendas, "estado": NUC.estado}
 
     def estado(self):
         return NUC.estado
@@ -223,7 +224,7 @@ class Api:
                 try: os.remove(f)
                 except OSError: pass
             for g in NUC.juegos:
-                for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN", "revTxt"):
+                for k in ("desc", "genres", "anio", "dev", "reqGB", "meta", "revPct", "revN"):
                     g.pop(k, None)
             threading.Thread(target=NUC.escanear, daemon=True).start()
         else:
@@ -265,7 +266,7 @@ class Api:
         os.startfile(paths.DATA); return True
 
     def accion(self, q):
-        """tipo=run|install|uninstall&appid=N (Steam) · lanzar=id (otras tiendas) · abrir=Tienda (launcher) · abrir=apps (Programas de Windows)."""
+        """tipo=run|install|uninstall&appid=N (Steam) · lanzar=id · desinstalar=id (otras tiendas) · abrir=Tienda (launcher)."""
         q = urllib.parse.parse_qs(q)
         tipo, appid, que, lz = q.get("tipo", [""])[0], q.get("appid", [""])[0], q.get("abrir", [""])[0], q.get("lanzar", [""])[0]
         vig = bool(NUC.cfg.get("cerrar_launchers", True))
@@ -274,8 +275,6 @@ class Api:
             if tipo == "run": watch.lanzar("Steam", "", lambda: os.startfile(uri), NUC.launchers, vig)
             else: os.startfile(uri)
             return True
-        if que == "apps":
-            os.startfile("ms-settings:appsfeatures"); return True
         des = q.get("desinstalar", [""])[0]
         if des:  # desinstalar un juego de otra tienda: comando propio si la tienda lo tiene, si no Aplicaciones instaladas de Windows
             g = next((x for x in NUC.juegos if x["id"] == des), None)
@@ -318,7 +317,6 @@ def main():
         build.escribir([], [], NUC.cfg, NUC.estado)
     v = webview.create_window("SantiStacks", pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
                               min_size=(820, 520), background_color="#f2f2ef")
-    NUC.ventana = v
     v.events.shown += lambda: _poner_icono(v, icono)
     def arranque():
         NUC.escanear()

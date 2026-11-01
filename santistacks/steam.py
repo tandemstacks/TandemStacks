@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Steam: usuario, juegos instalados (todas las bibliotecas), biblioteca completa (Web API) y fichas (appdetails + SteamSpy)."""
-import os, re, io, json, time, glob, difflib, urllib.request, urllib.parse
+import os, re, json, time, glob, difflib, threading, urllib.request, urllib.parse
 from . import paths
 from .detect import reg, HKCU
 
@@ -8,8 +8,10 @@ UA = {"User-Agent": "SantiStacks/1.0 (+https://github.com)"}
 CACHE_STEAM = os.path.join(paths.CACHE, "steam")
 os.makedirs(CACHE_STEAM, exist_ok=True)
 
-def http(url, timeout=30, data=None):
-    req = urllib.request.Request(url, data=data, headers=UA)
+_lock = threading.Lock()  # las fichas se piden de a 4 hilos: las cachés en disco se escriben de a uno
+
+def http(url, timeout=30):
+    req = urllib.request.Request(url, headers=UA)
     return urllib.request.urlopen(req, timeout=timeout).read()
 
 def http_json(url, timeout=30):
@@ -33,14 +35,18 @@ def usuario():
             mejor_ts, mejor = ts, (sid, (re.search(r'"PersonaName"\s*"([^"]*)"', cuerpo) or [0, ""])[1])
     return mejor or ("", "")
 
-def instalados():
-    """{appid: {"name", "gb", "drive", "dir"}} leyendo los appmanifest de todas las bibliotecas."""
+def _bibliotecas():
+    """Carpetas de bibliotecas de Steam (libraryfolders.vdf)."""
     sp = steam_path(); libs = [sp]
     vdf = os.path.join(sp, "steamapps", "libraryfolders.vdf")
     if os.path.exists(vdf):
         libs = [p.replace("\\\\", "\\") for p in re.findall(r'"path"\s*"([^"]+)"', open(vdf, encoding="utf-8", errors="ignore").read())] or libs
+    return libs
+
+def instalados():
+    """{appid: {"name", "gb", "drive", "dir"}} leyendo los appmanifest de todas las bibliotecas."""
     out = {}
-    for lib in libs:
+    for lib in _bibliotecas():
         for f in glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf")):
             try:
                 t = open(f, encoding="utf-8", errors="ignore").read()
@@ -56,11 +62,7 @@ def instalados():
 
 def huella_instalados():
     partes = []
-    sp = steam_path(); libs = [sp]
-    vdf = os.path.join(sp, "steamapps", "libraryfolders.vdf")
-    if os.path.exists(vdf):
-        libs = [p.replace("\\\\", "\\") for p in re.findall(r'"path"\s*"([^"]+)"', open(vdf, encoding="utf-8", errors="ignore").read())] or libs
-    for lib in libs:
+    for lib in _bibliotecas():
         for f in sorted(glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf"))):
             try:
                 t = open(f, encoding="utf-8", errors="ignore").read()
@@ -103,10 +105,12 @@ def ficha(appid, idioma="spanish"):
     if d:
         return d
     d = {"_ts": time.time()}
+    fallo = False  # si la tienda no respondió, no se guarda: se reintenta la próxima vez
     try:
         j = http_json("https://store.steampowered.com/api/appdetails?appids=%s&l=%s&cc=US" % (appid, idioma))
-        a = (j.get(str(appid)) or {}).get("data") or {}
-        if not isinstance(a, dict):  # algunos juegos retirados devuelven una lista vacía
+        e = j.get(str(appid)) if isinstance(j, dict) else None  # juegos retirados: Steam responde [] o sin datos
+        a = (e if isinstance(e, dict) else {}).get("data") or {}
+        if not isinstance(a, dict):
             a = {}
         if a:
             d["desc"] = a.get("short_description", "")
@@ -115,13 +119,15 @@ def ficha(appid, idioma="spanish"):
             d["dev"] = ", ".join(a.get("developers", [])[:2])
             d["tipo"] = a.get("type", "")
             if a.get("metacritic"): d["meta"] = a["metacritic"].get("score")
-            req = re.sub(r"<[^>]+>", " ", str(a.get("pc_requirements", {}).get("minimum", "")))
+            pcr = a.get("pc_requirements")  # algunos juegos lo mandan como lista vacía
+            req = re.sub(r"<[^>]+>", " ", str(pcr.get("minimum", "") if isinstance(pcr, dict) else ""))
             m = re.search(r"(\d+(?:[.,]\d+)?)\s*(GB|MB)\s*(?:de\s+)?(?:espacio|available|disponible|free|storage)", req, re.I) or \
                 re.search(r"(?:Storage|Almacenamiento|Disco|Hard Drive|Disk Space)[^0-9]{0,20}(\d+(?:[.,]\d+)?)\s*(GB|MB)", req, re.I)
             if m:
                 n = float(m.group(1).replace(",", ".")); d["reqGB"] = round(n / 1024, 1) if m.group(2).upper() == "MB" else n
     except Exception as e:
         paths.log("appdetails", appid, e)
+        fallo = True
         if "429" in str(e):
             time.sleep(60)
     try:
@@ -129,15 +135,15 @@ def ficha(appid, idioma="spanish"):
         pos, neg = int(s.get("positive", 0)), int(s.get("negative", 0))
         if pos + neg >= 10:
             pct = round(pos * 100 / (pos + neg))
-            d.update(revPct=pct, revN=pos + neg,
-                     revTxt=("Extremadamente positivas" if pct >= 95 else "Muy positivas" if pct >= 80 else "Mayormente positivas" if pct >= 70
-                             else "Mixtas" if pct >= 40 else "Mayormente negativas" if pct >= 20 else "Muy negativas"))
+            d.update(revPct=pct, revN=pos + neg)  # el texto ("Muy positivas"...) lo pone la página en su idioma
     except Exception as e:
         paths.log("steamspy", appid, e)
-    try:
-        json.dump(d, open(_cache(appid), "w", encoding="utf-8"), ensure_ascii=False)
-    except Exception:
-        pass
+    if not fallo:
+        try:
+            with _lock:
+                json.dump(d, open(_cache(appid), "w", encoding="utf-8"), ensure_ascii=False)
+        except Exception:
+            pass
     return d
 
 # ---------- buscar en Steam un juego de otra tienda (para portada y ficha) ----------
@@ -169,9 +175,10 @@ def buscar_appid(nombre):
     except Exception as e:
         paths.log("storesearch", nombre, e)
         return ""  # sin cachear: se reintenta la próxima
-    _busq[k] = res
     try:
-        json.dump(_busq, open(_busq_file, "w", encoding="utf-8"), ensure_ascii=False)
+        with _lock:
+            _busq[k] = res
+            json.dump(_busq, open(_busq_file, "w", encoding="utf-8"), ensure_ascii=False)
     except Exception:
         pass
     return res

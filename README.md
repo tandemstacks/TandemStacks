@@ -12,10 +12,13 @@ Gratis y de código abierto (licencia MIT). Hecho para Windows 10/11.
 - **Steam**: juegos instalados siempre; con una clave Web API (gratis, 1 minuto) también toda tu biblioteca.
 - **Riot y Battle.net**: catálogo gratis (LoL, VALORANT, Overwatch 2, Hearthstone…) más lo que tengas instalado.
 - **Rockstar**: los juegos de tu cuenta (los lee del launcher) y lo instalado.
-- **Epic, EA, Xbox, Ubisoft**: lo instalado (sus bibliotecas completas necesitan iniciar sesión y no hay una forma simple de leerlas).
+- **Epic**: toda tu biblioteca (la lee del catálogo que guarda el launcher, sin pedir login).
+- **EA, Xbox, Ubisoft**: lo instalado (sus bibliotecas no se pueden leer desde la PC; Ubisoft las guarda cifradas).
 - Un juego que tenés en varias tiendas aparece **una sola vez**, con los logos de todas.
-- Portadas y fichas (descripción, géneros, año, estudio, reseñas de Steam, Metacritic) se bajan solas y quedan en caché.
+- Fichas (descripción, géneros, año, estudio, reseñas de Steam, Metacritic) se bajan solas y quedan en caché. Las portadas son links directos a cada tienda: la app no guarda imágenes.
 - **No deja nada corriendo**: ningún launcher se abre al iniciar Windows por culpa de SantiStacks y, si abrís un juego desde acá, el launcher que se abrió se cierra cuando terminás (configurable).
+- Botón para **sacar los launchers del inicio de Windows** (los deshabilita como el Administrador de tareas).
+- Menú ⚙ con modo oscuro, español / inglés y desinstalar.
 - Barra de discos con cuánto ocupa cada juego y aviso cuando queda poco espacio.
 - Filtros por tienda (multiselección), género, instalados; búsqueda; orden por nombre, valoración, peso o año.
 

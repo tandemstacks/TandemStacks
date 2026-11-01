@@ -1,16 +1,46 @@
 # -*- coding: utf-8 -*-
 """Las demás tiendas. Cada función devuelve juegos como dicts:
-   {id, name, store, installed, dir, sizeGB, drive, launch (str|list|None), steam_hint (appid para ficha/portada), cover_builtin, desc, genres, anio, dev, reqGB}
-   Epic/EA/Xbox/Ubisoft: solo lo instalado (sus bibliotecas completas necesitan login). Riot y Battle.net: catálogo gratis + instalados.
-   Rockstar: los títulos cuyo manifiesto bajó el launcher (= biblioteca) + instalados."""
-import os, re, io, json, glob, subprocess
-from .detect import reg_hijas, uninstall_entries, HKLM, PF, PF86
+   {id, name, store, installed, dir, sizeGB, drive, launch (str|list|None), uninstall, steam_hint (appid para ficha/portada),
+    cover_builtin / cover_url, desc (+ desc_en), genres, anio, dev, reqGB}
+   Epic: biblioteca completa (catálogo local) + instalados. Riot y Battle.net: catálogo gratis + instalados.
+   Rockstar: los títulos cuyo manifiesto bajó el launcher (= biblioteca) + instalados. EA/Xbox/Ubisoft: solo instalados."""
+import os, re, io, json, glob, time, threading, subprocess
+from . import paths
+from .detect import reg_hijas, uninstall_entries, HKLM
+
+_TAM_FILE = os.path.join(paths.CACHE, "tamanos.json")
+try:
+    _tams = json.load(open(_TAM_FILE, encoding="utf-8"))
+except Exception:
+    _tams = {}
+_tam_lock = threading.Lock()
 
 def tam_gb(carpeta):
+    """GB de una carpeta. Recorrerla entera es lento con juegos grandes: se recuerda 1 día."""
+    c = _tams.get(carpeta)
+    if c and time.time() - c[1] < 86400:
+        return c[0]
     try:
-        return round(sum(os.path.getsize(os.path.join(r, f)) for r, _, fs in os.walk(carpeta) for f in fs) / 1073741824, 1)
+        gb = round(sum(os.path.getsize(os.path.join(r, f)) for r, _, fs in os.walk(carpeta) for f in fs) / 1073741824, 1)
     except Exception:
         return 0
+    with _tam_lock:
+        _tams[carpeta] = [gb, time.time()]
+        try:
+            json.dump(_tams, open(_TAM_FILE, "w", encoding="utf-8"))
+        except Exception:
+            pass
+    return gb
+
+def _mismo(a, b):
+    """Mismo juego por nombre normalizado: igual, o uno es el otro más un agregado que NO sea un número de secuela
+    (así StarCraft no se confunde con StarCraft II, ni Diablo III con Diablo II)."""
+    if a == b:
+        return True
+    corto, largo = (a, b) if len(a) < len(b) else (b, a)
+    if not corto or not largo.startswith(corto + " "):
+        return False
+    return not re.match(r"(i{1,3}|iv|v|vi|[0-9]+)\b", largo[len(corto) + 1:])
 
 def drive(p):
     return (p or "C:")[:2].upper()
@@ -99,7 +129,7 @@ def xbox():
     raiz = reg_hijas(HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root")
     paquetes = set()
     for n, v in raiz.items():
-        for n2, v2 in reg_hijas(HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root\%s" % n).items():
+        for v2 in reg_hijas(HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root\%s" % n).values():
             if v2.get("Package"): paquetes.add(str(v2["Package"]))
         if v.get("Package"): paquetes.add(str(v["Package"]))
     cmd = r'''
@@ -131,7 +161,7 @@ $out | ConvertTo-Json -Compress'''
     return out
 
 # ---------------- Riot ----------------
-RIOT = [  # (id, producto, nombre, año, GB, géneros, descripción, portada incluida)
+RIOT = [  # (id, producto, nombre, año, GB, géneros, descripción); la portada está en assets/covers/<id>.jpg
     ("riot_lol", "league_of_legends", "League of Legends", "2009", 20, ["MOBA", "Estrategia", "Multijugador"], "El MOBA de Riot: dos equipos de cinco campeones pelean por destruir el nexo rival. Gratis, con Vanguard."),
     ("riot_valorant", "valorant", "VALORANT", "2020", 40, ["Acción", "Shooter", "Multijugador"], "Shooter táctico 5v5 por rondas con agentes con habilidades. Gratis, con Vanguard."),
     ("riot_tft", "teamfighttactics", "Teamfight Tactics", "2019", 20, ["Estrategia", "Auto battler", "Multijugador"], "Auto battler de 8 jugadores con los campeones de League of Legends. Gratis."),
@@ -142,7 +172,7 @@ def riot(exe):
     out = []
     for gid, prod, nombre, anio, gb, gen, desc in RIOT:
         g = {"id": gid, "name": nombre, "store": "Riot", "installed": False, "dir": "", "anio": anio, "reqGB": gb, "genres": gen, "desc": desc,
-             "dev": "Riot Games", "cover_builtin": gid + ".jpg", "launch": None}
+             "dev": "Riot Games", "cover_builtin": gid + ".jpg", "launch": None, "desc_en": DESC_EN.get(gid, "")}
         ys = r"C:\ProgramData\Riot Games\Metadata\%s.live\%s.live.product_settings.yaml" % (prod, prod)
         if os.path.exists(ys):
             m = re.search(r'product_install_full_path:\s*"([^"]+)"', io.open(ys, encoding="utf-8", errors="ignore").read())
@@ -154,6 +184,20 @@ def riot(exe):
             g["uninstall"] = [exe, "--uninstall-product=" + prod, "--uninstall-patchline=live"]
         out.append(g)
     return out
+
+DESC_EN = {  # descripciones en inglés de los catálogos fijos (Riot y Battle.net)
+    "riot_lol": "Riot's MOBA: two teams of five champions fight to destroy the enemy Nexus. Free, uses Vanguard.",
+    "riot_valorant": "5v5 round-based tactical shooter with ability-wielding agents. Free, uses Vanguard.",
+    "riot_tft": "8-player auto battler with League of Legends champions. Free.",
+    "riot_lor": "Collectible card game set in Runeterra. Free.",
+    "riot_2xko": "2v2 tag fighting game with League of Legends champions. Free.",
+    "bnet_ow2": "Blizzard's 5v5 hero shooter. Free.", "bnet_hs": "Card game set in the Warcraft universe. Free.",
+    "bnet_sc2": "Real-time strategy: terran, zerg and protoss. Multiplayer and the Wings of Liberty campaign are free.",
+    "bnet_hots": "MOBA with heroes from every Blizzard universe. Free.",
+    "bnet_rumble": "Action strategy with Warcraft minis, on PC since 2024. Free.",
+    "bnet_dimm": "Online action RPG set between Diablo II and III. Free.",
+    "bnet_cod": "Call of Duty's free battle royale (installed from Call of Duty HQ).",
+}
 
 # ---------------- Battle.net ----------------
 BNET_GRATIS = [  # (id, código battlenet://, nombre, año, GB, géneros, desc, appid Steam para portada/ficha o None)
@@ -179,14 +223,14 @@ def battlenet(exe):
         n = nrm(nombre)
         for k, v in inst.items():
             kk = nrm(k)
-            if kk == n or kk in n or n in kk:
+            if _mismo(kk, n):
                 return str(v.get("InstallPath") or v.get("InstallLocation") or "")
         return None
     out = []
     for gid, cod, nombre, anio, gb, gen, desc, hint in BNET_GRATIS:
         g = {"id": gid, "name": nombre, "store": "Battle.net", "installed": False, "dir": "", "anio": anio, "reqGB": gb, "genres": gen, "desc": desc,
              "dev": "Blizzard" if "Call of Duty" not in nombre else "Activision", "steam_hint": hint, "cover_builtin": None if hint else gid + ".jpg",
-             "launch": ("battlenet://" + cod) if exe and os.path.exists(exe) else None}
+             "launch": ("battlenet://" + cod) if exe and os.path.exists(exe) else None, "desc_en": DESC_EN.get(gid, "")}
         c = instalado(nombre)
         if c is not None:
             g.update(installed=True, dir=c, drive=drive(c), sizeGB=tam_gb(c) if c and os.path.isdir(c) else 0)
@@ -194,7 +238,7 @@ def battlenet(exe):
     for k, v in inst.items():  # pagos: solo si están instalados
         kk = nrm(k)
         for clave, (gid, cod, nombre, hint) in BNET_PAGOS.items():
-            if kk.startswith(clave) and not any(x["id"] == gid for x in out):
+            if _mismo(kk, clave) and not any(x["id"] == gid for x in out):
                 c = str(v.get("InstallPath") or v.get("InstallLocation") or "")
                 out.append({"id": gid, "name": nombre, "store": "Battle.net", "installed": True, "dir": c, "drive": drive(c),
                             "sizeGB": tam_gb(c) if c and os.path.isdir(c) else 0, "dev": "Blizzard", "steam_hint": hint,
@@ -221,7 +265,7 @@ def rockstar():
             carpeta = str(v.get("InstallFolder") or "")
             if k in ("Launcher", "Steam", "Epic") or not carpeta or not os.path.isdir(carpeta) or re.search(r"steamapps|epic games", carpeta, re.I):
                 continue
-            if nrm(k) == nrm(nombre) or nrm(k) in nrm(nombre) or nrm(nombre) in nrm(k):
+            if _mismo(nrm(k), nrm(nombre)):
                 g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta))
                 exe = glob.glob(os.path.join(carpeta, "Play*.exe"))
                 if exe: g["launch"] = exe[0]

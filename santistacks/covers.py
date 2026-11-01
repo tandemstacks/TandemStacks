@@ -6,7 +6,7 @@
    3) Steam por appid o steam_hint (también para Rockstar, EA y Battle.net con equivalente en Steam)
    4) Xbox / Microsoft Store: se busca una vez por PackageFamilyName en displaycatalog y se guarda el link
 Si un link falla, la página prueba la imagen horizontal de Steam y si no, muestra el nombre sobre color."""
-import os, json, pathlib, urllib.parse
+import os, json, pathlib, threading, urllib.parse
 from . import paths
 from .steam import http_json
 
@@ -17,9 +17,12 @@ try:
 except Exception:
     _links = {}
 
+_lock = threading.Lock()
+
 def _guardar():
     try:
-        json.dump(_links, open(_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+        with _lock:
+            json.dump(dict(_links), open(_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
     except Exception:
         pass
 

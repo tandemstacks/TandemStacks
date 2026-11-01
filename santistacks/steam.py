@@ -106,6 +106,8 @@ def ficha(appid, idioma="spanish"):
     try:
         j = http_json("https://store.steampowered.com/api/appdetails?appids=%s&l=%s&cc=US" % (appid, idioma))
         a = (j.get(str(appid)) or {}).get("data") or {}
+        if not isinstance(a, dict):  # algunos juegos retirados devuelven una lista vacía
+            a = {}
         if a:
             d["desc"] = a.get("short_description", "")
             d["genres"] = [g["description"] for g in a.get("genres", [])][:5]

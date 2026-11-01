@@ -24,6 +24,8 @@ class Nucleo:
             self._stop_fichas.set()
             self.estado.update(fase="escaneando", msg="Buscando launchers y juegos…", hecho=0, total=0)
             self.launchers = detect.detectar(self.cfg)
+            # ya, no al final del escaneo: la bienvenida los muestra apenas abre
+            self.cfg["_launchers_vista"] = [{"n": n, "exe": self.launchers[n]["exe"], "ok": self.launchers[n]["ok"], "manual": self.launchers[n]["manual"]} for n in ORDEN_TIENDAS]
             sid, persona = steam.usuario()
             if not self.cfg.get("steam_id") and sid:
                 self.cfg["steam_id"] = sid
@@ -80,7 +82,6 @@ class Nucleo:
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
                 self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera})
-            self.cfg["_launchers_vista"] = [{"n": n, "exe": self.launchers[n]["exe"], "ok": self.launchers[n]["ok"], "manual": self.launchers[n]["manual"]} for n in ORDEN_TIENDAS]
             self.estado.update(fase="listo", msg="")
             self._publicar()
         if con_fichas:

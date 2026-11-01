@@ -499,6 +499,7 @@ window.quitarTienda=quitarTienda;
 // ---------- configuración ----------
 function configuracion(primera){
   api('config').then(c=>{
+    if(primera&&!(c.launchers_vista||[]).length) return setTimeout(()=>configuracion(true),1000);  // todavía detectando launchers
     const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||(l.n==='Xbox'&&l.ok?L.cXbox:L.cRuta))}" ${l.n==='Xbox'?'disabled':''}>${(T.find(x=>x.n===l.n)||{}).fuera?`<span class="estado" style="color:var(--warn)">${L.cDesv}</span>`:`<span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span>`}<button class="info" title="${esc(l.n)}" onclick="cerrar();const t=T.find(x=>x.n==='${esc(l.n)}');if(t)tienda(t)">›</button></div>`).join('');
     $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
       <h2>${primera?L.cBienvenida:L.cTitulo}</h2>

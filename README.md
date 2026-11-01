@@ -61,6 +61,10 @@ Borrar esas dos carpetas deja todo como recién instalado.
 
 Python 3.12 + [pywebview](https://pywebview.flowrl.com/) (ventana con WebView2), [psutil](https://github.com/giampaolo/psutil) y [Pillow](https://python-pillow.org/). La interfaz es un HTML con CSS y JS sin frameworks. Fuentes de datos: manifiestos y registro de Windows de cada launcher, Steam Web API, Steam Store API, SteamSpy, tienda Epic (portadas). Logos de tiendas: [Simple Icons](https://simpleicons.org/).
 
+## Contacto
+
+Dudas, errores o ideas: **stackssanti@gmail.com** o abrí un [issue](../../issues).
+
 ## Licencia
 
 [MIT](LICENSE). Los nombres y logos de las tiendas son de sus dueños.

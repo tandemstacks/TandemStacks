@@ -522,7 +522,7 @@ function configuracion(primera){
       <p style="margin:2px 0 8px;font-size:13px;line-height:1.45">${L.cInicioTxt}</p>
       <div class="row"><button class="btn" id="c_inicio">🚫 ${L.cInicioBtn}</button><span id="c_inicio_txt" style="font-size:13px;color:var(--mu)"></span></div>
       <div class="acts"><button class="btn pri" id="c_guardar">💾 ${L.cGuardar}</button><button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button><button class="btn" onclick="api('abrir_datos')">📁 ${L.mDatos}</button></div>
-      <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · ${L.cLibre} · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>
+      <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · ${L.cLibre} · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''} · <a onclick="api('abrir_url','mailto:stackssanti@gmail.com')">stackssanti@gmail.com</a></p>
       <button class="desinst" onclick="desinstalarApp()">${ico('trash')} ${L.mDesinst}</button>`;
     $('#c_guardar').onclick=()=>{
       const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});

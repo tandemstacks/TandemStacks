@@ -314,7 +314,7 @@ class Api:
         return "ok"
 
     def abrir_url(self, url):
-        if re.match(r"https?://", url): os.startfile(url)
+        if re.match(r"(https?://|mailto:)", url): os.startfile(url)
         return True
 
     def abrir_datos(self):

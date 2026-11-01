@@ -87,9 +87,10 @@ def epic():
             continue
         app = rel.get("appId", "")
         alta = next((k.get("url") for k in it.get("keyImages", []) if k.get("type") == "DieselGameBoxTall"), "")
+        desc = re.sub(r"\s+", " ", str(it.get("description", ""))).strip()
         juegos[it["id"]] = {"id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", app or titulo)[:40], "name": titulo, "store": "Epic", "installed": False,
-                            "dir": "", "dev": str(it.get("developer", "")), "cover_url": alta,
-                            "desc": re.sub(r"\s+", " ", str(it.get("description", "")))[:400],
+                            "dir": "", "dev": str(it.get("developer", "")), "cover_url": alta, "epic_ns": it.get("namespace", ""),
+                            "desc": desc[:400] if desc.lower() != titulo.lower() else "",  # casi siempre el catálogo repite el título
                             "launch": _epic_uri(it.get("namespace"), it["id"], app) if app else None}
     for f in glob.glob(os.path.join(EPIC_DATA, "Manifests", "*.item")):
         try:
@@ -102,7 +103,7 @@ def epic():
             continue
         loc = m.get("InstallLocation", "")
         g = juegos.get(m.get("CatalogItemId")) or {"id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", m.get("AppName", m["DisplayName"]))[:40],
-                                                   "name": m["DisplayName"], "store": "Epic"}
+                                                   "name": m["DisplayName"], "store": "Epic", "epic_ns": m.get("CatalogNamespace", "")}
         g.update(installed=True, dir=loc, drive=drive(loc), sizeGB=round(m.get("InstallSize", 0) / 1073741824, 1),
                  launch=_epic_uri(m.get("CatalogNamespace"), m.get("CatalogItemId"), m.get("AppName")))
         juegos[m.get("CatalogItemId") or g["id"]] = g

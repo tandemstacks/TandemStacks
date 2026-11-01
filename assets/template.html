@@ -107,7 +107,7 @@ main{padding:16px 22px 60px}
 .meta{color:var(--mu);font-size:13px;margin-bottom:10px;display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;line-height:1.3}
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .pill{font-size:12px;padding:3px 9px;border-radius:3px;background:var(--bg);text-transform:uppercase;letter-spacing:.3px}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
 .st{background:var(--bg);border-radius:3px;border-left:3px solid var(--acc);padding:8px 10px;font-size:12px;color:var(--mu)}
 .st b{display:block;font-size:17px;color:var(--tx)}
 .desc{font-size:14px;line-height:1.55;margin-bottom:14px}
@@ -187,7 +187,7 @@ const TXT={
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
   jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ficha',desinstalar:'Desinstalar',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
-  loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
+  loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',horas:'horas jugadas',ultima:'última vez',logros:'logros',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
   listo:'Listo: si hace falta confirmar, fijate en la ventana que se abrió.',noPudo:'No se pudo.',disco:'disco',
   tLeida:'Leída',tParcial:'Parcial',tNo:'No instalada',clicCfg:'Clic para ver cómo configurarla',
   detectado:'Launcher detectado',noDetectado:'Launcher no instalado',abrirL:'Abrir',descargar:'Descargar',reescanear:'Volver a escanear',comoFunc:'Cómo funciona',paraEmpezar:'Para empezar',
@@ -205,7 +205,7 @@ const TXT={
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
   jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'Store page',desinstalar:'Uninstall',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
-  loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',rev:['Overwhelmingly positive','Very positive','Mostly positive','Mixed','Mostly negative','Very negative'],notaFicha:'Install and uninstall open the store; you confirm there.',
+  loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',horas:'hours played',ultima:'last played',logros:'achievements',rev:['Overwhelmingly positive','Very positive','Mostly positive','Mixed','Mostly negative','Very negative'],notaFicha:'Install and uninstall open the store; you confirm there.',
   listo:'Done: if confirmation is needed, check the window that opened.',noPudo:'It didn\'t work.',disco:'disk',
   tLeida:'Read',tParcial:'Partial',tNo:'Not installed',clicCfg:'Click to see how to set it up',
   detectado:'Launcher detected',noDetectado:'Launcher not installed',abrirL:'Open',descargar:'Download',reescanear:'Rescan',comoFunc:'How it works',paraEmpezar:'Getting started',
@@ -236,7 +236,7 @@ function agrupar(){
   J=Object.values(grupos).map(items=>{
     items.sort((a,b)=>(b.installed-a.installed)||(!!b.cover-!!a.cover)||(PRIO[a.store]-PRIO[b.store]));
     const p={...items[0]};
-    for(const k of ['desc','genres','anio','dev','revPct','revN','meta','reqGB','appid','cover'])
+    for(const k of ['desc','genres','anio','dev','revPct','revN','reqGB','appid','cover','horas','ultima'])
       if(p[k]==null||p[k]==='') p[k]=(items.find(x=>x[k]!=null&&x[k]!=='')||{})[k];
     p.items=items; p.stores=[...new Set(items.map(x=>x.store))];
     p.installed=items.some(x=>x.installed);
@@ -402,28 +402,43 @@ function botones(g){
   if(inst.length) inst.forEach(it=>b.push(...botonesDe(it,g.items.length>1)));
   else if(g.items.length>1) b.push(`<button class="btn pri" onclick="elegir()">⬇ ${L.instalarPuntos}</button>`);
   else b=botonesDe(g.items[0],false);
-  if(a) b.push(`<button class="btn" onclick="api('abrir_url','https://store.steampowered.com/app/${a}')">${L.ficha}</button>`);
+  // la página de la tienda principal de la tarjeta (Epic y Microsoft la traen al abrir la ficha)
+  const u=g.items[0].store!=='Steam'&&g.url?g.url:a?'https://store.steampowered.com/app/'+a:g.url;
+  if(u) b.push(`<button class="btn" onclick="api('abrir_url','${esc(u)}')">${L.ficha}</button>`);
   return b.join('');
+}
+// datos de la tienda de cada juego que se piden al abrir la ficha (logros, Epic, Microsoft): manda la tienda principal
+function completar(g){
+  if(g._fx) return; g._fx=true;
+  api('ficha',g.items.map(x=>x.id)).then(r=>{
+    Object.entries(r[g.items[0].id]||{}).forEach(([k,v])=>g[k]=v);
+    g.items.slice(1).forEach(it=>Object.entries(r[it.id]||{}).forEach(([k,v])=>{if(g[k]==null||g[k]===''||(Array.isArray(g[k])&&!g[k].length))g[k]=v;}));
+    if(actual===g&&$('#bg').classList.contains('show')&&!$('#modal').classList.contains('tcard')) abrir(g);
+  }).catch(()=>{});
 }
 function abrir(g){
   actual=g; $('#modal').classList.remove('tcard');
   const tam=g.installed&&g.sizeGB?`${g.sizeGB} GB`:g.reqGB?`~${g.reqGB} GB`:'—';
   const tamL=g.installed&&g.sizeGB?`${L.ocupaEn} ${g.drive||L.disco}`:g.reqGB?L.necesita:L.ocupa;
+  const loc=IDIOMA==='english'?'en':'es', num=n=>Number(n).toLocaleString(loc);
+  const cajas=[`<div class="st"><b>${tam}</b>${tamL}</div>`];
+  if(g.stores.includes('Steam')) cajas.push(`<div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revPct?resTxt(g.revPct):L.resenas}${g.revN?` (${num(g.revN)})`:''}</div>`);
+  if(g.horas) cajas.push(`<div class="st"><b>${num(g.horas)} h</b>${L.horas}${g.ultima?` · ${L.ultima} ${new Date(g.ultima*1000).toLocaleDateString(loc)}`:''}</div>`);
+  if(g.logrosT) cajas.push(`<div class="st"><b>${g.logros}/${g.logrosT}</b>${L.logros}</div>`);
+  if(g.msRating) cajas.push(`<div class="st"><b>★ ${num(g.msRating)}</b>Microsoft Store${g.msN?` (${num(g.msN)})`:''}</div>`);
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
     <div class="cov">${img(g)}</div>
     <div style="flex:1;min-width:0">
       <h2>${esc(g.name)}</h2>
-      <div class="meta">${g.stores.length>1?L.loTenes+' ':''}${g.stores.map(s=>`<span style="color:${sc(s)};display:inline-flex;align-items:center;gap:5px;line-height:1">${logo(s,sc(s),13)}${s}</span>`).join(' ')}${g.anio?` · ${esc(g.anio)}`:''}${g.dev?` · ${esc(g.dev)}`:''} · ${g.installed?`<span style="color:var(--ok)">${L.instalado}</span>`:L.noInstalado}</div>
+      <div class="meta">${g.stores.length>1?L.loTenes+' ':''}${g.stores.map(s=>`<span style="color:${sc(s)};display:inline-flex;align-items:center;gap:5px;line-height:1">${logo(s,sc(s),13)}${s}</span>`).join(' ')}${g.anio?` · ${esc(g.anio)}`:''}${g.dev?` · ${esc(g.dev)}`:''}${g.clasif?` · ${esc(g.clasif)}`:''} · ${g.installed?`<span style="color:var(--ok)">${L.instalado}</span>`:L.noInstalado}</div>
       ${g.genres?`<div class="pills">${g.genres.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div>`:''}
-      <div class="stats">
-        <div class="st"><b>${tam}</b>${tamL}</div>
-        <div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revPct?resTxt(g.revPct):L.resenas}${g.revN?` (${g.revN.toLocaleString(IDIOMA==='english'?'en':'es')})`:''}</div>
-      </div>
+      <div class="stats">${cajas.join('')}</div>
       ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:''}
       <div class="acts" id="acts">${botones(g)}</div>
       <div class="nota" id="nota">${L.notaFicha}</div>
     </div>`;
   $('#bg').classList.add('show');
+  completar(g);
 }
 window.abrir=abrir;
 const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove('show');};

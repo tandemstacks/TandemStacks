@@ -71,8 +71,40 @@ def huella_instalados():
                 pass
     return "\n".join(partes)
 
+def _vdf(t):
+    """VDF de texto de Steam -> dicts anidados (claves en minúscula)."""
+    raiz = actual = {}; pila = []; clave = None
+    for m in re.finditer(r'"((?:[^"\\]|\\.)*)"|([{}])', t):
+        if m.group(2) == "{":
+            nuevo = {}; actual[clave or ""] = nuevo; pila.append(actual); actual = nuevo; clave = None
+        elif m.group(2) == "}":
+            actual = pila.pop() if pila else raiz; clave = None
+        elif clave is None:
+            clave = m.group(1).lower()
+        else:
+            actual[clave] = m.group(1); clave = None
+    return raiz
+
+def tiempos(steamid):
+    """{appid: (minutos jugados, última vez en epoch)} desde localconfig.vdf del usuario. Local, sin red."""
+    if not steamid:
+        return {}
+    try:
+        f = os.path.join(steam_path(), "userdata", str(int(steamid) - 76561197960265728), "config", "localconfig.vdf")
+        apps = _vdf(open(f, encoding="utf-8", errors="ignore").read())
+        for k in ("userlocalconfigstore", "software", "valve", "steam", "apps"):
+            apps = apps.get(k) or {}
+    except Exception:
+        return {}
+    out = {}
+    for aid, d in apps.items():
+        if isinstance(d, dict) and (d.get("playtime") or d.get("lastplayed")):
+            try: out[aid] = (int(d.get("playtime") or 0), int(d.get("lastplayed") or 0))
+            except ValueError: pass
+    return out
+
 def biblioteca(api_key, steamid):
-    """Lista completa [(appid, nombre)] vía Web API. None si no hay clave, el perfil es privado o falló."""
+    """Lista completa [(appid, nombre, minutos jugados, última vez)] vía Web API. None si no hay clave, el perfil es privado o falló."""
     if not api_key or not steamid:
         return None
     try:
@@ -81,7 +113,7 @@ def biblioteca(api_key, steamid):
         juegos = j.get("response", {}).get("games")
         if juegos is None:
             return None
-        return [(str(g["appid"]), g.get("name", "")) for g in juegos]
+        return [(str(g["appid"]), g.get("name", ""), g.get("playtime_forever", 0), g.get("rtime_last_played", 0)) for g in juegos]
     except Exception as e:
         paths.log("steam biblioteca:", e)
         return None

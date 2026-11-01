@@ -66,6 +66,7 @@ def _xbox(familia):
     j = http_json("https://displaycatalog.mp.microsoft.com/v7.0/products/lookup?" + urllib.parse.urlencode(
         {"alternateId": "PackageFamilyName", "value": familia, "market": "US", "languages": "en-us"}), 20)
     for prod in j.get("Products", []):
+        if prod.get("ProductId"): _links["xboxid:" + familia] = prod["ProductId"]  # lo usa la ficha (fichas.py)
         imgs = [i for lp in prod.get("LocalizedProperties", []) for i in lp.get("Images", [])]
         for tipo in ("Poster", "BoxArt"):
             i = next((x for x in imgs if x.get("ImagePurpose") == tipo), None)

@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, VERSION
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft"]
 
@@ -37,9 +37,11 @@ class Nucleo:
             inst = steam.instalados()
             bib = steam.biblioteca(self.cfg.get("steam_api_key"), self.cfg.get("steam_id")) if self.launchers["Steam"]["ok"] or inst else None
             vistos = set()
-            for aid, nombre in (bib or []):
+            jugado = steam.tiempos(self.cfg.get("steam_id"))  # horas y última vez, de los archivos de Steam (sin red)
+            for aid, nombre, mins, ult in (bib or []):
                 if aid not in inst and steam.NO_JUEGO.search(nombre or ""):
                     continue
+                if mins or ult: jugado[aid] = (max(mins, jugado.get(aid, (0, 0))[0]), max(ult, jugado.get(aid, (0, 0))[1]))  # la Web API suma otras PC
                 g = {"id": aid, "appid": aid, "name": nombre, "store": "Steam", "installed": False, "launch": "steam://run/" + aid}
                 if aid in inst:
                     g.update(installed=True, sizeGB=inst[aid]["gb"], drive=inst[aid]["drive"], dir=inst[aid]["dir"])
@@ -47,6 +49,10 @@ class Nucleo:
             for aid, i in inst.items():
                 if aid not in vistos:
                     juegos.append({"id": aid, "appid": aid, "name": i["name"], "store": "Steam", "installed": True, "sizeGB": i["gb"], "drive": i["drive"], "dir": i["dir"], "launch": "steam://run/" + aid})
+            for g in juegos:
+                mins, ult = jugado.get(g["appid"], (0, 0))
+                if mins: g["horas"] = round(mins / 60, 1)
+                if ult: g["ultima"] = ult
             steam_info = ("%d juegos" % len(bib)) if bib is not None else ("%d instalados · sin clave API no se ve la biblioteca completa" % len(inst) if not self.cfg.get("steam_api_key") else "%d instalados · la clave o el perfil no dejaron leer la biblioteca" % len(inst))
             # otras tiendas
             paso("Epic")
@@ -71,9 +77,10 @@ class Nucleo:
             try: juegos += stores.ubisoft()
             except Exception as e: paths.log("ubisoft", e)
             self.estado.update(msg="Armando la biblioteca…", de="")
-            # fichas ya cacheadas + portadas ya bajadas (instantáneo)
+            # fichas ya cacheadas + portadas ya bajadas (instantáneo). La ficha de Steam es solo para juegos de Steam:
+            # los de otras tiendas muestran lo de su tienda (steam_hint queda solo para la portada)
             for g in juegos:
-                f = steam.ficha_cacheada(g.get("appid") or g.get("steam_hint") or "", self.cfg.get("idioma", "spanish"))
+                f = steam.ficha_cacheada(g["appid"], self.cfg.get("idioma", "spanish")) if g.get("appid") else None
                 if f: self._aplicar_ficha(g, f)
                 g["cover"] = covers.rapida(g)  # link, sin descargar
             juegos = [g for g in juegos if g.get("tipo", "game") in ("game", "")]  # fuera DLC, demos, bandas sonoras, herramientas
@@ -105,7 +112,7 @@ class Nucleo:
     def _fichas(self):
         """Fase 2: completar fichas y portadas que falten, de a 4 hilos, publicando cada 8 s."""
         self._stop_fichas = threading.Event(); stop = self._stop_fichas
-        pend = [g for g in self.juegos if not g.get("cover") or (not g.get("desc") and (g.get("appid") or g.get("steam_hint") or g["store"] not in ("Riot", "Battle.net")))]
+        pend = [g for g in self.juegos if not g.get("cover") or (g.get("appid") and not g.get("desc"))]
         self.estado.update(fase="fichas", hecho=0, total=len(pend), msg="Buscando portadas en Steam…", de="")
         try:  # portadas exactas de Steam: pocos pedidos para toda la biblioteca
             covers.steam_exactas([g.get("appid") or g.get("steam_hint") for g in self.juegos])
@@ -119,11 +126,10 @@ class Nucleo:
             if stop.is_set(): return
             self.estado.update(msg="Bajando ficha de %s…" if g.get("cover") else "Bajando ficha y portada de %s…", de=g.get("name") or "")
             try:
-                if not g.get("appid") and not g.get("steam_hint") and g["store"] not in ("Riot",):
-                    g["steam_hint"] = steam.buscar_appid(g["name"])
-                aid = g.get("appid") or g.get("steam_hint")
-                if aid and not g.get("desc"):
-                    self._aplicar_ficha(g, steam.ficha(aid, self.cfg.get("idioma", "spanish")))
+                if not g.get("cover") and not g.get("appid") and not g.get("steam_hint") and g["store"] not in ("Riot",):
+                    g["steam_hint"] = steam.buscar_appid(g["name"])  # solo para la portada
+                if g.get("appid") and not g.get("desc"):
+                    self._aplicar_ficha(g, steam.ficha(g["appid"], self.cfg.get("idioma", "spanish")))
                 if g.get("steam_hint") and "steam:%s" % g["steam_hint"] not in covers._links:
                     covers.steam_exactas([g["steam_hint"]])
                 if not g.get("cover") or g.get("steam_hint"):
@@ -235,6 +241,16 @@ class Api:
 
     def estado(self):
         return NUC.estado
+
+    def ficha(self, ids):
+        """Datos de la tienda de cada juego de la tarjeta, pedidos al abrir la ficha (con caché). {id: {...}}"""
+        out = {}
+        for i in ids or []:
+            g = next((x for x in NUC.juegos if x["id"] == i), None)
+            if g:
+                try: out[i] = fichas.de(g, NUC.cfg)
+                except Exception as e: paths.log("ficha", i, e)
+        return out
 
     def config(self):
         c = {k: v for k, v in NUC.cfg.items() if not k.startswith("_")}

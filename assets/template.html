@@ -40,6 +40,7 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .ordgen .dd summary.chip{padding:0 11px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;letter-spacing:.3px;text-transform:uppercase;user-select:none;white-space:nowrap;box-shadow:var(--sh)}
 .chip:hover{background:var(--card)}
+.chip.tog{gap:8px}.chip.tog .sw{margin-left:0;width:28px;height:15px}.chip.tog .sw::after{width:11px;height:11px}.chip.tog .sw.on::after{left:15px}  /* Instalados: interruptor (prendido = solo instalados, apagado = todos) */
 .chip.on{background:var(--acc);color:#fff}
 .chip.vacia{opacity:.55}.chip.vacia.on{opacity:1}
 .count{color:var(--mu);font-size:13px}
@@ -53,7 +54,12 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .dd .menu label.todos{border-bottom:1px solid var(--ln);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:12px}
 .dd .menu input{accent-color:var(--acc);width:15px;height:15px;margin:0}.dd .menu small{margin-left:auto;color:var(--mu)}
 .dd .menu .sep{border-top:1px solid var(--ln);margin:6px 0}
-.dd .menu .it svg{flex:none;width:16px;height:16px;fill:none;stroke:var(--mu);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.dd .menu .it.top{font-size:14px;font-weight:700}.dd .menu .it.top svg{stroke:var(--tx)}.dd .menu .it.poco{font-size:12px;color:var(--mu);padding:5px 8px}.dd .menu .it.poco svg{width:14px;height:14px}.dd .menu .it.mal:hover{color:var(--bad)}.dd .menu .it.mal:hover svg{stroke:var(--bad)}.swl{margin-left:auto;width:34px;height:18px;border-radius:9px;position:relative;flex:none;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}.swl.es{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27 18' preserveAspectRatio='none'%3E%3Crect width='27' height='18' fill='%23fff'/%3E%3Cg fill='%230038a8'%3E%3Crect y='2' width='27' height='2'/%3E%3Crect y='6' width='27' height='2'/%3E%3Crect y='10' width='27' height='2'/%3E%3Crect y='14' width='27' height='2'/%3E%3C/g%3E%3Crect width='10' height='10' fill='%23fff'/%3E%3Ccircle cx='5' cy='5' r='2.7' fill='%23fcd116' stroke='%23b07a00' stroke-width='.4'/%3E%3C/svg%3E")}.swl.en{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 13' preserveAspectRatio='none'%3E%3Crect width='26' height='13' fill='%23fff'/%3E%3Cg fill='%23b22234'%3E%3Crect width='26' height='1'/%3E%3Crect y='2' width='26' height='1'/%3E%3Crect y='4' width='26' height='1'/%3E%3Crect y='6' width='26' height='1'/%3E%3Crect y='8' width='26' height='1'/%3E%3Crect y='10' width='26' height='1'/%3E%3Crect y='12' width='26' height='1'/%3E%3C/g%3E%3Crect width='11' height='7' fill='%233c3b6e'/%3E%3C/svg%3E")}.swl::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.4);font:700 6px/14px system-ui,sans-serif;color:#1a1a1a;text-align:center;transition:left .15s}.swl.en::after{left:18px}
+.dd .menu .it svg{flex:none;width:16px;height:16px;fill:none;stroke:var(--mu);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.dd .menu .it.top{font-size:14px;font-weight:700}.dd .menu .it.top svg{stroke:var(--tx)}.dd .menu .it.poco{font-size:12px;color:var(--mu);padding:5px 8px}.dd .menu .it.poco svg{width:14px;height:14px}.dd .menu .it.mal:hover{color:var(--bad)}.dd .menu .it.mal:hover svg{stroke:var(--bad)}.ayuda{margin-left:auto;flex:none;width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--mu);color:var(--mu);font:700 10px/16px Bahnschrift,sans-serif;text-align:center;position:relative;cursor:help}
+.ayuda:hover{box-shadow:inset 0 0 0 1.5px var(--acc);color:var(--acc)}
+.ayuda .tip{display:none;position:absolute;right:-8px;top:24px;width:250px;white-space:normal;text-align:left;font:400 12px/1.45 Bahnschrift,sans-serif;color:var(--tx);background:var(--panel);box-shadow:var(--sh);border-left:3px solid var(--acc);border-radius:4px;padding:9px 11px;z-index:60;cursor:default}
+.ayuda:hover .tip{display:block}
+.btn .ayuda{margin-left:8px}.btn .ayuda .tip{top:auto;bottom:26px}
+.swl{margin-left:auto;width:34px;height:18px;border-radius:9px;position:relative;flex:none;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}.swl.es{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27 18' preserveAspectRatio='none'%3E%3Crect width='27' height='18' fill='%23fff'/%3E%3Cg fill='%230038a8'%3E%3Crect y='2' width='27' height='2'/%3E%3Crect y='6' width='27' height='2'/%3E%3Crect y='10' width='27' height='2'/%3E%3Crect y='14' width='27' height='2'/%3E%3C/g%3E%3Crect width='10' height='10' fill='%23fff'/%3E%3Ccircle cx='5' cy='5' r='2.7' fill='%23fcd116' stroke='%23b07a00' stroke-width='.4'/%3E%3C/svg%3E")}.swl.en{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 13' preserveAspectRatio='none'%3E%3Crect width='26' height='13' fill='%23fff'/%3E%3Cg fill='%23b22234'%3E%3Crect width='26' height='1'/%3E%3Crect y='2' width='26' height='1'/%3E%3Crect y='4' width='26' height='1'/%3E%3Crect y='6' width='26' height='1'/%3E%3Crect y='8' width='26' height='1'/%3E%3Crect y='10' width='26' height='1'/%3E%3Crect y='12' width='26' height='1'/%3E%3C/g%3E%3Crect x='15' width='11' height='7' fill='%233c3b6e'/%3E%3C/svg%3E")}.swl::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.4);font:700 6px/14px system-ui,sans-serif;color:#1a1a1a;text-align:center;transition:left .15s}.swl.es::after{left:18px}  /* español: perilla a la derecha, se ve el sol de Uruguay; inglés: a la izquierda, se ve el cantón de EE. UU. */
 
 .sw{margin-left:auto;width:34px;height:18px;border-radius:9px;background:var(--card);position:relative;flex:none}.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .15s}.sw.on{background:var(--acc)}.sw.on::after{left:18px}
 .prog{display:none;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mu)}
@@ -109,6 +115,7 @@ main{padding:16px 22px 60px}
 .pill{font-size:12px;padding:3px 9px;border-radius:3px;background:var(--bg);text-transform:uppercase;letter-spacing:.3px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
 .st{background:var(--bg);border-radius:3px;border-left:3px solid var(--acc);padding:8px 10px;font-size:12px;color:var(--mu)}
+.st.link{cursor:pointer}.st.link:hover{background:var(--card);color:var(--tx)}
 .st b{display:block;font-size:17px;color:var(--tx)}
 .desc{font-size:14px;line-height:1.55;margin-bottom:14px}
 .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
@@ -177,6 +184,8 @@ let RAW=window.JUEGOS||[], D=window.DISCOS||[], T=window.TIENDAS||[], CONF=windo
 if(window.LOGO) document.getElementById('logo').src=document.getElementById('cargalogo').src='data:image/png;base64,'+window.LOGO;
 document.documentElement.dataset.tema=CONF.tema||'claro';
 const $=s=>document.querySelector(s);
+// signo de ayuda: al pasar el mouse muestra la explicación (el clic no dispara la acción del botón)
+const ayuda=t=>`<span class="ayuda" onclick="event.stopPropagation()">?<span class="tip">${esc(t)}</span></span>`;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.api[fn])?window.pywebview.api[fn](...a):Promise.reject('sin api');
 
@@ -187,7 +196,7 @@ const TXT={
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
   jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ficha',desinstalar:'Desinstalar',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
-  loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',horas:'horas jugadas',ultima:'última vez',logros:'logros',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
+  loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',horas:'horas jugadas',verLogros:'Ver tus logros en Steam',ultima:'última vez',logros:'logros',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
   listo:'Listo: si hace falta confirmar, fijate en la ventana que se abrió.',noPudo:'No se pudo.',disco:'disco',
   tLeida:'Leída',tParcial:'Parcial',tNo:'No instalada',clicCfg:'Clic para ver cómo configurarla',
   detectado:'Launcher detectado',noDetectado:'Launcher no instalado',abrirL:'Abrir',descargar:'Descargar',reescanear:'Volver a escanear',comoFunc:'Cómo funciona',paraEmpezar:'Para empezar',
@@ -211,7 +220,7 @@ const TXT={
   detectado:'Launcher detected',noDetectado:'Launcher not installed',abrirL:'Open',descargar:'Download',reescanear:'Rescan',comoFunc:'How it works',paraEmpezar:'Getting started',
   otraCarpeta:'If it\'s installed in another folder, paste the .exe path in ⚙ Settings.',queHacemos:'Unlink',desvincular:'Unlink',volverVincular:'Link again',
   notaQuitar:'The store and its games stop showing in TasloStacks. Nothing changes on your PC: the launcher and games stay installed. To link it again: ⚙ Settings → the store\'s › arrow.',
-  mConfig:'Settings',mOscuro:'Dark mode',mIdioma:'Language',mDesinst:'Uninstall TasloStacks',mDatos:'Data folder',web:'Open the TasloStacks website',mDatosAy:'Opens the folder where TasloStacks keeps its cache and your library. Useful to clear the cache if something looks wrong, or to send files when reporting a bug. It does not touch your games.',confDesinst:'Uninstall TasloStacks from this PC? The Windows uninstaller will open.',noInstalador:'This copy wasn\'t installed with the Setup: delete the program folder to remove it.',
+  mConfig:'Settings',mOscuro:'Dark mode',mIdioma:'Language',mDesinst:'Uninstall TasloStacks',mDatos:'Data folder',verLogros:'See your achievements in Steam',web:'Open the TasloStacks website',mDatosAy:'Opens the folder where TasloStacks keeps its cache and your library. Useful to clear the cache if something looks wrong, or to send files when reporting a bug. It does not touch your games.',confDesinst:'Uninstall TasloStacks from this PC? The Windows uninstaller will open.',noInstalador:'This copy wasn\'t installed with the Setup: delete the program folder to remove it.',
   nueva:'A new TasloStacks version is available:',bajarNueva:'Update',
   cBienvenida:'Welcome to TasloStacks!',cTitulo:'Settings',cIntro0:'All your games in one screen:',cIntro1:'This is what I found on your PC; review and save.',
   cIntro2:'Everything is detected automatically. Only change something if a path is wrong.',guardar:'Save',cSteamAv:'<b>Steam: right now you only see your installed games.</b> To also see games you own but have not installed, connect your Steam account. It is free and takes 1 minute: you paste a key that Steam gives you.',cSteamBtn:'Connect my Steam account',cInicioTxt:'Many launchers (Steam, Epic, EA…) open by themselves when the PC starts and use memory even when you are not playing. This button makes them <b>stop opening on their own</b>. It does not uninstall or delete anything: when you pick a game in TasloStacks, the launcher opens at that moment. You can undo it from Task Manager → Startup. The Riot anti-cheat (Vanguard) is never touched.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
@@ -261,7 +270,7 @@ function cabecera(){
   const cuenta=s=>RAW.filter(g=>g.store===s).length, cuentaInst=s=>RAW.filter(g=>g.store===s&&g.installed).length;
   const visibles=TODAS.filter(s=>cuenta(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera));
   const tiendas=['todos',...visibles,'inst'];
-  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?'● '+L.instalados:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55" title="${cuentaInst(t)} ${L.instalados.toLowerCase()} ${L.de} ${cuenta(t)}">${cuentaInst(t)}/${cuenta(t)}</span>`}</span>`).join('');
+  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size?'on':''):t==='inst'?'tog':(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?`${L.instalados}<span class="sw ${soloInst?'on':''}"></span>`:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55" title="${cuentaInst(t)} ${L.instalados.toLowerCase()} ${L.de} ${cuenta(t)}">${cuentaInst(t)}/${cuenta(t)}</span>`}</span>`).join('');
   const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
   const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
   $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> ${L.todos}</label>`+
@@ -346,7 +355,7 @@ function menu(){
     <div class="it" onclick="tema()">${ico('moon')} ${L.mOscuro}<span class="sw ${oscuro?'on':''}"></span></div>
     <div class="it" onclick="idioma()">${ico('globe')} ${L.mIdioma}<span class="swl ${IDIOMA==='english'?'en':'es'}" title="${IDIOMA==='english'?'English':'Español'}"></span></div>
     <div class="sep"></div>
-    <div class="it poco" title="${esc(L.mDatosAy)}" onclick="cerrarMenu();api('abrir_datos')">${ico('folder')} ${L.mDatos}</div>
+    <div class="it poco" onclick="cerrarMenu();api('abrir_datos')">${ico('folder')} ${L.mDatos}${ayuda(L.mDatosAy)}</div>
     <div class="sep"></div>
     <div class="it top" onclick="cerrarMenu();configuracion(false)">${ico('gear')} ${L.mConfig}</div>`;
 }
@@ -422,9 +431,9 @@ function abrir(g){
   const tamL=g.installed&&g.sizeGB?`${L.ocupaEn} ${g.drive||L.disco}`:g.reqGB?L.necesita:L.ocupa;
   const loc=IDIOMA==='english'?'en':'es', num=n=>Number(n).toLocaleString(loc);
   const cajas=[`<div class="st"><b>${tam}</b>${tamL}</div>`];
-  if(g.stores.includes('Steam')) cajas.push(`<div class="st"><b style="color:${g.revPct?rcol(g.revPct):'var(--tx)'}">${g.revPct?pulgar(g.revPct)+' '+g.revPct+'%':'—'}</b>${g.revPct?resTxt(g.revPct):L.resenas}${g.revN?` (${num(g.revN)})`:''}</div>`);
+  if(g.stores.includes('Steam')&&g.revPct) cajas.push(`<div class="st"><b style="color:${rcol(g.revPct)}">${pulgar(g.revPct)+' '+g.revPct+'%'}</b>${resTxt(g.revPct)}${g.revN?` (${num(g.revN)})`:''}</div>`);  // sin reseñas no se muestra la caja
   if(g.horas) cajas.push(`<div class="st"><b>${num(g.horas)} h</b>${L.horas}${g.ultima?` · ${L.ultima} ${new Date(g.ultima*1000).toLocaleDateString(loc)}`:''}</div>`);
-  if(g.logrosT) cajas.push(`<div class="st"><b>${g.logros}/${g.logrosT}</b>${L.logros}</div>`);
+  if(g.logrosT) cajas.push(`<div class="st link" title="${esc(L.verLogros)}" onclick="api('abrir_url','steam://openurl/https://steamcommunity.com/my/stats/${g.appid}/achievements')"><b>${g.logros}/${g.logrosT}</b>${L.logros} ›</div>`);  // abre tus logros dentro de Steam
   if(g.msRating) cajas.push(`<div class="st"><b>★ ${num(g.msRating)}</b>Microsoft Store${g.msN?` (${num(g.msN)})`:''}</div>`);
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
     <div class="cov">${img(g)}</div>
@@ -449,8 +458,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu
 $('#q').addEventListener('input',e=>{texto=e.target.value.toLowerCase().trim();render();});
 $('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
 $('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;
-  if(t==='todos'){tsel.clear();soloInst=false;}else if(t==='inst'){soloInst=!soloInst;}else{tsel.has(t)?tsel.delete(t):tsel.add(t);}
-  document.querySelectorAll('#filtros .chip').forEach(x=>{const k=x.dataset.t;x.classList.toggle('on',k==='todos'?(!tsel.size&&!soloInst):k==='inst'?soloInst:tsel.has(k));});render();});
+  if(t==='todos'){tsel.clear();}else if(t==='inst'){soloInst=!soloInst;}else{tsel.has(t)?tsel.delete(t):tsel.add(t);}
+  document.querySelectorAll('#filtros .chip').forEach(x=>{const k=x.dataset.t;if(k==='inst'){x.querySelector('.sw').classList.toggle('on',soloInst);return;}x.classList.toggle('on',k==='todos'?!tsel.size:tsel.has(k));});render();});
 $('#generos').addEventListener('change',e=>{const i=e.target;if(!i||!i.dataset.g)return;const g=i.dataset.g;
   if(g==='__todos'){gens.clear();}else{i.checked?gens.add(g):gens.delete(g);}
   cabecera();render();$('#ddgen').open=true;});
@@ -543,7 +552,7 @@ function configuracion(primera){
       <label>${L.cInicio}</label>
       <p style="margin:2px 0 8px;font-size:13px;line-height:1.45">${L.cInicioTxt}</p>
       <div class="row"><button class="btn" id="c_inicio">🚫 ${L.cInicioBtn}</button><span id="c_inicio_txt" style="font-size:13px;color:var(--mu)"></span></div>
-      <div class="acts"><button class="btn pri" id="c_guardar">💾 ${L.cGuardar}</button><button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button><button class="btn" title="${esc(L.mDatosAy)}" onclick="api('abrir_datos')">📁 ${L.mDatos}</button></div>
+      <div class="acts"><button class="btn pri" id="c_guardar">💾 ${L.cGuardar}</button><button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button><button class="btn" onclick="api('abrir_datos')">📁 ${L.mDatos}${ayuda(L.mDatosAy)}</button></div>
       <p style="margin-top:14px">TasloStacks ${esc(c.version||'')} · ${L.cLibre} · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>
       <button class="desinst" onclick="desinstalarApp()">${ico('trash')} ${L.mDesinst}</button>`;
     $('#c_guardar').onclick=()=>{

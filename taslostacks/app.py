@@ -187,8 +187,8 @@ class Nucleo:
                 if ahora != antes:
                     antes = ahora
                     self.escanear()
-            except Exception as e:
-                paths.log("vigilar", e)
+            except Exception:
+                import traceback; paths.log("vigilar", traceback.format_exc())
 
     # ---------- versión nueva ----------
     @staticmethod
@@ -339,7 +339,7 @@ class Api:
         return "ok"
 
     def abrir_url(self, url):
-        if re.match(r"(https?://|mailto:)", url): os.startfile(url)
+        if re.match(r"(https?://|mailto:|steam://openurl/https://)", url): os.startfile(url)  # steam://openurl abre la página dentro de Steam (con tu sesión)
         return True
 
     def abrir_datos(self):
@@ -399,7 +399,10 @@ def main():
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
     def arranque():
-        NUC.escanear()
+        try:
+            NUC.escanear()
+        except Exception:
+            import traceback; paths.log("escaneo inicial", traceback.format_exc())  # sin esto un error deja la página vieja sin rastro
         threading.Thread(target=NUC.vigilar, daemon=True).start()
     covers.limpiar_descargadas()
     # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones

@@ -233,7 +233,7 @@ class Nucleo:
         cache = os.path.join(paths.CACHE, "version_remota.json")
         try:
             d = json.load(open(cache))
-            if d.get("repo") == repo and time.time() - d.get("ts", 0) < 86400: return mas_nueva(d.get("tag"))
+            if d.get("repo") == repo and time.time() - d.get("ts", 0) < 3600: return mas_nueva(d.get("tag"))  # 1 hora: con 1 día una versión recién publicada tardaba en avisarse
         except Exception: pass
         try:
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % repo, 15)
@@ -395,7 +395,7 @@ def main():
     if not os.path.exists(paths.HTML):
         NUC.estado.update(fase="escaneando", msg="Preparando la biblioteca…")
         build.escribir([], [], NUC.cfg, NUC.estado)
-    v = webview.create_window("TasloStacks", pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
+    v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
     def arranque():

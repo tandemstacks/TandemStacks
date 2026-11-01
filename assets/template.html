@@ -250,7 +250,7 @@ const LOGO={"Steam": "M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.3
 const logo=(s,c,n)=>LOGO[s]?`<svg class="lg" viewBox="0 0 24 24" width="${n}" height="${n}" fill="${c}" aria-label="${esc(s)}"><title>${esc(s)}</title><path d="${LOGO[s]}"/></svg>`:`<b style="color:${c}">${esc(s)}</b>`;
 const BG={Steam:'#1b3a5c',Epic:'#3a3a3a',Xbox:'#1f4020',EA:'#5c2020','Battle.net':'#0f3a66',Rockstar:'#5c4310',Riot:'#5c1020',Ubisoft:'#10305c'};
 const peso=g=>g.installed?(g.sizeGB||0):(g.reqGB||0);
-let tsel=new Set(), soloInst=false, gens=new Set(), texto='', orden='nombre', abiertos=new Set();
+let tsel=new Set(), soloInst=false, gens=new Set(), texto='', orden='nombre', abiertos=new Set(['si']);  // Instalados arranca abierto, No instalados cerrado
 const ST={ok:['var(--ok)',L.tLeida],parcial:['var(--warn)',L.tParcial],no:['var(--bad)',L.tNo]};
 const TODAS=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft'];
 
@@ -308,7 +308,7 @@ function render(){
     <span class="tag">${g.stores.map(s=>logo(s,sc(s),20)).join('')}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
     <div class="nm">${esc(g.name)}</div></div>`;
   const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
-  let h=inst.length?`<h2 class="sec">✅ ${L.instalados} <span>${inst.length}</span></h2><div class="grid">${inst.map(card).join('')}</div>`:'';
+  let h=inst.length?`<details class="grupo" data-s="si"${texto||abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${inst.length}</span><span class="flecha">▾</span></summary><div class="grid">${inst.map(card).join('')}</div></details>`:'';
   if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>${L.noInst}</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;
   if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?L.vacio:L.buscando}</div>`;
   $('#grid').innerHTML=h;

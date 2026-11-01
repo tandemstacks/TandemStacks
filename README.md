@@ -4,6 +4,8 @@
 
 Gratis y de código abierto (licencia MIT). Hecho para Windows 10/11.
 
+**Página y descarga: https://taslostacks.github.io/TasloStacks/**
+
 ![TasloStacks](assets/logo.png)
 
 ## Qué hace

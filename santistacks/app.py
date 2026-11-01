@@ -77,7 +77,7 @@ class Nucleo:
                 elif n in solo_inst: info, st = ("%d instalados (la tienda no deja leer la biblioteca completa)" % cuenta(n)), ("parcial" if l["ok"] else "no")
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
-                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info})
+                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"]})
             self.cfg["_launchers_vista"] = [{"n": n, "exe": self.launchers[n]["exe"], "ok": self.launchers[n]["ok"], "manual": self.launchers[n]["manual"]} for n in ORDEN_TIENDAS]
             self.estado.update(fase="listo", msg="")
             self._publicar()

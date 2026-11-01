@@ -19,7 +19,10 @@ header{position:sticky;top:0;z-index:5;background:var(--panel);border-top:5px so
 .tnd{display:flex;align-items:center;gap:6px;padding:5px 9px 5px 6px;border-radius:3px;background:var(--panel);box-shadow:var(--sh);font-size:12px;cursor:default}
 .tnd .ic{width:20px;height:20px;border-radius:2px;display:grid;place-items:center;font-weight:800;font-size:11px;color:#fff}
 .tnd .dot{width:7px;height:7px;border-radius:50%}
-.tnd.no{opacity:.45}
+.tnd{cursor:pointer}.tnd:hover{background:var(--card)}.tnd.no{opacity:.55}
+.tcard .big{width:150px;height:150px;flex:none;border-radius:4px;display:grid;place-items:center;box-shadow:var(--sh)}
+.tcard ol{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.55}.tcard ol li{margin-bottom:5px}
+.tcard .estado{font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:8px}
 .gear{border:none;background:var(--bg);box-shadow:var(--sh);border-radius:3px;width:34px;height:34px;cursor:pointer;font-size:18px;display:grid;place-items:center}
 .gear:hover{background:var(--card)}
 .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
@@ -177,7 +180,7 @@ const ST={ok:['var(--ok)','Leída'],parcial:['var(--warn)','Parcial'],no:['var(-
 const TODAS=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft'];
 
 function cabecera(){
-  $('#tiendas').innerHTML=T.map(t=>`<div class="tnd ${t.st==='no'?'no':''}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}">
+  $('#tiendas').innerHTML=T.map((t,i)=>`<div class="tnd ${t.st==='no'?'no':''}" data-t="${i}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}. Clic para ver cómo configurarla">
     <span class="ic" style="background:${t.c}">${logo(t.n,'#fff',12)}</span>${esc(t.n)}<span class="dot" style="background:${ST[t.st][0]}"></span></div>`).join('');
   $('#sub').textContent=`${J.length} juegos · ${J.filter(g=>g.installed).length} instalados`;
   const tiendas=['todos',...TODAS.filter(s=>RAW.some(g=>g.store===s)),'inst'];
@@ -266,7 +269,7 @@ function botones(g){
   return b.join('');
 }
 function abrir(g){
-  actual=g;
+  actual=g; $('#modal').classList.remove('tcard');
   const tam=g.installed&&g.sizeGB?`${g.sizeGB} GB`:g.reqGB?`~${g.reqGB} GB`:'—';
   const tamL=g.installed&&g.sizeGB?`Ocupa en ${g.drive||'disco'}`:g.reqGB?'Necesita (requisito)':'Ocupa';
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
@@ -323,6 +326,40 @@ function configuracion(primera){
   }).catch(()=>{$('#cfg').innerHTML='<button class="x">×</button><h2>Configuración</h2><p>Solo disponible dentro de la aplicación.</p>';$('#cfgbg').classList.add('show');});
 }
 $('#gear').onclick=()=>configuracion(false);
+
+// ---------- tarjeta de cada tienda: logo grande, descarga y pasos ----------
+const GUIA={
+  Steam:{launcher:'Steam',lee:'Juegos instalados siempre. Con una clave Web API (gratis), toda tu biblioteca.',pasos:['Bajá e instalá Steam desde el botón de la derecha.','Iniciá sesión con tu cuenta.','Opcional, para ver toda tu biblioteca: en ⚙ Configuración pegá tu clave Web API (link ahí mismo) y poné los detalles de juegos de tu perfil en público.','SantiStacks detecta todo solo; si no aparece, ⚙ → Volver a escanear.']},
+  Epic:{launcher:'Epic Games Launcher',lee:'Juegos instalados (la biblioteca completa de Epic no se puede leer sin iniciar sesión).',pasos:['Bajá e instalá el Epic Games Launcher.','Iniciá sesión con tu cuenta de Epic.','Instalá los juegos desde el launcher: van apareciendo acá solos.']},
+  EA:{launcher:'EA app',lee:'Juegos instalados (la biblioteca completa de EA no se puede leer).',pasos:['Bajá e instalá la EA app.','Iniciá sesión con tu cuenta de EA.','Instalá los juegos desde la app: aparecen acá cuando terminan.']},
+  Xbox:{launcher:'App Xbox (Microsoft Store)',lee:'Juegos instalados desde la app Xbox o la Microsoft Store (Game Pass incluido).',pasos:['Instalá la app Xbox desde la Microsoft Store (o el botón de la derecha).','Iniciá sesión con tu cuenta Microsoft.','Instalá juegos de Game Pass o de la Store: aparecen acá solos.']},
+  Riot:{launcher:'Riot Client',lee:'Los 5 juegos gratis de Riot (LoL, VALORANT, TFT, Legends of Runeterra, 2XKO) y cuáles tenés instalados.',pasos:['Bajá cualquier juego de Riot (instala el Riot Client).','Iniciá sesión con tu cuenta de Riot.','Desde acá podés instalar o jugar cualquiera de los 5: el botón abre el Riot Client en ese juego.','Aviso: LoL y VALORANT usan Vanguard (anti-trampas) y pueden pedir reiniciar.']},
+  'Battle.net':{launcher:'Battle.net',lee:'Los juegos gratis de Blizzard (Overwatch 2, Hearthstone, StarCraft II, Warcraft Rumble…) y los pagos que tengas instalados.',pasos:['Bajá e instalá la app Battle.net.','Iniciá sesión con tu cuenta de Blizzard.','Instalar / Jugar desde acá abre Battle.net en ese juego.']},
+  Rockstar:{launcher:'Rockstar Games Launcher',lee:'Los juegos de tu cuenta de Rockstar (los que el launcher conoce) y cuáles están instalados.',pasos:['Bajá e instalá el Rockstar Games Launcher.','Iniciá sesión con tu cuenta de Rockstar (Social Club).','Esperá un minuto: el launcher baja la lista de tus juegos y SantiStacks la lee sola.']},
+  Ubisoft:{launcher:'Ubisoft Connect',lee:'Juegos instalados (la biblioteca completa de Ubisoft no se puede leer).',pasos:['Bajá e instalá Ubisoft Connect.','Iniciá sesión con tu cuenta de Ubisoft.','Instalá los juegos desde Ubisoft Connect: aparecen acá cuando terminan.']},
+};
+function tienda(t){
+  const g=GUIA[t.n]||{launcher:t.n,lee:'',pasos:[]};
+  const cuantos=RAW.filter(x=>x.store===t.n).length, inst=RAW.filter(x=>x.store===t.n&&x.installed).length;
+  $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
+    <div class="big" style="background:${t.c}">${logo(t.n,'#fff',96)}</div>
+    <div style="flex:1;min-width:0">
+      <h2>${esc(t.n)}</h2>
+      <div class="estado" style="color:${ST[t.st][0]}">● ${t.ok?'Launcher detectado':'Launcher no instalado'}${t.ok?` · ${cuantos} juegos · ${inst} instalados`:''}</div>
+      <p style="margin:0 0 6px;font-size:14px;color:var(--mu)">${esc(g.lee)}</p>
+      <div class="acts" style="margin:10px 0 6px">
+        ${t.ok?`<button class="btn ok" onclick="accion('abrir=${encodeURIComponent(t.n)}')">▶ Abrir ${esc(g.launcher)}</button>`:`<button class="btn pri" onclick="api('abrir_url','${esc(t.bajar)}')">⬇ Descargar ${esc(g.launcher)}</button>`}
+        <button class="btn" onclick="api('reescanear');cerrar()">↻ Volver a escanear</button>
+        ${t.n==='Steam'?`<button class="btn" onclick="cerrar();configuracion(false)">⚙ Clave de Steam</button>`:''}
+      </div>
+      <b style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu)">${t.ok?'Cómo funciona':'Para empezar'}</b>
+      <ol>${g.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+      <div class="nota" id="nota">${t.ok?'':'Si ya lo tenés instalado en otra carpeta, pegá la ruta del .exe en ⚙ Configuración.'}</div>
+    </div>`;
+  $('#modal').classList.add('tcard');
+  $('#bg').classList.add('show');
+}
+$('#tiendas').addEventListener('click',e=>{const d=e.target.closest('.tnd');if(d&&T[+d.dataset.t])tienda(T[+d.dataset.t]);});
 
 // ---------- datos en vivo desde Python ----------
 let versionVista=EST.version||0;

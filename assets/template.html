@@ -85,7 +85,6 @@ main{padding:16px 22px 60px}
 .card:hover .nm{opacity:1}
 .tag{position:absolute;top:7px;left:7px;display:flex;gap:6px;align-items:center;padding:5px 6px;border-radius:3px;background:var(--tagbg);box-shadow:0 1px 4px rgba(0,0,0,.3)}.lg{display:inline-block;flex:none;vertical-align:middle;position:relative;top:-1px}
 .inst{position:absolute;top:7px;right:7px;width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(0,0,0,.6)}
-.rate{position:absolute;bottom:7px;right:7px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.75);color:#fff}
 .empty{color:var(--mu);text-align:center;padding:40px}
 #bg,#cfgbg{position:fixed;inset:0;background:rgba(20,24,40,.5);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
 #bg.show,#cfgbg.show{display:flex}
@@ -293,7 +292,7 @@ function render(){
   list.sort(by[orden]);
   const card=g=>`<div class="card${g.installed?'':' off'}" data-i="${J.indexOf(g)}">${img(g)}
     <span class="tag">${g.stores.map(s=>logo(s,sc(s),20)).join('')}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
-    ${g.revPct?`<span class="rate" style="color:${rcol(g.revPct)}">${pulgar(g.revPct)} ${g.revPct}%</span>`:''}<div class="nm">${esc(g.name)}</div></div>`;
+    <div class="nm">${esc(g.name)}</div></div>`;
   const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
   let h=inst.length?`<h2 class="sec">✅ ${L.instalados} <span>${inst.length}</span></h2><div class="grid">${inst.map(card).join('')}</div>`:'';
   if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>${L.noInst}</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;

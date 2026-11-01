@@ -38,6 +38,8 @@ def cargar():
             cfg.update(json.load(f))
     except Exception:
         pass
+    if not cfg.get("repo"):  # configs guardadas antes de tener repo
+        cfg["repo"] = DEFAULT["repo"]
     return cfg
 
 def guardar(cfg):

@@ -32,6 +32,7 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;letter-spacing:.3px;text-transform:uppercase;user-select:none;white-space:nowrap;box-shadow:var(--sh)}
 .chip:hover{background:var(--card)}
 .chip.on{background:var(--acc);color:#fff}
+.chip.vacia{opacity:.55}.chip.vacia.on{opacity:1}
 .count{color:var(--mu);font-size:13px}
 /* desplegables (géneros, menú del engranaje) */
 .dd{position:relative}.dd summary{list-style:none;cursor:pointer}.dd summary::-webkit-details-marker{display:none}
@@ -181,7 +182,7 @@ const TXT={
   cBienvenida:'¡Bienvenido a SantiStacks!',cTitulo:'Configuración',cIntro1:'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá.',
   cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal o querés la biblioteca completa de Steam.',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
-  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cDet:'✓ detectado',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)',
+  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)',
   cGuardar:'Guardar y escanear',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
@@ -199,7 +200,7 @@ const TXT={
   cBienvenida:'Welcome to SantiStacks!',cTitulo:'Settings',cIntro1:'All your games (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) in one screen. This is what I found on your PC; review and save.',
   cIntro2:'Everything is detected automatically. Only change something if a path is wrong or you want your full Steam library.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
   cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>santistacks</i>). Your profile must have <b>game details</b> set to public.',
-  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cDet:'✓ detected',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if SantiStacks opened it)',
+  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if SantiStacks opened it)',
   cGuardar:'Save and scan',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
 };
 const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
@@ -241,8 +242,10 @@ function cabecera(){
   $('#tiendas').innerHTML=T.map((t,i)=>`<div class="tnd ${t.st==='no'?'no':''}" data-t="${i}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}. ${L.clicCfg}">
     <span class="ic" style="background:${t.c}">${logo(t.n,'#fff',12)}</span>${esc(t.n)}<span class="dot" style="background:${ST[t.st][0]}"></span></div>`).join('');
   $('#sub').textContent=`${J.length} ${L.juegos} · ${J.filter(g=>g.installed).length} ${L.instalados.toLowerCase()}`;
-  const tiendas=['todos',...TODAS.filter(s=>RAW.some(g=>g.store===s)),'inst'];
-  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}" data-t="${t}">${t==='todos'?L.todos:t==='inst'?'● '+L.instalados:logo(t,sc(t),12)+' '+t}</span>`).join('');
+  const cuenta=s=>RAW.filter(g=>g.store===s).length;
+  const visibles=TODAS.filter(s=>cuenta(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera));
+  const tiendas=['todos',...visibles,'inst'];
+  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size&&!soloInst?'on':''):t==='inst'?(soloInst?'on':''):(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?'● '+L.instalados:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55">${cuenta(t)}</span>`}</span>`).join('');
   const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
   const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
   $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> ${L.todos}</label>`+
@@ -452,7 +455,7 @@ window.quitarTienda=quitarTienda;
 // ---------- configuración ----------
 function configuracion(primera){
   api('config').then(c=>{
-    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||L.cRuta)}"><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span><button class="info" title="${esc(l.n)}" onclick="cerrar();const t=T.find(x=>x.n==='${esc(l.n)}');if(t)tienda(t)">›</button></div>`).join('');
+    const filas=(c.launchers_vista||[]).map(l=>`<div class="lrow"><span>${logo(l.n,sc(l.n),14)} ${esc(l.n)}</span><input type="text" data-l="${esc(l.n)}" value="${esc(l.manual?l.exe:'')}" placeholder="${esc(l.exe||(l.n==='Xbox'&&l.ok?L.cXbox:L.cRuta))}" ${l.n==='Xbox'?'disabled':''}><span class="estado" style="color:${l.ok?'var(--ok)':'var(--bad)'}">${l.ok?L.cDet:L.cNoEsta}</span><button class="info" title="${esc(l.n)}" onclick="cerrar();const t=T.find(x=>x.n==='${esc(l.n)}');if(t)tienda(t)">›</button></div>`).join('');
     $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
       <h2>${primera?L.cBienvenida:L.cTitulo}</h2>
       <p>${primera?L.cIntro1:L.cIntro2}</p>

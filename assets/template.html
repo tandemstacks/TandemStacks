@@ -120,7 +120,7 @@ main{padding:16px 22px 60px}
 .cfg label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--mu);margin:12px 0 4px}
 .cfg input[type=text]{width:100%;font:inherit;font-size:13px;padding:8px 10px;border:none;border-radius:3px;background:var(--bg);color:var(--tx);box-shadow:inset 0 1px 3px rgba(0,0,0,.12);outline:none}
 .cfg input[type=text]:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
-.cfg .row{display:flex;gap:10px;align-items:center}
+.cfg .row{display:flex;gap:10px;align-items:center}.cfg .row .btn{flex:none;white-space:nowrap}
 .cfg .lrow{display:grid;grid-template-columns:110px 1fr 90px 34px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
 .cfg .lrow .info{border:none;background:var(--bg);box-shadow:var(--sh);border-radius:3px;width:30px;height:30px;cursor:pointer;color:var(--tx);font-size:15px}.cfg .lrow .info:hover{background:var(--card)}
 .cfg .lrow .estado{font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:700}
@@ -181,8 +181,8 @@ const TXT={
   notaQuitar:'La tienda y sus juegos dejan de verse en SantiStacks. No se toca nada en tu PC: el launcher y los juegos quedan instalados. Para volver a vincularla: ⚙ Configuración → flecha › de la tienda.',
   mConfig:'Configuración',mOscuro:'Modo oscuro',mIdioma:'Idioma',mDesinst:'Desinstalar SantiStacks',mDatos:'Carpeta de datos',confDesinst:'¿Seguro que querés desinstalar SantiStacks de esta PC? Se abre el desinstalador de Windows.',noInstalador:'Esta copia no se instaló con el Setup: para quitarla, borrá la carpeta del programa.',
   nueva:'Hay una versión nueva de SantiStacks:',bajarNueva:'Descargar',
-  cBienvenida:'¡Bienvenido a SantiStacks!',cTitulo:'Configuración',cIntro1:'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá.',
-  cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal o querés la biblioteca completa de Steam.',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
+  cBienvenida:'¡Bienvenido a SantiStacks!',cTitulo:'Configuración',cIntro1:'Junta todos tus juegos (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) en una sola pantalla. Detecté esto en tu PC; revisalo y guardá. Para ver toda tu biblioteca de Steam, entrá a la flecha › de Steam.',
+  cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal. Para ver toda tu biblioteca de Steam, entrá a la flecha › de Steam.',guardar:'Guardar',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>santistacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió SantiStacks)',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
@@ -199,8 +199,8 @@ const TXT={
   notaQuitar:'The store and its games stop showing in SantiStacks. Nothing changes on your PC: the launcher and games stay installed. To link it again: ⚙ Settings → the store\'s › arrow.',
   mConfig:'Settings',mOscuro:'Dark mode',mIdioma:'Language',mDesinst:'Uninstall SantiStacks',mDatos:'Data folder',confDesinst:'Uninstall SantiStacks from this PC? The Windows uninstaller will open.',noInstalador:'This copy wasn\'t installed with the Setup: delete the program folder to remove it.',
   nueva:'A new SantiStacks version is available:',bajarNueva:'Download',
-  cBienvenida:'Welcome to SantiStacks!',cTitulo:'Settings',cIntro1:'All your games (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) in one screen. This is what I found on your PC; review and save.',
-  cIntro2:'Everything is detected automatically. Only change something if a path is wrong or you want your full Steam library.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
+  cBienvenida:'Welcome to SantiStacks!',cTitulo:'Settings',cIntro1:'All your games (Steam, Epic, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft) in one screen. This is what I found on your PC; review and save. For your full Steam library, open the › arrow next to Steam.',
+  cIntro2:'Everything is detected automatically. Only change something if a path is wrong. For your full Steam library, open the › arrow next to Steam.',guardar:'Save',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
   cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>santistacks</i>). Your profile must have <b>game details</b> set to public.',
   cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if SantiStacks opened it)',
   cGuardar:'Save and scan',cInicio:'Windows startup',cInicioBtn:'Remove launchers from startup',cInicioAct:'start with Windows',cInicioOk:'No launcher starts with Windows',cInicioAdmin:'These are set for all users and need administrator rights (remove them from Task Manager → Startup):',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
@@ -410,7 +410,7 @@ document.addEventListener('click',e=>{for(const id of ['ddgen','ddmenu']){const 
 // ---------- tarjeta de cada tienda ----------
 const GUIA={
  spanish:{
-  Steam:{launcher:'Steam',lee:'Juegos instalados siempre. Con una clave Web API (gratis), toda tu biblioteca.',pasos:['Bajá e instalá Steam desde el botón de la derecha e iniciá sesión.','Opcional, para ver toda tu biblioteca: en ⚙ Configuración pegá tu clave Web API (link ahí mismo) y poné los detalles de juegos de tu perfil en público.','Desde acá instalás, jugás y desinstalás cualquier juego de Steam: SantiStacks le pide a Steam que lo haga y Steam te pide la confirmación.','Lo que instales o borres desde Steam también se refleja acá solo.']},
+  Steam:{launcher:'Steam',lee:'Juegos instalados siempre. Con una clave Web API (gratis), toda tu biblioteca.',pasos:['Bajá e instalá Steam desde el botón de la derecha e iniciá sesión.','Opcional, para ver toda tu biblioteca: pegá tu clave Web API acá abajo y poné los detalles de juegos de tu perfil en público.','Desde acá instalás, jugás y desinstalás cualquier juego de Steam: SantiStacks le pide a Steam que lo haga y Steam te pide la confirmación.','Lo que instales o borres desde Steam también se refleja acá solo.']},
   Epic:{launcher:'Epic Games Launcher',lee:'Tu biblioteca completa de Epic (la lee del catálogo que guarda el launcher) y cuáles tenés instalados.',pasos:['Bajá e instalá el Epic Games Launcher e iniciá sesión: el launcher guarda la lista de tus juegos y SantiStacks la lee sola.','Desde acá instalás, jugás y desinstalás: Instalar abre Epic directo en ese juego.','Si compraste o reclamaste algo nuevo, abrí el launcher una vez para que actualice la lista.']},
   EA:{launcher:'EA app',lee:'Juegos instalados (la biblioteca completa de EA no se puede leer).',pasos:['Bajá e instalá la EA app e iniciá sesión.','Lo que tengas instalado aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí la EA app desde acá (EA no deja leer tu biblioteca); cuando termine, aparece solo.']},
   Xbox:{launcher:'App Xbox (Microsoft Store)',lee:'Juegos instalados desde la app Xbox o la Microsoft Store (Game Pass incluido).',pasos:['Instalá la app Xbox desde la Microsoft Store (o el botón de la derecha) e iniciá sesión con tu cuenta Microsoft.','Lo que tengas instalado (Game Pass o Store) aparece acá con Jugar y Desinstalar.','Para instalar un juego nuevo, abrí la app Xbox desde acá; cuando termine, aparece solo.']},
@@ -419,7 +419,7 @@ const GUIA={
   Rockstar:{launcher:'Rockstar Games Launcher',lee:'Los juegos de tu cuenta de Rockstar (los que el launcher conoce) y cuáles están instalados.',pasos:['Bajá e instalá el Rockstar Games Launcher e iniciá sesión (Social Club).','Esperá un minuto: el launcher baja la lista de tus juegos y SantiStacks la lee sola.','Instalar abre el launcher; Jugar arranca el juego desde acá; Desinstalar abre Aplicaciones instaladas de Windows.']},
   Ubisoft:{launcher:'Ubisoft Connect',lee:'Solo los juegos que tenés instalados. Ubisoft Connect guarda la lista de tus juegos cifrada en la PC, así que SantiStacks no puede mostrar los que no instalaste ni instalarlos desde acá.',pasos:['Bajá e instalá Ubisoft Connect e iniciá sesión.','Para instalar un juego, hacelo desde Ubisoft Connect (botón Abrir de acá arriba).','Cuando termina de instalarse aparece acá solo, con Jugar y Desinstalar.']}},
  english:{
-  Steam:{launcher:'Steam',lee:'Installed games always. With a (free) Web API key, your whole library.',pasos:['Download and install Steam from the button on the right and sign in.','Optional, to see your whole library: paste your Web API key in ⚙ Settings (link there) and set your profile\'s game details to public.','Install, play and uninstall any Steam game from here: SantiStacks asks Steam to do it and Steam asks you to confirm.','Whatever you install or remove from Steam shows up here too.']},
+  Steam:{launcher:'Steam',lee:'Installed games always. With a (free) Web API key, your whole library.',pasos:['Download and install Steam from the button on the right and sign in.','Optional, to see your whole library: paste your Web API key below and set your profile\'s game details to public.','Install, play and uninstall any Steam game from here: SantiStacks asks Steam to do it and Steam asks you to confirm.','Whatever you install or remove from Steam shows up here too.']},
   Epic:{launcher:'Epic Games Launcher',lee:'Your whole Epic library (read from the catalog the launcher keeps) and which games are installed.',pasos:['Download and install the Epic Games Launcher and sign in: the launcher stores your game list and SantiStacks reads it.','Install, play and uninstall from here: Install opens Epic right on that game.','If you bought or claimed something new, open the launcher once so it updates the list.']},
   EA:{launcher:'EA app',lee:'Installed games (EA\'s full library can\'t be read).',pasos:['Download and install the EA app and sign in.','Whatever you have installed shows here with Play and Uninstall.','To install a new game, open the EA app from here; when it finishes, it shows up here.']},
   Xbox:{launcher:'Xbox app (Microsoft Store)',lee:'Games installed from the Xbox app or the Microsoft Store (Game Pass included).',pasos:['Install the Xbox app from the Microsoft Store (or the button on the right) and sign in with your Microsoft account.','Whatever you have installed (Game Pass or Store) shows here with Play and Uninstall.','To install a new game, open the Xbox app from here; when it finishes, it shows up here.']},
@@ -441,14 +441,22 @@ function tienda(t){
         ${t.fuera?`<button class="btn pri" onclick="api('desvincular','${esc(t.n)}',false);cerrar()">🔗 ${L.volverVincular}</button>`:
           t.ok?`<button class="btn ok" onclick="accion('abrir=${encodeURIComponent(t.n)}')">▶ ${L.abrirL} ${esc(g.launcher)}</button>`:`<button class="btn pri" onclick="api('abrir_url','${esc(t.bajar)}')">⬇ ${L.descargar} ${esc(g.launcher)}</button>`}
         <button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button>
-        ${t.n==='Steam'&&!t.fuera?`<button class="btn" onclick="cerrar();configuracion(false)">⚙ ${L.claveSteam}</button>`:''}
         ${t.ok&&!t.fuera?`<button class="btn" onclick="quitarTienda(${T.indexOf(t)})">🔗 ${L.desvincular}</button>`:''}
       </div>
       <b style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu)">${t.ok?L.comoFunc:L.paraEmpezar}</b>
       <ol>${g.pasos.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+      ${t.n==='Steam'&&!t.fuera?`<div class="cfg" style="max-width:none;margin-top:14px;border-top:1px solid var(--ln);padding-top:6px">
+        <label>${L.cCuenta}</label>
+        <div class="row"><input type="text" id="s_sid" placeholder="${L.cSid}" style="max-width:240px"><span id="s_user" style="font-size:13px;color:var(--mu)"></span></div>
+        <label>${L.cClave}</label>
+        <div class="row"><input type="text" id="s_key" placeholder="32 caracteres"><button class="btn pri" id="s_guardar">💾 ${L.guardar}</button></div>
+        <p>${L.cClaveTxt} <a onclick="api('abrir_url','https://steamcommunity.com/dev/apikey')">steamcommunity.com/dev/apikey</a> ${L.cClaveTxt2}</p></div>`:''}
       <div class="nota" id="nota">${t.ok?'':L.otraCarpeta}</div>
     </div>`;
   $('#modal').classList.add('tcard');
+  if(t.n==='Steam'&&!t.fuera) api('config').then(c=>{$('#s_sid').value=c.steam_id||'';$('#s_key').value=c.steam_api_key||'';
+    $('#s_user').innerHTML=c.steam_user?L.cDetectada+' <b>'+esc(c.steam_user)+'</b>':L.cSinUser;
+    $('#s_guardar').onclick=()=>api('guardar_config',{steam_id:$('#s_sid').value.trim(),steam_api_key:$('#s_key').value.trim()}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});}).catch(()=>{});
   $('#bg').classList.add('show');
 }
 $('#tiendas').addEventListener('click',e=>{const d=e.target.closest('.tnd');if(d&&T[+d.dataset.t])tienda(T[+d.dataset.t]);});
@@ -468,11 +476,6 @@ function configuracion(primera){
     $('#cfg').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
       <h2>${primera?L.cBienvenida:L.cTitulo}</h2>
       <p>${primera?L.cIntro1:L.cIntro2}</p>
-      <label>${L.cCuenta}</label>
-      <div class="row"><input type="text" id="c_sid" value="${esc(c.steam_id||'')}" placeholder="${L.cSid}" style="max-width:260px"><span style="font-size:13px;color:var(--mu)">${c.steam_user?L.cDetectada+' <b>'+esc(c.steam_user)+'</b>':L.cSinUser}</span></div>
-      <label>${L.cClave}</label>
-      <input type="text" id="c_key" value="${esc(c.steam_api_key||'')}" placeholder="32 caracteres">
-      <p>${L.cClaveTxt} <a onclick="api('abrir_url','https://steamcommunity.com/dev/apikey')">steamcommunity.com/dev/apikey</a> ${L.cClaveTxt2}</p>
       <label>${L.cLaunchers}</label>${filas}
       <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> ${L.cCerrar}</label>
       <label>${L.cInicio}</label>
@@ -481,7 +484,7 @@ function configuracion(primera){
       <p style="margin-top:14px">SantiStacks ${esc(c.version||'')} · ${L.cLibre} · ${c.repo?`<a onclick="api('abrir_url','https://github.com/${esc(c.repo)}')">github.com/${esc(c.repo)}</a>`:''}</p>`;
     $('#c_guardar').onclick=()=>{
       const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});
-      api('guardar_config',{steam_api_key:$('#c_key').value.trim(),steam_id:$('#c_sid').value.trim(),cerrar_launchers:$('#c_cerrar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
+      api('guardar_config',{cerrar_launchers:$('#c_cerrar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
     };
     const pintarInicio=()=>api('inicio_estado').then(l=>{const act=l.filter(x=>x.activa);
       $('#c_inicio_txt').innerHTML=act.length?`<b style="color:var(--warn)">${act.length} ${L.cInicioAct}</b>: ${act.map(x=>esc(x.nombre)).join(', ')}`:`<span style="color:var(--ok)">✓ ${L.cInicioOk}</span>`;

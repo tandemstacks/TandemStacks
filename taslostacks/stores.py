@@ -289,9 +289,23 @@ def ubisoft():
     return out
 
 # ---------------- bases SQLite de los launchers ----------------
+import sqlite3
+
+class _Copia(sqlite3.Connection):
+    """Conexión a una copia temporal: al cerrarla se borra la copia (si no, quedaba un archivo por cada escaneo)."""
+    def close(self):
+        super().close()
+        for ext in ("", "-wal", "-shm", "-journal"):
+            try: os.remove(self.tmp + ext)
+            except OSError: pass
+
+for _f in glob.glob(os.path.join(paths.CACHE, "db_*")):  # copias que dejaron versiones anteriores
+    try: os.remove(_f)
+    except OSError: pass
+
 def _sqlite(ruta):
-    """Abre una copia de la base del launcher (la original puede estar en uso y con cambios en el -wal)."""
-    import sqlite3, shutil
+    """Abre una copia de la base del launcher (la original puede estar en uso y con cambios en el -wal). Cerrarla la borra."""
+    import shutil
     if not os.path.exists(ruta):
         return None
     tmp = os.path.join(paths.CACHE, "db_%s_%s" % (threading.get_ident(), os.path.basename(ruta)))  # un archivo por hilo: escaneo y vigilancia corren juntos
@@ -299,7 +313,9 @@ def _sqlite(ruta):
     for ext in ("-wal", "-shm"):
         if os.path.exists(ruta + ext): shutil.copy(ruta + ext, tmp + ext)
         elif os.path.exists(tmp + ext): os.remove(tmp + ext)
-    return sqlite3.connect(tmp)
+    c = sqlite3.connect(tmp, factory=_Copia)
+    c.tmp = tmp
+    return c
 
 def _carga(v):
     try:

@@ -105,6 +105,17 @@ def _slug(t):
     t = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode().lower().replace("&", "and")
     return re.sub(r"[^a-z0-9]+", "-", re.sub(r"['’:.!™®]", "", t)).strip("-")
 
+def _texto(md, largo=500):
+    """Markdown de la tienda -> texto plano corto (cortado en una oración si se puede)."""
+    t = re.sub(r"!\[[^\]]*\]\([^)]*\)|<[^>]+>", " ", md)            # imágenes y HTML
+    t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", t)                  # links -> su texto
+    t = re.sub(r"^\s*(#+|[=-]{3,}|[*-]\s)", " ", t, flags=re.M)     # títulos, subrayados, viñetas
+    t = re.sub(r"\s+", " ", t.replace("*", "").replace("_", " ")).strip()
+    if len(t) <= largo:
+        return t
+    corte = t.rfind(". ", 0, largo)
+    return t[:corte + 1] if corte > largo // 3 else t[:largo].rsplit(" ", 1)[0] + "…"
+
 def epic(g, idioma):
     ns, titulo = g.get("epic_ns"), g.get("name", "")
     if not ns or not titulo:
@@ -123,7 +134,7 @@ def epic(g, idioma):
                 tags = meta.get("tags") or []
                 rat = (j.get("productRatings") or {}).get("ratings") or []
                 pegi = next((r.get("title") for r in rat if "ES" in str(r.get("countryCodes", "")).split(",")), "")
-                d = {"desc": re.sub(r"\s+", " ", about.get("shortDescription") or "").strip()[:500],
+                d = {"desc": _texto(about.get("shortDescription") or about.get("description") or ""),  # algunos juegos traen solo la larga
                      "dev": about.get("developerAttribution") or ", ".join(meta.get("developer") or []),
                      "anio": (meta.get("releaseDate") or "")[:4],
                      "genres": [(EPIC_TAG.get(t) if idioma != "english" else None) or t.replace("_", " ").capitalize() for t in tags][:5],

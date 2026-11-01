@@ -5,3 +5,5 @@ dist/
 installer/Output/
 *.spec
 *.log
+
+instagram/

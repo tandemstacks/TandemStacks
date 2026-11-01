@@ -25,7 +25,7 @@ DEFAULT = {
     "launchers": {},          # {"Steam": {"exe": "..."}} para corregir una ruta a mano
     "cerrar_launchers": True, # al cerrar el juego, cerrar el launcher que se abrió para jugarlo
     "idioma": "spanish",
-    "repo": "",               # usuario/repo de GitHub para avisar de versiones nuevas
+    "repo": "rullans/SantiStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
     "primer_arranque": True,
 }
 

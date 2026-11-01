@@ -2,7 +2,7 @@
 
 App de escritorio para Windows que junta todas las bibliotecas de juegos (Steam, Epic, EA, Xbox / Game Pass, Riot, Battle.net, Rockstar, Ubisoft) en una pantalla. Open source (MIT), gratis para la comunidad. Repo: https://github.com/rullans/SantiStacks (dueño: `rullans`). Idioma del código, comentarios, UI y commits: **español rioplatense**.
 
-Nació el 01/11/2026 como versión "para repartir" de una app personal (Santisteam, en `Proyectos IA\things IA\Chequeo PC`), que sigue existiendo aparte con la lista de juegos cargada a mano. **Este repo no comparte código con aquella**: acá todo se detecta solo en la PC de quien lo instale.
+Nació el 01/11/2026 como versión "para repartir" de una app personal (Santisteam), que ya se borró: **SantiStacks es la única app y es un proyecto independiente** (no depende de ninguna otra carpeta). Acá todo se detecta solo en la PC de quien lo instale.
 
 ## Cómo está armado
 

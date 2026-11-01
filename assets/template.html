@@ -61,7 +61,8 @@ main{padding:16px 22px 60px}
 .bar i{display:block;height:100%}
 .bar .o{background:#c5cbd8}
 .flecha{color:var(--mu);font-size:12px}
-.ddet{padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.ddet{padding:0 16px 14px;display:grid;grid-template-columns:1fr;gap:12px}
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));column-gap:28px}
 .dcard{background:var(--bg);border-radius:3px;padding:12px}
 .dcard h3{margin:0 0 6px;font-size:14px}
 .jrow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--ln)}
@@ -264,7 +265,7 @@ function discos(){
     return `<div class="dmini"><div class="lbl"><span><b style="color:var(--tx)">${d.letra}</b> · ${L.juegos} ${d.juegosGB} GB</span><span style="${poco?'color:var(--bad);font-weight:700':''}">${poco?'⚠ ':''}${d.libreGB} GB ${L.libres} ${d.totalGB}</span></div>
     <div class="bar">${d.juegos.map((x,i)=>`<i title="${esc(x.name)} · ${x.gb} GB" style="width:${x.gb/d.totalGB*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}<i class="o" style="width:${o}%" title="${L.otros}"></i></div></div>`}).join('');
   const det=D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} ${L.juegos}, ${d.juegosGB} GB</h3>
-    ${d.juegos.map((x,i)=>`<div class="jrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div>`).join('');
+    <div class="jgrid">${d.juegos.map((x,i)=>`<div class="jrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div></div>`).join('');
   const estaba=$('#discos').open;
   $('#discos').innerHTML=`<summary><b>💾 ${L.discos}</b>${mini}<span class="flecha">${L.verJuegos} ▾</span></summary>
     ${alerta.length?`<div style="margin:0 16px 10px;padding:8px 12px;border-radius:3px;background:rgba(229,83,75,.15);color:var(--bad);font-size:13px">⚠ ${L.pocoEsp} ${alerta.map(d=>d.letra).join(', ')}: ${L.pocoEsp2}</div>`:''}

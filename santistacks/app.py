@@ -13,7 +13,7 @@ class Nucleo:
         self.launchers = {}
         self.juegos = []
         self.tiendas = []
-        self.estado = {"fase": "inicio", "hecho": 0, "total": 0, "version": 0, "msg": ""}
+        self.estado = {"fase": "inicio", "hecho": 0, "total": 0, "version": 0, "msg": "", "de": ""}
         self.lock = threading.Lock()
         self._stop_fichas = threading.Event()
 
@@ -22,10 +22,12 @@ class Nucleo:
         """Fase 1 (segundos): launchers + juegos + lo instalado. Fase 2 (minutos, en hilos): fichas y portadas."""
         with self.lock:
             self._stop_fichas.set()
-            self.estado.update(fase="escaneando", msg="Buscando launchers y juegos…", hecho=0, total=0)
+            self.estado.update(fase="escaneando", msg="Buscando launchers instalados…", de="", hecho=0, total=0)
+            paso = lambda n: self.estado.update(msg="Leyendo juegos de %s…", de=n)  # la pantalla de carga muestra qué está haciendo
             self.launchers = detect.detectar(self.cfg)
             # ya, no al final del escaneo: la bienvenida los muestra apenas abre
             self.cfg["_launchers_vista"] = [{"n": n, "exe": self.launchers[n]["exe"], "ok": self.launchers[n]["ok"], "manual": self.launchers[n]["manual"]} for n in ORDEN_TIENDAS]
+            paso("Steam")
             sid, persona = steam.usuario()
             if not self.cfg.get("steam_id") and sid:
                 self.cfg["steam_id"] = sid
@@ -47,20 +49,28 @@ class Nucleo:
                     juegos.append({"id": aid, "appid": aid, "name": i["name"], "store": "Steam", "installed": True, "sizeGB": i["gb"], "drive": i["drive"], "dir": i["dir"], "launch": "steam://run/" + aid})
             steam_info = ("%d juegos" % len(bib)) if bib is not None else ("%d instalados · sin clave API no se ve la biblioteca completa" % len(inst) if not self.cfg.get("steam_api_key") else "%d instalados · la clave o el perfil no dejaron leer la biblioteca" % len(inst))
             # otras tiendas
+            paso("Epic")
             try: juegos += stores.epic()
             except Exception as e: paths.log("epic", e)
+            paso("EA")
             try: juegos += stores.ea()
             except Exception as e: paths.log("ea", e)
+            paso("Xbox")
             try: juegos += stores.xbox()
             except Exception as e: paths.log("xbox", e)
+            paso("Riot")
             try: juegos += stores.riot(self.launchers["Riot"]["exe"])
             except Exception as e: paths.log("riot", e)
+            paso("Battle.net")
             try: juegos += stores.battlenet(self.launchers["Battle.net"]["exe"])
             except Exception as e: paths.log("bnet", e)
+            paso("Rockstar")
             try: juegos += stores.rockstar()
             except Exception as e: paths.log("rockstar", e)
+            paso("Ubisoft")
             try: juegos += stores.ubisoft()
             except Exception as e: paths.log("ubisoft", e)
+            self.estado.update(msg="Armando la biblioteca…", de="")
             # fichas ya cacheadas + portadas ya bajadas (instantáneo)
             for g in juegos:
                 f = steam.ficha_cacheada(g.get("appid") or g.get("steam_hint") or "")
@@ -82,7 +92,7 @@ class Nucleo:
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
                 self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera})
-            self.estado.update(fase="listo", msg="")
+            self.estado.update(fase="listo", msg="", de="")
             self._publicar()
         if con_fichas:
             threading.Thread(target=self._fichas, daemon=True).start()
@@ -96,7 +106,7 @@ class Nucleo:
         """Fase 2: completar fichas y portadas que falten, de a 4 hilos, publicando cada 8 s."""
         self._stop_fichas = threading.Event(); stop = self._stop_fichas
         pend = [g for g in self.juegos if not g.get("cover") or (not g.get("desc") and (g.get("appid") or g.get("steam_hint") or g["store"] not in ("Riot", "Battle.net")))]
-        self.estado.update(fase="fichas", hecho=0, total=len(pend), msg="Bajando fichas y portadas…")
+        self.estado.update(fase="fichas", hecho=0, total=len(pend), msg="Buscando portadas en Steam…", de="")
         try:  # portadas exactas de Steam: pocos pedidos para toda la biblioteca
             covers.steam_exactas([g.get("appid") or g.get("steam_hint") for g in self.juegos])
             for g in self.juegos:
@@ -107,6 +117,7 @@ class Nucleo:
         ultimo = [time.time()]
         def uno(g):
             if stop.is_set(): return
+            self.estado.update(msg="Bajando ficha y portada de %s…", de=g.get("name") or "")
             try:
                 if not g.get("appid") and not g.get("steam_hint") and g["store"] not in ("Riot",):
                     g["steam_hint"] = steam.buscar_appid(g["name"])
@@ -126,7 +137,7 @@ class Nucleo:
             list(ex.map(uno, pend))
         if not stop.is_set():
             self.juegos = [g for g in self.juegos if g.get("tipo", "game") in ("game", "")]
-            self.estado.update(fase="listo", msg="")
+            self.estado.update(fase="listo", msg="", de="")
             self._publicar()
 
     def _publicar(self):

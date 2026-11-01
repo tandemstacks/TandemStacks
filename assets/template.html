@@ -175,7 +175,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 const TXT={
  spanish:{buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
-  msgs:{'Buscando launchers y juegos…':'Buscando launchers y juegos…','Bajando fichas y portadas…':'Bajando fichas y portadas…','Preparando la biblioteca…':'Preparando la biblioteca…','Escaneando…':'Escaneando…'},
+  msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
   jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ficha',desinstalar:'Desinstalar',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
   loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
@@ -193,7 +193,7 @@ const TXT={
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
-  msgs:{'Buscando launchers y juegos…':'Looking for launchers and games…','Bajando fichas y portadas…':'Downloading details and covers…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
+  msgs:{'Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
   jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'Store page',desinstalar:'Uninstall',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
   loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',rev:['Overwhelmingly positive','Very positive','Mostly positive','Mixed','Mostly negative','Very negative'],notaFicha:'Install and uninstall open the store; you confirm there.',
@@ -312,12 +312,12 @@ function render(){
 }
 function progreso(){
   const p=$('#prog');
-  if(EST.fase&&EST.fase!=='listo'){p.classList.add('show');$('#progtxt').textContent=(L.msgs[EST.msg]||EST.msg||L.trabajando)+(EST.total?` ${EST.hecho}/${EST.total}`:'');$('#progbar').style.width=(EST.total?EST.hecho/EST.total*100:15)+'%';}
+  if(EST.fase&&EST.fase!=='listo'){p.classList.add('show');$('#progtxt').textContent=textoEstado();$('#progbar').style.width=(EST.total?EST.hecho/EST.total*100:15)+'%';}
   else p.classList.remove('show');
   // pantalla de carga: solo mientras todavía no hay ningún juego para mostrar
   const c=$('#carga'); if(!c) return;
   if(RAW.length||EST.fase==='listo'){c.classList.add('fuera');setTimeout(()=>c.remove(),400);return;}
-  $('#cargatxt').textContent=(L.msgs[EST.msg]||EST.msg||L.trabajando)+(EST.total?` ${EST.hecho}/${EST.total}`:'');
+  $('#cargatxt').textContent=textoEstado();
   $('#cargapb').classList.toggle('ind',!EST.total);$('#cargabar').style.width=EST.total?(EST.hecho/EST.total*100)+'%':'';
 }
 function todo(){agrupar();cabecera();discos();render();progreso();}
@@ -530,6 +530,8 @@ window.configuracion=configuracion;
 
 // ---------- datos en vivo desde Python ----------
 let versionVista=EST.version||0;
+// qué está haciendo ahora (el núcleo manda la frase y, aparte, la tienda o el juego)
+function textoEstado(){return (L.msgs[EST.msg]||EST.msg||L.trabajando).replace('%s',EST.de||'')+(EST.total?` ${EST.hecho}/${EST.total}`:'');}
 function sincronizar(){
   api('estado').then(e=>{
     const cambio=e.version!==versionVista; EST=e; progreso();
@@ -539,7 +541,8 @@ function sincronizar(){
 todo();
 try{if(sessionStorage.getItem('menuAbierto')){sessionStorage.removeItem('menuAbierto');$('#ddmenu').open=true;}}catch(e){}
 function alArrancar(){
-  sincronizar(); setInterval(sincronizar,4000);
+  // mientras trabaja pregunta cada 1 s para que el texto vaya cambiando; quieto, cada 4 s
+  (function ciclo(){sincronizar();setTimeout(ciclo,EST.fase&&EST.fase!=='listo'?1000:4000);})();
   if(CONF.primer_arranque) setTimeout(()=>configuracion(true),800);
   setTimeout(()=>api('version_nueva').then(tag=>{if(tag){$('#updtag').textContent=tag;$('#updlink').onclick=()=>api('abrir_url','https://github.com/'+CONF.repo+'/releases/latest');$('#upd').classList.add('show');}}).catch(()=>{}),3000);
 }

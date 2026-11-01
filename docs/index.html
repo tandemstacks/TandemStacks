@@ -156,7 +156,7 @@ footer a{color:var(--mu)}
       <a class="btn dc discord" href="#comunidad"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18.1a19.9 19.9 0 0 0 6 3l1.3-2.1a12.9 12.9 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.8 19.8 0 0 0 6-3c.5-5.2-.9-9.7-3.6-13.7zM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg><span>Discord</span></a>
       <a class="btn ig" href="https://www.instagram.com/taslostacks/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>Instagram</span></a>
     </div>
-    <div class="nota" id="nota">Instalador de ~16 MB · open source (MIT)</div>
+    <div class="nota"><span id="nota">Instalador de ~17 MB · open source (MIT)</span><span id="descargas"></span></div>
     <div class="ventana">
       <div class="barra"><img src="logo.png" alt="">TasloStacks<i>– ▢ ✕</i></div>
       <img class="cap" src="captura.jpg" alt="TasloStacks mostrando la biblioteca de juegos con portadas, filtros por tienda y espacio en disco" width="1440" height="630">
@@ -281,6 +281,13 @@ fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then(r=>r.ok?r.jso
   document.getElementById('ver').textContent='v'+String(j.tag_name||'').replace(/^v/,'');
   if(a){document.getElementById('bajar').href=a.browser_download_url;
     document.getElementById('nota').textContent=`${a.name} · ${(a.size/1048576).toFixed(0)} MB · open source (MIT)`;}
+}).catch(()=>{});
+
+// contador de descargas: suma las de todas las versiones (GitHub las cuenta solo). Se muestra recién desde MIN_DESCARGAS.
+const MIN_DESCARGAS = 50;
+fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`).then(r=>r.ok?r.json():[]).then(rs=>{
+  const n=rs.reduce((t,r)=>t+(r.assets||[]).filter(a=>/Setup.*\.exe$/i.test(a.name)).reduce((u,a)=>u+a.download_count,0),0);
+  if(n>=MIN_DESCARGAS) document.getElementById('descargas').textContent=` · ${n.toLocaleString('es-UY')} descargas`;
 }).catch(()=>{});
 </script>
 </body>

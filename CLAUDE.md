@@ -49,6 +49,7 @@ El proyecto tiene **4 pilares** que se mantienen **al día juntos y enlazados en
 
 Checklist en cada cambio relevante:
 - **Versión nueva:** release en GitHub → confirmar que la landing ofrece la nueva → anuncio en Discord #anuncios → post o historia en Instagram.
+- **Nada a Discord ni a Instagram hasta que el dueño confirme que las funciones nuevas andan** (regla del 02/11/2026). Se dejan imagen y texto listos en `instagram/` y se espera su OK.
 - **Cambia un dato** (nombre, logo, link, cantidad de tiendas, tamaño del instalador, requisitos): actualizarlo en los 4.
 - **Cada post o historia de Instagram también va a Discord #anuncios** (misma imagen, texto es+en, link).
 - **Cada pilar enlaza a los otros 3.** Si uno no se pudo actualizar, avisarlo.

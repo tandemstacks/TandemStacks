@@ -430,9 +430,18 @@ def main():
     except Exception:
         pass
     # primera pantalla enseguida (con lo que haya en caché); el escaneo real arranca al abrir
-    if not os.path.exists(paths.HTML):
+    # si la plantilla cambió (versión nueva) la página guardada es de la anterior: se rehace, si no la ventana
+    # mostraba la pantalla vieja hasta el próximo arranque
+    import hashlib
+    marca = os.path.join(paths.CACHE, "plantilla.txt")
+    huella = hashlib.md5(open(os.path.join(paths.ASSETS, "template.html"), "rb").read()).hexdigest()
+    try: vieja = open(marca).read()
+    except OSError: vieja = ""
+    if not os.path.exists(paths.HTML) or vieja != huella:
         NUC.estado.update(fase="escaneando", msg="Preparando la biblioteca…")
         build.escribir([], [], NUC.cfg, NUC.estado)
+        try: open(marca, "w").write(huella)
+        except OSError: pass
     v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)

@@ -360,7 +360,7 @@ function render(){
   const vacias=[...tsel].filter(s=>!RAW.some(g=>g.store===s));
   $('#empty').innerHTML=!list.length&&vacias.length?vacias.map(s=>{const t=T.find(x=>x.n===s);const g=(GUIA[IDIOMA]||{})[s]||{};
     return `<div style="max-width:560px;margin:0 auto 10px">${logo(s,sc(s),28)}<p style="margin:8px 0 4px;color:var(--tx);font-weight:700">${esc(s)}: 0 ${L.juegos}</p><p style="margin:0 0 8px">${esc(g.lee||'')}</p>${t?`<button class="btn" onclick="tienda(T[${T.indexOf(t)}])">${L.verTienda}</button>`:''}</div>`;}).join(''):L.sinRes;
-  $('#empty').style.display=list.length||!RAW.length?'none':'block';
+  $('#empty').style.display=list.length||nc.length||!RAW.length?'none':'block';
   $('#count').textContent=`${list.length} ${L.de} ${J.length}`;
 }
 function progreso(){

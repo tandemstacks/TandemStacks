@@ -7,7 +7,7 @@
    GOG e itch.io: biblioteca completa (bases SQLite de sus apps) + instalados."""
 import os, re, io, json, glob, time, threading, subprocess
 from . import paths
-from .detect import reg_hijas, uninstall_entries, HKLM
+from .detect import reg_hijas, uninstall_entries, HKLM, LAUNCHERS
 
 _TAM_FILE = os.path.join(paths.CACHE, "tamanos.json")
 try:
@@ -283,6 +283,14 @@ def rockstar():
     return out
 
 # ---------------- Ubisoft ----------------
+UBI_ICONOS = {  # ícono que baja Ubisoft Connect -> juego (se suman a medida que aparezcan)
+    "2e12c86976b047eb31f24364b382a0a2": "Assassin's Creed III", "436885f573ff3b6c934cdd33bca9be22": "Assassin's Creed Valhalla",
+    "912c28f69e6d44a0c9b106038aa98259": "Far Cry 4", "00842e79ba6c2bf42759a65da1e0cc59": "Far Cry 3 Blood Dragon",
+    "1dfa256ba4370c1212f01a1251268216": "Watch Dogs 2", "15a8918b82e47c0da7e24b34d42d71c1": "Tom Clancy's The Division 2",
+    "736e15bcd62e86efee7946230be731f6": "Tom Clancy's Ghost Recon Breakpoint", "8231e71808581ef4d3499fe96ecdf921": "Trackmania",
+    "4214440db42e3ce9a5d557418c6a7327": "Rayman Origins", "b9e5651a4de5a78d2e5ba4f73ee4478b": "Prince of Persia: The Sands of Time",
+    "b210fc1356a7938eb80daf2278b160b7": "Beyond Good and Evil", "3a22e1056f6c9dc902879d02ff4f1893": "Tom Clancy's Splinter Cell",
+}
 def ubisoft():
     out = []
     for e in uninstall_entries():
@@ -293,6 +301,15 @@ def ubisoft():
         out.append({"id": "ubi_" + m.group(1), "name": str(e["DisplayName"]), "store": "Ubisoft", "installed": bool(loc and os.path.isdir(loc)), "dir": loc,
                     "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1),
                     "uninstall": "uplay://uninstall/%s" % m.group(1)})
+    # Juegos de la cuenta no instalados: la lista está cifrada, pero el launcher baja el ícono de cada juego que tenés
+    # (data\<id>.ico junto a upc.exe) y el id de cada ícono es fijo. Sin el número de Ubisoft, se abre Ubisoft Connect.
+    carpeta = os.path.dirname(LAUNCHERS["Ubisoft"]["exe"]())
+    vistos = {nrm(g["name"]) for g in out}
+    for f in glob.glob(os.path.join(carpeta, "data", "*.ico")):
+        nombre = UBI_ICONOS.get(os.path.basename(f)[:-4].lower())
+        if nombre and nrm(nombre) not in vistos:
+            vistos.add(nrm(nombre))
+            out.append({"id": "ubi_" + nrm(nombre).replace(" ", "_"), "name": nombre, "store": "Ubisoft", "installed": False, "dir": "", "launch": "uplay://"})
     return out
 
 # ---------------- bases SQLite de los launchers ----------------

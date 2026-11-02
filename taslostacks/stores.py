@@ -254,10 +254,17 @@ ROCK = {  # código del manifiesto -> (nombre, appid Steam para portada/ficha)
     "gtasa": ("Grand Theft Auto: San Andreas", "12120"), "gtavc": ("Grand Theft Auto: Vice City", "12110"), "gta3": ("Grand Theft Auto III", "12100"),
     "bully": ("Bully: Scholarship Edition", "12200"), "rdr": ("Red Dead Redemption", "2668510"), "gtatrilogy": ("GTA: The Trilogy - Definitive Edition", "1546990"),
 }
+# La lista de juegos de la cuenta está cifrada, pero el launcher baja sin cifrar las imágenes de cada juego que tenés
+# (uipackages\assets\packages\public\<id>.jpg.cache, y borra las que ya no). Cada portada vertical tiene un id fijo:
+ROCK_PORTADAS = {"6fcf0d27-f501-4272-82a6-3a3f86d6422c": "gta5", "9a56bbaa-b519-44c5-97b7-aa74ce64fd3a": "mp3",
+                 "df7e2c4c-bec4-4634-966a-2c85731316d1": "rdr2"}
 def rockstar():
     base = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Rockstar Games", "Launcher")
     codigos = {m.group(1).lower() for f in glob.glob(os.path.join(base, "manifest_*_*.xml")) for m in [re.match(r"manifest_(.+?)_\d+\.xml$", os.path.basename(f))] if m}
     codigos.discard("launcher")
+    for f in glob.glob(os.path.join(base, "uipackages", "assets", "packages", "public", "*")):
+        cod = ROCK_PORTADAS.get(os.path.basename(f).split(".")[0].lower())
+        if cod: codigos.add(cod)
     rk = reg_hijas(HKLM, r"SOFTWARE\WOW6432Node\Rockstar Games")
     out = []
     for cod in sorted(codigos):

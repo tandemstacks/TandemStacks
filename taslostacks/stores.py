@@ -245,7 +245,30 @@ def battlenet(exe):
                 out.append({"id": gid, "name": nombre, "store": "Battle.net", "installed": True, "dir": c, "drive": drive(c),
                             "sizeGB": tam_gb(c) if c and os.path.isdir(c) else 0, "dev": "Blizzard", "steam_hint": hint,
                             "cover_builtin": None if hint else gid + ".jpg", "launch": ("battlenet://" + cod) if exe and os.path.exists(exe) else None})
-    return out
+    return _wow_versiones(out, exe)
+
+# WoW: cada versión (Retail, Classic, Aniversario...) se instala aparte, en su carpeta dentro de la de WoW.
+WOW_VERSIONES = [  # (carpeta, id, nombre, código de "Battle.net.exe --exec=launch X" o None si no se conoce: abre la página de WoW)
+    ("_retail_", "bnet_wow", "World of Warcraft", "WoW"),
+    ("_classic_", "bnet_wow_classic", "World of Warcraft: Mists of Pandaria Classic", "WoWC"),
+    ("_classic_era_", "bnet_wow_era", "World of Warcraft Classic", None),
+    ("_anniversary_", "bnet_wow_aniv", "World of Warcraft: Burning Crusade Anniversary", None),
+]
+def _wow_versiones(out, exe):
+    wow = next((g for g in out if g["id"] == "bnet_wow"), None)
+    if not wow or not wow["dir"] or not os.path.isdir(wow["dir"]):
+        return out
+    versiones = []
+    for carpeta, gid, nombre, cod in WOW_VERSIONES:
+        c = os.path.join(wow["dir"], carpeta)
+        if not os.path.isdir(c):
+            continue
+        g = dict(wow, id=gid, name=nombre, dir=c, sizeGB=tam_gb(c))
+        if cod and exe and os.path.exists(exe): g["launch"] = [exe, "--exec=launch " + cod]
+        versiones.append(g)
+    if not versiones:  # carpeta vieja sin versiones: queda la tarjeta única
+        return out
+    return [g for g in out if g["id"] != "bnet_wow"] + versiones
 
 # ---------------- Rockstar ----------------
 ROCK = {  # código del manifiesto -> (nombre, appid Steam para portada/ficha)

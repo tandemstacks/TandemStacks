@@ -192,7 +192,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 
 // ---------- idioma ----------
 const TXT={
- spanish:{noComprados:'No comprados',catAyuda:'Juegos de GOG que no están en tu biblioteca. Tocá uno y se abre en GOG para comprarlo (si ya lo tenés, GOG te ofrece instalarlo).',catMas:'Se muestran {n}: buscá para ver otros.',
+ spanish:{noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',catMas:'Se muestran {n}: buscá para ver otros.',
   buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
@@ -211,7 +211,7 @@ const TXT={
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>taslostacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió TasloStacks)',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
- english:{noComprados:'Not owned',catAyuda:'GOG games that aren\'t in your library. Tap one and it opens in GOG to buy it (if you already own it, GOG offers to install it).',catMas:'Showing {n}: search to see others.',
+ english:{noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',catMas:'Showing {n}: search to see others.',
   buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
@@ -313,16 +313,27 @@ const resTxt=p=>L.rev[p>=95?0:p>=80?1:p>=70?2:p>=40?3:p>=20?4:5];
 // ---------- No comprados: catálogo público de GOG (lo arma GitHub cada semana) ----------
 // Los juegos que ya tenés en cualquier tienda (mismo nombre) no se repiten: quedan en su tarjeta de siempre.
 let CAT=[];
-const cargarCatalogo=()=>api('catalogo','gog').then(d=>{CAT=(d&&d.juegos)||[];render();}).catch(()=>{});
+const cargarCatalogo=()=>api('catalogo','todos').then(d=>{CAT=(d&&d.juegos)||[];render();}).catch(()=>{});
 function noComprados(){
-  if(soloInst||gens.size||(tsel.size&&!tsel.has('GOG'))) return [];
+  if(soloInst||gens.size) return [];
   const tengo=new Set(J.map(g=>norm(g.name)));
-  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t))&&(!texto||j.t.toLowerCase().includes(texto)));
+  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t))&&(!tsel.size||Object.keys(j.st).some(s=>tsel.has(s)))&&(!texto||j.t.toLowerCase().includes(texto)));
+}
+// tocar un juego no comprado: si está en una sola tienda se abre ahí; si está en varias, elegís en cuál
+function verNC(j){
+  const st=Object.keys(j.st), ir=s=>{const v=j.st[s];api('ver_en_tienda',s,Array.isArray(v)?v[0]:v,Array.isArray(v)?v[1]:'');};
+  if(st.length===1) return ir(st[0]);
+  $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
+    <div class="cov">${j.c?`<img referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}</div>
+    <div style="flex:1;min-width:0"><h2>${esc(j.t)}</h2><p style="margin:0 0 12px;font-size:14px;color:var(--mu)">${L.ncElegir}</p>
+      <div class="acts">${st.map(s=>`<button class="btn" data-ir="${esc(s)}">${logo(s,sc(s),18)} ${esc(s)}</button>`).join('')}</div></div>`;
+  $('#modal').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{ir(b.dataset.ir);cerrar();});
+  $('#bg').classList.add('show');
 }
 // son miles: se dibujan de a tandas a medida que bajás (y las portadas se piden recién al verse, loading=lazy)
 const NC={lista:[],n:0,TANDA:96};
-const cardNC=j=>`<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="GOG" onerror="sinPortada(this)">`:ph({store:'GOG',name:j.t})}
-  <span class="tag">${logo('GOG',sc('GOG'),20)}</span><div class="nm">${esc(j.t)}</div></div>`;
+const cardNC=j=>{const st=Object.keys(j.st);return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
+  <span class="tag">${st.map(s=>logo(s,sc(s),20)).join('')}</span><div class="nm">${esc(j.t)}</div></div>`;};
 window.addEventListener('scroll',()=>{const g=document.getElementById('ncgrid');
   if(!g||NC.n>=NC.lista.length||g.getBoundingClientRect().bottom>innerHeight+800)return;
   g.insertAdjacentHTML('beforeend',NC.lista.slice(NC.n,NC.n+NC.TANDA).map(cardNC).join('')); NC.n+=NC.TANDA;},{passive:true,capture:true});
@@ -476,7 +487,7 @@ function abrir(g){
 window.abrir=abrir;
 const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove('show');};
 $('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(!c)return;
-  if(c.dataset.c!=null){const j=CAT[+c.dataset.c];api('ver_en_tienda','gog',j.i,j.s);} else abrir(J[+c.dataset.i]);});
+  if(c.dataset.c!=null) verNC(CAT[+c.dataset.c]); else abrir(J[+c.dataset.i]);});
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});

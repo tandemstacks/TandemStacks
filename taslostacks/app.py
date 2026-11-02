@@ -346,7 +346,7 @@ class Api:
     def catalogo(self, tienda):
         """Catálogo público de una tienda para Explorar. Lo arma GitHub cada semana (scripts/catalogos.py) y se publica con
         la landing; acá se guarda 1 día en la caché. Marca con "tuyo" los que ya están en tu biblioteca."""
-        if tienda not in ("gog",): return None
+        if tienda not in ("gog", "todos"): return None
         cache = os.path.join(paths.CACHE, "catalogo_%s.json" % tienda)
         d = None
         try:
@@ -361,16 +361,23 @@ class Api:
                 try: d = json.load(open(cache, encoding="utf-8"))  # sin internet: el último que se bajó
                 except Exception: return None
         tuyos = {g["id"] for g in NUC.juegos}
-        for j in d.get("juegos", []):
-            if "gog_" + j["i"] in tuyos: j["tuyo"] = "gog_" + j["i"]
+        for j in d.get("juegos", []):  # además del nombre (lo compara la página), por id de tienda
+            st = j.get("st") or {"GOG": [j.get("i"), j.get("s")]}
+            if "gog_" + str((st.get("GOG") or [""])[0]) in tuyos or str(st.get("Steam", "-")) in tuyos: j["tuyo"] = 1
         return d
 
-    def ver_en_tienda(self, tienda, gid, slug):
+    def ver_en_tienda(self, tienda, gid, slug=""):
         """Abre la página del juego en el launcher de la tienda (ahí dice Comprar o Instalar según tu cuenta) o en su web."""
-        if tienda == "gog" and re.fullmatch(r"\d{1,12}", str(gid)):
-            if NUC.launchers.get("GOG", {}).get("ok"): os.startfile("goggalaxy://openGameView/" + str(gid))
+        ok = lambda n: NUC.launchers.get(n, {}).get("ok")
+        gid = str(gid)
+        if tienda.lower() == "gog" and re.fullmatch(r"\d{1,12}", gid):
+            if ok("GOG"): os.startfile("goggalaxy://openGameView/" + gid)
             elif re.fullmatch(r"[a-z0-9_]{1,120}", str(slug)): os.startfile("https://www.gog.com/en/game/" + slug)
             return True
+        if tienda == "Steam" and re.fullmatch(r"\d{1,9}", gid):
+            os.startfile(("steam://store/" if ok("Steam") else "https://store.steampowered.com/app/") + gid); return True
+        if tienda == "Xbox" and re.fullmatch(r"[0-9A-Z]{12}", gid):
+            os.startfile("ms-windows-store://pdp/?productid=" + gid); return True
         return False
 
     def abrir_datos(self):

@@ -21,7 +21,7 @@ GEN_EN = {"Acción": "Action", "Aventura": "Adventure", "Estrategia": "Strategy"
 
 def publico(g, idioma="spanish"):
     """Lo que ve la página (sin rutas ni comandos de lanzamiento), con los textos fijos en el idioma elegido."""
-    keys = ("id", "name", "store", "appid", "cover", "installed", "sizeGB", "drive", "desc", "genres", "anio", "dev", "reqGB", "revPct", "revN", "horas", "ultima")
+    keys = ("id", "name", "store", "appid", "cover", "installed", "sizeGB", "drive", "desc", "genres", "anio", "dev", "reqGB", "revPct", "revN", "horas", "ultima", "desconocido")
     d = {k: g[k] for k in keys if g.get(k) not in (None, "", [])}
     if idioma == "english":
         if g.get("desc_en"): d["desc"] = g["desc_en"]

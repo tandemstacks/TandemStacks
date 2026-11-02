@@ -5,7 +5,7 @@
    Epic: biblioteca completa (catálogo local) + instalados. Riot y Battle.net: catálogo gratis + instalados.
    Rockstar: los títulos cuyo manifiesto bajó el launcher (= biblioteca) + instalados. EA/Xbox/Ubisoft/Amazon: solo instalados.
    GOG e itch.io: biblioteca completa (bases SQLite de sus apps) + instalados."""
-import os, re, io, json, glob, time, threading, subprocess
+import os, re, io, json, glob, time, pathlib, threading, subprocess
 from . import paths
 from .detect import reg_hijas, uninstall_entries, HKLM, LAUNCHERS
 
@@ -285,9 +285,14 @@ def rockstar():
     base = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Rockstar Games", "Launcher")
     codigos = {m.group(1).lower() for f in glob.glob(os.path.join(base, "manifest_*_*.xml")) for m in [re.match(r"manifest_(.+?)_\d+\.xml$", os.path.basename(f))] if m}
     codigos.discard("launcher")
+    raras = []  # portadas verticales (≈401x539) que la tabla todavía no conoce
     for f in glob.glob(os.path.join(base, "uipackages", "assets", "packages", "public", "*")):
-        cod = ROCK_PORTADAS.get(os.path.basename(f).split(".")[0].lower())
+        h = os.path.basename(f).split(".")[0].lower()
+        cod = ROCK_PORTADAS.get(h)
         if cod: codigos.add(cod)
+        elif f.lower().endswith(".jpg.cache"):
+            t = _jpg_tam(f)
+            if t and 380 <= t[0] <= 420 and 520 <= t[1] <= 560: raras.append((h, f))
     rk = reg_hijas(HKLM, r"SOFTWARE\WOW6432Node\Rockstar Games")
     out = []
     for cod in sorted(codigos):
@@ -303,6 +308,8 @@ def rockstar():
                 if exe: g["launch"] = exe[0]
                 break
         out.append(g)
+    lanzar = LAUNCHERS["Rockstar"]["abrir"](LAUNCHERS["Rockstar"]["exe"]()) if "abrir" in LAUNCHERS["Rockstar"] else None
+    out += [_sin_identificar("Rockstar", h, f, lanzar) for h, f in sorted(raras)]
     return out
 
 # ---------------- Ubisoft ----------------
@@ -315,25 +322,55 @@ UBI_ICONOS = {  # ícono que baja Ubisoft Connect -> juego (se suman a medida qu
     "b210fc1356a7938eb80daf2278b160b7": "Beyond Good and Evil", "3a22e1056f6c9dc902879d02ff4f1893": "Tom Clancy's Splinter Cell",
 }
 def ubisoft():
-    out = []
+    out, iconos_inst = [], set()
     for e in uninstall_entries():
         m = re.match(r"Uplay Install (\d+)", str(e.get("_key", "")))
         if not m or not e.get("DisplayName"):
             continue
         loc = str(e.get("InstallLocation", "")).strip('"')
+        ico = re.search(r"([0-9a-f]{32})\.ico", str(e.get("DisplayIcon", "")).lower())  # los instalados suelen usar el mismo ícono
+        if ico: iconos_inst.add(ico.group(1))
         out.append({"id": "ubi_" + m.group(1), "name": str(e["DisplayName"]), "store": "Ubisoft", "installed": bool(loc and os.path.isdir(loc)), "dir": loc,
                     "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1),
                     "uninstall": "uplay://uninstall/%s" % m.group(1)})
     # Juegos de la cuenta no instalados: la lista está cifrada, pero el launcher baja el ícono de cada juego que tenés
     # (data\<id>.ico junto a upc.exe) y el id de cada ícono es fijo. Sin el número de Ubisoft, se abre Ubisoft Connect.
+    # Los íconos que todavía no están en la tabla salen como "sin identificar", para que cualquiera pueda avisar cuál es.
     carpeta = os.path.dirname(LAUNCHERS["Ubisoft"]["exe"]())
     vistos = {nrm(g["name"]) for g in out}
-    for f in glob.glob(os.path.join(carpeta, "data", "*.ico")):
-        nombre = UBI_ICONOS.get(os.path.basename(f)[:-4].lower())
+    for f in sorted(glob.glob(os.path.join(carpeta, "data", "*.ico"))):
+        h = os.path.basename(f)[:-4].lower()
+        nombre = UBI_ICONOS.get(h)
         if nombre and nrm(nombre) not in vistos:
             vistos.add(nrm(nombre))
             out.append({"id": "ubi_" + nrm(nombre).replace(" ", "_"), "name": nombre, "store": "Ubisoft", "installed": False, "dir": "", "launch": "uplay://"})
+        elif not nombre and h not in iconos_inst:
+            out.append(_sin_identificar("Ubisoft", h, f, "uplay://"))
     return out
+
+def _sin_identificar(tienda, h, archivo, launch):
+    """Juego de la cuenta que la app todavía no reconoce: se muestra con su imagen y la ficha ofrece avisar cuál es."""
+    return {"id": "x_%s_%s" % (tienda.lower(), h[:12]), "name": "%s · sin identificar (%s)" % (tienda, h[:6]), "store": tienda, "installed": False,
+            "dir": "", "launch": launch, "cover_url": pathlib.Path(archivo).as_uri(), "desconocido": h}
+
+def _jpg_tam(ruta):
+    """(ancho, alto) de un JPG leyendo solo su encabezado, o None."""
+    try:
+        with open(ruta, "rb") as f:
+            if f.read(2) != b"\xff\xd8": return None
+            while True:
+                b = f.read(1)
+                while b and b != b"\xff": b = f.read(1)
+                m = f.read(1)
+                while m == b"\xff": m = f.read(1)
+                if not m: return None
+                largo = int.from_bytes(f.read(2), "big")
+                if m[0] in (0xC0, 0xC1, 0xC2):
+                    f.read(1); alto = int.from_bytes(f.read(2), "big"); ancho = int.from_bytes(f.read(2), "big")
+                    return ancho, alto
+                f.seek(largo - 2, 1)
+    except (OSError, ValueError):
+        return None
 
 # ---------------- bases SQLite de los launchers ----------------
 import sqlite3

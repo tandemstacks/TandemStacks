@@ -21,8 +21,9 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 
 ## No comprados (02/11/2026, sin publicar)
 
-- Tercer grupo de la biblioteca, abajo de Instalados / No instalados: juegos del **catálogo público de GOG** que no tenés en ninguna tienda (mismo nombre normalizado = misma tarjeta, no se repite).
-- `scripts/catalogos.py` baja `catalog.gog.com/v1/catalog` (público, sin login) → `docs/catalogo/gog.json` (claves cortas i/t/s/c/y/g), que se publica con la landing. `.github/workflows/catalogos.yml` lo rehace los lunes; **todavía no está subido**: el token de `gh` no tiene permiso `workflow` (`gh auth refresh -s workflow`).
+- Tercer grupo de la biblioteca, abajo de Instalados / No instalados: juegos de los **catálogos públicos de GOG, Steam y Xbox** que no tenés en ninguna tienda (mismo nombre normalizado = misma tarjeta, no se repite). Si está en varias tiendas, la tarjeta muestra sus logos y al tocarla se elige dónde abrirla.
+- `scripts/catalogos.py` junta `catalog.gog.com/v1/catalog`, los 10.000 más jugados de Steam (SteamSpy `request=all`, 1 página por minuto) y PC Game Pass (`catalog.gamepass.com/sigls` + `displaycatalog`) → `docs/catalogo/todos.json` (`t`, `c`, `st: {GOG: [id, slug], Steam: appid, Xbox: id}`; ~14.500 juegos, 2,6 MB), publicado con la landing. Tarda ~12 min.
+- Al abrir, la app rehace `biblioteca.html` si cambió la huella de la plantilla (`cache/plantilla.txt`): antes mostraba la pantalla de la versión anterior. `.github/workflows/catalogos.yml` lo rehace los lunes; **todavía no está subido**: el token de `gh` no tiene permiso `workflow` (`gh auth refresh -s workflow`).
 - `Api.catalogo(tienda)` lo baja de la landing (caché 1 día) y `Api.ver_en_tienda` abre `goggalaxy://openGameView/<id>` (Galaxy dice Comprar o Instalar) o la web de GOG.
 - La plantilla dibuja No comprados recién al abrirlo y de a 96 tarjetas al bajar; portadas con `loading=lazy` (son links, no ocupan disco).
 - Ubisoft: no hay catálogo usable sin claves internas de la tienda (no usarlas). Próximas candidatas con catálogo público: Steam, Xbox.

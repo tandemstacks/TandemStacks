@@ -224,6 +224,14 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
+<section class="bloque" id="novedades" style="padding-top:0">
+  <div class="wrap">
+    <h2 class="tit">Novedades</h2>
+    <p class="sub">Las últimas versiones y qué trajo cada una.</p>
+    <div class="faq" id="versiones"><p>Cargando…</p></div>
+  </div>
+</section>
+
 <section class="bloque" id="faq" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Preguntas</h2>
@@ -288,7 +296,23 @@ const MIN_DESCARGAS = 50;
 fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`).then(r=>r.ok?r.json():[]).then(rs=>{
   const n=rs.reduce((t,r)=>t+(r.assets||[]).filter(a=>/Setup.*\.exe$/i.test(a.name)).reduce((u,a)=>u+a.download_count,0),0);
   if(n>=MIN_DESCARGAS) document.getElementById('descargas').textContent=` · ${n.toLocaleString('es-UY')} descargas`;
-}).catch(()=>{});
+  novedades(rs);
+}).catch(()=>novedades([]));
+
+// Novedades: las últimas versiones de GitHub con la parte en español de sus notas (lo que va antes de "What's new")
+function novedades(rs){
+  const caja=document.getElementById('versiones'), MAX=6;
+  const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const lista=rs.filter(r=>!r.draft&&!r.prerelease).slice(0,MAX);
+  if(!lista.length){caja.innerHTML=`<p>No se pudieron cargar. Están todas en <a href="https://github.com/${REPO}/releases" target="_blank" rel="noopener">GitHub</a>.</p>`;return;}
+  caja.innerHTML=lista.map((r,i)=>{
+    const es=(r.body||'').split(/^##\s*What'?s new/im)[0];
+    const items=es.split('\n').filter(l=>/^\s*[-*•]\s+/.test(l)).map(l=>esc(l.replace(/^\s*[-*•]\s+/,'')).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'));
+    const fecha=new Date(r.published_at).toLocaleDateString('es-UY',{day:'numeric',month:'long',year:'numeric'});
+    return `<details${i?'':' open'}><summary><span>v${esc(String(r.tag_name).replace(/^v/,''))}${i?'':' · versión actual'} <small style="font-weight:400;opacity:.7">· ${fecha}</small></span></summary>`+
+      (items.length?`<ul>${items.map(x=>`<li>${x}</li>`).join('')}</ul>`:`<p>${esc(es.replace(/[#*]/g,'').trim()).slice(0,300)||'Arreglos y mejoras.'}</p>`)+`</details>`;
+  }).join('')+`<p><a href="https://github.com/${REPO}/releases" target="_blank" rel="noopener">Ver todas las versiones en GitHub →</a></p>`;
+}
 </script>
 </body>
 </html>

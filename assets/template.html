@@ -146,6 +146,10 @@ main{padding:16px 22px 60px}
 .cfg .chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:14px;text-transform:none;letter-spacing:0;color:var(--tx)}
 .cfg .acts{margin-top:18px}
 .cfg a{color:var(--acc);cursor:pointer}
+/* Explorar: catálogo de una tienda */
+body.explorando .filafilt,body.explorando #discos{display:none}
+.catayuda{color:var(--mut);font-size:13px;margin:4px 0 14px}
+.card .tuyo{position:absolute;top:8px;left:8px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:3px}
 @media (max-width:640px){.modal{flex-direction:column}.modal .cov{width:150px}.stats{grid-template-columns:1fr 1fr}.tiendas{margin-left:0}.cfg .lrow{grid-template-columns:90px 1fr 70px 34px}}
 </style>
 </head>
@@ -159,6 +163,7 @@ main{padding:16px 22px 60px}
   </div>
   <div class="tools">
     <input id="q" autocomplete="off">
+    <button class="chip" id="modo"></button>
     <span class="count" id="count"></span>
   </div>
   <div class="filafilt"><div class="chips" id="filtros"></div>
@@ -191,7 +196,9 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 
 // ---------- idioma ----------
 const TXT={
- spanish:{buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
+ spanish:{explorar:'Explorar GOG',biblioteca:'← Mi biblioteca',catCargando:'Bajando el catálogo de GOG...',catError:'No se pudo bajar el catálogo de GOG. Revisá tu conexión.',
+  catAyuda:'Todos los juegos de GOG. Tocá uno y se abre en GOG: ahí te dice si lo tenés para instalar o si lo podés comprar.',tuyo:'Tuyo',catMas:'Mostrando {n}: buscá para ver otros.',
+  buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
@@ -209,7 +216,9 @@ const TXT={
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>taslostacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió TasloStacks)',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
- english:{buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
+ english:{explorar:'Explore GOG',biblioteca:'← My library',catCargando:'Downloading the GOG catalog...',catError:'Couldn\'t download the GOG catalog. Check your connection.',
+  catAyuda:'Every game on GOG. Tap one and it opens in GOG: it tells you whether you own it to install or can buy it.',tuyo:'Yours',catMas:'Showing {n}: search to see others.',
+  buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
@@ -307,7 +316,31 @@ const rcol=p=>p>=80?'var(--ok)':p>=60?'var(--warn)':'var(--bad)';
 const pulgar=p=>p>=60?'👍':'👎';
 const resTxt=p=>L.rev[p>=95?0:p>=80?1:p>=70?2:p>=40?3:p>=20?4:5];
 
+// ---------- Explorar: catálogo público de GOG (lo arma GitHub cada semana) ----------
+let explorando=false, CAT=null, catEstado='';
+function modo(){
+  explorando=!explorando; document.body.classList.toggle('explorando',explorando);
+  $('#modo').textContent=explorando?L.biblioteca:L.explorar;
+  $('#q').value=''; texto='';
+  if(explorando&&!CAT){catEstado=L.catCargando;
+    api('catalogo','gog').then(d=>{CAT=d;catEstado=d?'':L.catError;render();}).catch(()=>{catEstado=L.catError;render();});}
+  render(); window.scrollTo(0,0);
+}
+function renderCat(){
+  if(!CAT){$('#grid').innerHTML=`<div class="empty">${esc(catEstado)}</div>`;$('#empty').style.display='none';$('#count').textContent='';return;}
+  const todos=CAT.juegos, list=texto?todos.filter(j=>j.t.toLowerCase().includes(texto)):todos, MAX=240;
+  const card=j=>`<div class="card${j.tuyo?'':' off'}" data-c="${todos.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="GOG" onerror="sinPortada(this)">`:ph({store:'GOG',name:j.t})}
+    <span class="tag">${logo('GOG',sc('GOG'),20)}</span>${j.tuyo?`<span class="tuyo">${L.tuyo}</span>`:''}<div class="nm">${esc(j.t)}</div></div>`;
+  $('#grid').innerHTML=`<p class="catayuda">${L.catAyuda}${list.length>MAX?' '+L.catMas.replace('{n}',MAX):''}</p><div class="grid">${list.slice(0,MAX).map(card).join('')}</div>`;
+  $('#empty').style.display=list.length?'none':'block';
+  $('#count').textContent=`${list.length} ${L.de} ${todos.length}`;
+}
+function verCat(j){
+  if(j.tuyo){const g=J.find(x=>x.items.some(i=>i.id===j.tuyo)); if(g) return abrir(g);}
+  api('ver_en_tienda','gog',j.i,j.s);
+}
 function render(){
+  if(explorando) return renderCat();
   let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
     &&(!texto||g.name.toLowerCase().includes(texto))
     &&(!gens.size||[...gens].some(x=>(g.genres||[]).includes(x))));
@@ -451,7 +484,9 @@ function abrir(g){
 }
 window.abrir=abrir;
 const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove('show');};
-$('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)abrir(J[+c.dataset.i]);});
+$('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(!c)return;
+  if(c.dataset.c!=null) verCat(CAT.juegos[+c.dataset.c]); else abrir(J[+c.dataset.i]);});
+$('#modo').textContent=L.explorar; $('#modo').addEventListener('click',modo);
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});

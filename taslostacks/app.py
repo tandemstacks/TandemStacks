@@ -343,6 +343,36 @@ class Api:
         if re.match(r"(https?://|mailto:|steam://openurl/https://)", url): os.startfile(url)  # steam://openurl abre la página dentro de Steam (con tu sesión)
         return True
 
+    def catalogo(self, tienda):
+        """Catálogo público de una tienda para Explorar. Lo arma GitHub cada semana (scripts/catalogos.py) y se publica con
+        la landing; acá se guarda 1 día en la caché. Marca con "tuyo" los que ya están en tu biblioteca."""
+        if tienda not in ("gog",): return None
+        cache = os.path.join(paths.CACHE, "catalogo_%s.json" % tienda)
+        d = None
+        try:
+            if time.time() - os.path.getmtime(cache) < 86400: d = json.load(open(cache, encoding="utf-8"))
+        except Exception: pass
+        if d is None:
+            try:
+                d = steam.http_json("https://taslostacks.github.io/TasloStacks/catalogo/%s.json" % tienda, 30)
+                json.dump(d, open(cache, "w", encoding="utf-8"), ensure_ascii=False)
+            except Exception as e:
+                paths.log("catalogo", tienda, e)
+                try: d = json.load(open(cache, encoding="utf-8"))  # sin internet: el último que se bajó
+                except Exception: return None
+        tuyos = {g["id"] for g in NUC.juegos}
+        for j in d.get("juegos", []):
+            if "gog_" + j["i"] in tuyos: j["tuyo"] = "gog_" + j["i"]
+        return d
+
+    def ver_en_tienda(self, tienda, gid, slug):
+        """Abre la página del juego en el launcher de la tienda (ahí dice Comprar o Instalar según tu cuenta) o en su web."""
+        if tienda == "gog" and re.fullmatch(r"\d{1,12}", str(gid)):
+            if NUC.launchers.get("GOG", {}).get("ok"): os.startfile("goggalaxy://openGameView/" + str(gid))
+            elif re.fullmatch(r"[a-z0-9_]{1,120}", str(slug)): os.startfile("https://www.gog.com/en/game/" + slug)
+            return True
+        return False
+
     def abrir_datos(self):
         os.startfile(paths.DATA); return True
 

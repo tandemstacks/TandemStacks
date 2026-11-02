@@ -146,10 +146,7 @@ main{padding:16px 22px 60px}
 .cfg .chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:14px;text-transform:none;letter-spacing:0;color:var(--tx)}
 .cfg .acts{margin-top:18px}
 .cfg a{color:var(--acc);cursor:pointer}
-/* Explorar: catálogo de una tienda */
-body.explorando .filafilt,body.explorando #discos{display:none}
 .catayuda{color:var(--mut);font-size:13px;margin:4px 0 14px}
-.card .tuyo{position:absolute;top:8px;left:8px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:3px}
 @media (max-width:640px){.modal{flex-direction:column}.modal .cov{width:150px}.stats{grid-template-columns:1fr 1fr}.tiendas{margin-left:0}.cfg .lrow{grid-template-columns:90px 1fr 70px 34px}}
 </style>
 </head>
@@ -163,7 +160,6 @@ body.explorando .filafilt,body.explorando #discos{display:none}
   </div>
   <div class="tools">
     <input id="q" autocomplete="off">
-    <button class="chip" id="modo"></button>
     <span class="count" id="count"></span>
   </div>
   <div class="filafilt"><div class="chips" id="filtros"></div>
@@ -196,8 +192,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 
 // ---------- idioma ----------
 const TXT={
- spanish:{explorar:'Explorar GOG',biblioteca:'← Mi biblioteca',catCargando:'Bajando el catálogo de GOG...',catError:'No se pudo bajar el catálogo de GOG. Revisá tu conexión.',
-  catAyuda:'Todos los juegos de GOG. Tocá uno y se abre en GOG: ahí te dice si lo tenés para instalar o si lo podés comprar.',tuyo:'Tuyo',catMas:'Mostrando {n}: buscá para ver otros.',
+ spanish:{noComprados:'No comprados',catAyuda:'Juegos de GOG que no están en tu biblioteca. Tocá uno y se abre en GOG para comprarlo (si ya lo tenés, GOG te ofrece instalarlo).',catMas:'Se muestran {n}: buscá para ver otros.',
   buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
@@ -216,8 +211,7 @@ const TXT={
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>taslostacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió TasloStacks)',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
- english:{explorar:'Explore GOG',biblioteca:'← My library',catCargando:'Downloading the GOG catalog...',catError:'Couldn\'t download the GOG catalog. Check your connection.',
-  catAyuda:'Every game on GOG. Tap one and it opens in GOG: it tells you whether you own it to install or can buy it.',tuyo:'Yours',catMas:'Showing {n}: search to see others.',
+ english:{noComprados:'Not owned',catAyuda:'GOG games that aren\'t in your library. Tap one and it opens in GOG to buy it (if you already own it, GOG offers to install it).',catMas:'Showing {n}: search to see others.',
   buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
@@ -243,7 +237,7 @@ document.documentElement.lang=IDIOMA==='english'?'en':'es';
 $('#q').placeholder=L.buscar; $('#brand').title=L.web; [...$('#orden').options].forEach((o,i)=>o.textContent=L.orden[i]); $('#empty').textContent=L.sinRes; $('#updtxt').innerHTML=L.nueva+' <b id="updtag"></b>'; $('#updlink').textContent=L.bajarNueva;
 
 // ---------- juegos ----------
-const norm=n=>n.toLowerCase().replace(/[™®©]/g,'')
+const norm=n=>n.toLowerCase().replace(/[™®©]/g,'').replace(/&/g,' and ')
   .replace(/[-:–]?\s*(the )?(definitive|complete|special|celebration|game of the year|goty|enhanced|deluxe|remastered|director'?s cut|steam|legacy)( edition)?\b/g,'')
   .replace(/[^a-z0-9]+/g,' ').trim();
 const PRIO={Steam:0,Epic:1,GOG:2,EA:3,Xbox:4,'Battle.net':5,Rockstar:6,Riot:7,Ubisoft:8,Amazon:9,'itch.io':10};
@@ -316,31 +310,23 @@ const rcol=p=>p>=80?'var(--ok)':p>=60?'var(--warn)':'var(--bad)';
 const pulgar=p=>p>=60?'👍':'👎';
 const resTxt=p=>L.rev[p>=95?0:p>=80?1:p>=70?2:p>=40?3:p>=20?4:5];
 
-// ---------- Explorar: catálogo público de GOG (lo arma GitHub cada semana) ----------
-let explorando=false, CAT=null, catEstado='';
-function modo(){
-  explorando=!explorando; document.body.classList.toggle('explorando',explorando);
-  $('#modo').textContent=explorando?L.biblioteca:L.explorar;
-  $('#q').value=''; texto='';
-  if(explorando&&!CAT){catEstado=L.catCargando;
-    api('catalogo','gog').then(d=>{CAT=d;catEstado=d?'':L.catError;render();}).catch(()=>{catEstado=L.catError;render();});}
-  render(); window.scrollTo(0,0);
+// ---------- No comprados: catálogo público de GOG (lo arma GitHub cada semana) ----------
+// Los juegos que ya tenés en cualquier tienda (mismo nombre) no se repiten: quedan en su tarjeta de siempre.
+let CAT=[];
+const cargarCatalogo=()=>api('catalogo','gog').then(d=>{CAT=(d&&d.juegos)||[];render();}).catch(()=>{});
+function noComprados(){
+  if(soloInst||gens.size||(tsel.size&&!tsel.has('GOG'))) return [];
+  const tengo=new Set(J.map(g=>norm(g.name)));
+  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t))&&(!texto||j.t.toLowerCase().includes(texto)));
 }
-function renderCat(){
-  if(!CAT){$('#grid').innerHTML=`<div class="empty">${esc(catEstado)}</div>`;$('#empty').style.display='none';$('#count').textContent='';return;}
-  const todos=CAT.juegos, list=texto?todos.filter(j=>j.t.toLowerCase().includes(texto)):todos, MAX=240;
-  const card=j=>`<div class="card${j.tuyo?'':' off'}" data-c="${todos.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="GOG" onerror="sinPortada(this)">`:ph({store:'GOG',name:j.t})}
-    <span class="tag">${logo('GOG',sc('GOG'),20)}</span>${j.tuyo?`<span class="tuyo">${L.tuyo}</span>`:''}<div class="nm">${esc(j.t)}</div></div>`;
-  $('#grid').innerHTML=`<p class="catayuda">${L.catAyuda}${list.length>MAX?' '+L.catMas.replace('{n}',MAX):''}</p><div class="grid">${list.slice(0,MAX).map(card).join('')}</div>`;
-  $('#empty').style.display=list.length?'none':'block';
-  $('#count').textContent=`${list.length} ${L.de} ${todos.length}`;
-}
-function verCat(j){
-  if(j.tuyo){const g=J.find(x=>x.items.some(i=>i.id===j.tuyo)); if(g) return abrir(g);}
-  api('ver_en_tienda','gog',j.i,j.s);
-}
+// son miles: se dibujan de a tandas a medida que bajás (y las portadas se piden recién al verse, loading=lazy)
+const NC={lista:[],n:0,TANDA:96};
+const cardNC=j=>`<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="GOG" onerror="sinPortada(this)">`:ph({store:'GOG',name:j.t})}
+  <span class="tag">${logo('GOG',sc('GOG'),20)}</span><div class="nm">${esc(j.t)}</div></div>`;
+window.addEventListener('scroll',()=>{const g=document.getElementById('ncgrid');
+  if(!g||NC.n>=NC.lista.length||g.getBoundingClientRect().bottom>innerHeight+800)return;
+  g.insertAdjacentHTML('beforeend',NC.lista.slice(NC.n,NC.n+NC.TANDA).map(cardNC).join('')); NC.n+=NC.TANDA;},{passive:true,capture:true});
 function render(){
-  if(explorando) return renderCat();
   let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
     &&(!texto||g.name.toLowerCase().includes(texto))
     &&(!gens.size||[...gens].some(x=>(g.genres||[]).includes(x))));
@@ -352,9 +338,14 @@ function render(){
   const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
   let h=inst.length?`<details class="grupo" data-s="si"${texto||abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${inst.length}</span><span class="flecha">▾</span></summary><div class="grid">${inst.map(card).join('')}</div></details>`:'';
   if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>${L.noInst}</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;
+  const nc=NC.lista=noComprados(); NC.n=Math.min(NC.TANDA,nc.length);
+  if(nc.length){const abierto=(texto||abiertos.has('nc'));
+    h+=`<details class="grupo" data-s="nc"${abierto?' open':''}><summary><b>${L.noComprados}</b> <span>${nc.length}</span><span class="flecha">▾</span></summary>`
+      +(abierto?`<p class="catayuda">${L.catAyuda}</p><div class="grid" id="ncgrid">${nc.slice(0,NC.n).map(cardNC).join('')}</div>`:'')+`</details>`;}
   if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?L.vacio:L.buscando}</div>`;
   $('#grid').innerHTML=h;
-  $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{if(!texto)d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);}));
+  $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{if(!texto)d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);
+    if(d.dataset.s==='nc'&&d.open&&!d.querySelector('.grid'))render();}));  // No comprados se dibuja recién al abrirlo (son miles)
   const vacias=[...tsel].filter(s=>!RAW.some(g=>g.store===s));
   $('#empty').innerHTML=!list.length&&vacias.length?vacias.map(s=>{const t=T.find(x=>x.n===s);const g=(GUIA[IDIOMA]||{})[s]||{};
     return `<div style="max-width:560px;margin:0 auto 10px">${logo(s,sc(s),28)}<p style="margin:8px 0 4px;color:var(--tx);font-weight:700">${esc(s)}: 0 ${L.juegos}</p><p style="margin:0 0 8px">${esc(g.lee||'')}</p>${t?`<button class="btn" onclick="tienda(T[${T.indexOf(t)}])">${L.verTienda}</button>`:''}</div>`;}).join(''):L.sinRes;
@@ -485,8 +476,7 @@ function abrir(g){
 window.abrir=abrir;
 const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove('show');};
 $('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(!c)return;
-  if(c.dataset.c!=null) verCat(CAT.juegos[+c.dataset.c]); else abrir(J[+c.dataset.i]);});
-$('#modo').textContent=L.explorar; $('#modo').addEventListener('click',modo);
+  if(c.dataset.c!=null){const j=CAT[+c.dataset.c];api('ver_en_tienda','gog',j.i,j.s);} else abrir(J[+c.dataset.i]);});
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});
@@ -620,6 +610,7 @@ function alArrancar(){
   // mientras trabaja pregunta cada 1 s para que el texto vaya cambiando; quieto, cada 4 s
   (function ciclo(){sincronizar();setTimeout(ciclo,EST.fase&&EST.fase!=='listo'?1000:4000);})();
   if(CONF.primer_arranque) setTimeout(()=>configuracion(true),800);
+  setTimeout(cargarCatalogo,1500);
   setTimeout(()=>api('version_nueva').then(tag=>{if(tag){$('#updtag').textContent=tag;$('#updlink').onclick=()=>api('actualizar').then(r=>{if(r==='ok'){$('#upd').classList.remove('show');EST={fase:'actualizando',msg:'Descargando la actualización…',hecho:0,total:0};progreso();}});$('#upd').classList.add('show');}}).catch(()=>{}),3000);
 }
 if(window.pywebview&&window.pywebview.api) alArrancar(); else window.addEventListener('pywebviewready',alArrancar);

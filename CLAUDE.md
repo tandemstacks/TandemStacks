@@ -19,6 +19,14 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - `assets/template.html`: toda la UI (CSS + JS sin frameworks). La página no se recarga: cada 4 s pide `estado()` y si cambió `version` pide `datos()` y re-renderiza manteniendo filtros. Primer arranque (`CONF.primer_arranque`) abre la Configuración con bienvenida. Juegos repetidos entre tiendas se agrupan por nombre normalizado en una tarjeta. Filtro de tiendas multiselección; "Instalados" se combina. Logos de tiendas: SVG inline de Simple Icons (Xbox dibujado a mano).
 - Estética (pedida por el dueño): industrial, naranja `#ff6a00` + blanco, sin bordes, sombras, radios 3–5 px, fuente Bahnschrift, títulos en mayúsculas con barra naranja. Logo: `assets/hacer-logo.py` → `logo.png` / `icon.ico` (cuadrado naranja con una S de bloques).
 
+## No comprados (02/11/2026, sin publicar)
+
+- Tercer grupo de la biblioteca, abajo de Instalados / No instalados: juegos del **catálogo público de GOG** que no tenés en ninguna tienda (mismo nombre normalizado = misma tarjeta, no se repite).
+- `scripts/catalogos.py` baja `catalog.gog.com/v1/catalog` (público, sin login) → `docs/catalogo/gog.json` (claves cortas i/t/s/c/y/g), que se publica con la landing. `.github/workflows/catalogos.yml` lo rehace los lunes; **todavía no está subido**: el token de `gh` no tiene permiso `workflow` (`gh auth refresh -s workflow`).
+- `Api.catalogo(tienda)` lo baja de la landing (caché 1 día) y `Api.ver_en_tienda` abre `goggalaxy://openGameView/<id>` (Galaxy dice Comprar o Instalar) o la web de GOG.
+- La plantilla dibuja No comprados recién al abrirlo y de a 96 tarjetas al bajar; portadas con `loading=lazy` (son links, no ocupan disco).
+- Ubisoft: no hay catálogo usable sin claves internas de la tienda (no usarlas). Próximas candidatas con catálogo público: Steam, Xbox.
+
 ## Agregado el 01/11/2026 (publicado en la v1.1.0)
 
 - Tarjeta por tienda: clic en la barra de tiendas abre logo grande + estado + Descargar/Abrir launcher + pasos; botón **Desvincular** (`cfg["desvinculadas"]`: oculta la tienda y sus juegos, no toca nada en la PC; se revierte desde Configuración → › de la tienda). El dueño pidió que las tarjetas de tienda NO ofrezcan desinstalar el launcher.

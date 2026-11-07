@@ -121,6 +121,64 @@ def itch(paginas=10):
             time.sleep(0.5)
     return juegos
 
+def _pagina(url):
+    for intento in range(3):
+        try:
+            return urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (TasloStacks)"}), timeout=30).read().decode("utf-8", "replace")
+        except Exception:
+            time.sleep(4 * (intento + 1))
+    return ""
+
+def _en_paralelo(f, lista, hilos=4):
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(hilos) as ex:
+        return [r for r in ex.map(f, lista) if r]
+
+EDICION = re.compile(r"\s+(standard|deluxe|gold|ultimate|complete|premium|collector'?s|digital deluxe)\s+edition$", re.I)
+
+def ubisoft():
+    """Juegos de PC de la tienda de Ubisoft. Su mapa del sitio lista los productos; cada página dice si es un juego, si es
+    para adultos, el precio en dólares y la portada. Las ediciones de un mismo juego quedan en una sola tarjeta."""
+    mapa = _pagina("https://store.ubisoft.com/us/sitemap_0.xml")
+    urls = sorted(set(re.findall(r"<loc>(https://store\.ubisoft\.com/us/[a-z0-9-]+/[0-9a-f]{24}\.html)", mapa)))
+    def leer(url):
+        h = _pagina(url)
+        t = re.search(r"<title>Buy (.+?) for PC \|", h)
+        if not t or '"productTypeDetail":"games"' not in h or '"adultgame":"yes"' in h:
+            return None
+        titulo = EDICION.sub("", html_texto(t.group(1)))
+        precio = re.search(r'"price":"([\d.]+)","priceCurrency":"USD"', h)
+        img = re.search(r'og:image" content="([^"]+)"', h)
+        return {"i": url, "t": titulo, "c": img.group(1) if img else "", "pr": "US$ " + precio.group(1) if precio else ""}
+    vistos, juegos = set(), []
+    for j in _en_paralelo(leer, urls):
+        if norm(j["t"]) not in vistos:
+            vistos.add(norm(j["t"])); juegos.append(j)
+    print("ubisoft", len(juegos), "juegos de", len(urls), "páginas", flush=True)
+    return juegos
+
+def ea():
+    """Juegos de PC de EA: su mapa del sitio lista las páginas de cada juego; se quedan las que se compran ("Buy ...")
+    y se juegan con la app de EA."""
+    mapa = _pagina("https://www.ea.com/sitemap-en-us.xml")
+    urls = sorted(set(re.findall(r"<loc>(https://www\.ea\.com/games/[a-z0-9-]+/[a-z0-9-]+)</loc>", mapa)))
+    def leer(url):
+        h = _pagina(url)
+        t = re.search(r"<title[^>]*>Buy (.+?) - Electronic Arts", h)
+        if not t or "EA app" not in h:
+            return None
+        return {"i": url, "t": EDICION.sub("", html_texto(t.group(1)))}
+    vistos, juegos = set(), []
+    for j in _en_paralelo(leer, urls):
+        if norm(j["t"]) not in vistos:
+            vistos.add(norm(j["t"])); juegos.append(j)
+    print("ea", len(juegos), "juegos de", len(urls), "páginas", flush=True)
+    return juegos
+
+def html_texto(t):
+    import html
+    return re.sub(r"[™®]", "", html.unescape(t)).strip()
+
 # Battle.net y Rockstar no tienen catálogo público: son pocos juegos de PC y se listan a mano, con su página de compra
 # (verificadas el 07/11/2026). "sa" = appid de Steam, solo para tomar la portada si el juego también está ahí.
 BATTLENET = [("World of Warcraft", "world-of-warcraft-subscription", None), ("Diablo IV", "diablo-iv", 2344520),
@@ -172,6 +230,6 @@ def guardar(tienda, juegos):
 if __name__ == "__main__":
     g, s, x = gog(), steam_adultos(steam()), xbox()
     otras = (("itch.io", itch()), ("Battle.net", fijos(BATTLENET, "https://us.shop.battle.net/en-us/product/")),
-             ("Rockstar", fijos(ROCKSTAR, "https://store.rockstargames.com/game/")))
+             ("Rockstar", fijos(ROCKSTAR, "https://store.rockstargames.com/game/")), ("Ubisoft", ubisoft()), ("EA", ea()))
     guardar("gog", [j for j in g if not j.get("x")])
     guardar("todos", juntar(g, s, x, otras))

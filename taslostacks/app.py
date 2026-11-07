@@ -405,8 +405,8 @@ class Api:
         if tienda == "Steam" and re.fullmatch(r"\d{1,9}", gid):
             os.startfile(("steam://store/" if ok("Steam") else "https://store.steampowered.com/app/") + gid)
             return "Steam" if ok("Steam") else True
-        # itch.io, Battle.net y Rockstar: el catálogo trae el link de la página de compra; solo se abren sus dominios
-        if tienda in ("itch.io", "Battle.net", "Rockstar") and re.match(r"https://([a-z0-9-]+\.itch\.io|itch\.io|us\.shop\.battle\.net|store\.rockstargames\.com)/", gid):
+        # itch.io, Battle.net, Rockstar, Ubisoft y EA: el catálogo trae el link de la página de compra; solo se abren sus dominios
+        if tienda in ("itch.io", "Battle.net", "Rockstar", "Ubisoft", "EA") and re.match(r"https://([a-z0-9-]+\.itch\.io|itch\.io|us\.shop\.battle\.net|store\.rockstargames\.com|store\.ubisoft\.com|www\.ea\.com)/", gid):
             os.startfile(gid); return True
         if tienda == "Xbox" and re.fullmatch(r"[0-9A-Z]{12}", gid):
             os.startfile("ms-windows-store://pdp/?productid=" + gid); return True

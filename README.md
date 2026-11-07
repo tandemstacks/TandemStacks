@@ -75,6 +75,8 @@ TasloStacks es sin fines de lucro y hoy no recibe plata. **Estamos buscando patr
 
 ## Contacto
 
+- Correo: **taslostacks@gmail.com** (patrocinios, marcas y propuestas)
+
 Dudas, errores o ideas: abrí un [issue](../../issues).
 
 ## Licencia

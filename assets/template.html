@@ -36,7 +36,8 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .ordgen{display:flex;gap:12px;align-items:center;margin-left:auto;flex:none}
 .ordgen select{padding:0 8px;font-size:12px;letter-spacing:.3px;text-transform:uppercase;box-shadow:var(--sh);cursor:pointer}
 /* misma altura para tiendas, orden y géneros: quedan alineados */
-.filafilt .chip,.ordgen select{height:28px;box-sizing:border-box;padding-top:0;padding-bottom:0}
+.gfil{display:flex;gap:10px;align-items:flex-start;margin:2px 16px 12px}.gfil .chips{flex:1;margin-top:0}
+.gfil .chip,.ordgen select{height:28px;box-sizing:border-box;padding-top:0;padding-bottom:0}
 .ordgen .dd summary.chip{padding:0 11px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;letter-spacing:.3px;text-transform:uppercase;user-select:none;white-space:nowrap;box-shadow:var(--sh)}
 .chip:hover{background:var(--card)}
@@ -93,6 +94,7 @@ main{padding:16px 22px 60px}
 .grupo summary::-webkit-details-marker{display:none}.grupo summary .flecha{margin-left:auto;transition:transform .2s}
 .grupo[open] summary .flecha{transform:rotate(180deg)}.grupo .grid{padding:0 16px 16px}
 .card{position:relative;border-radius:3px;overflow:hidden;cursor:pointer;background:var(--card);aspect-ratio:2/3;transition:transform .15s,box-shadow .15s;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.grid .card{content-visibility:auto;contain-intrinsic-size:auto 225px}
 .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 28px rgba(0,0,0,.28)}
 .card img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .2s}
 .card.off img,.card.off .ph{filter:grayscale(.75) brightness(.8)}
@@ -176,10 +178,6 @@ main{padding:16px 22px 60px}
     </div>
   </div>
   <div id="descargas"></div>
-  <div class="filafilt"><div class="chips" id="filtros"></div>
-    <div class="ordgen"><span class="chip tog" id="instchip" data-t="inst"></span><select id="orden"><option value="nombre"></option><option value="valor"></option><option value="peso"></option><option value="anio"></option></select>
-      <details class="dd der" id="ddgen"><summary class="chip" id="gensum"></summary><div class="menu" id="generos"></div></details></div>
-  </div>
   <div class="prog" id="prog"><span id="progtxt"></span><div class="pb"><i id="progbar" style="width:0%"></i></div></div>
 </header>
 <div class="upd" id="upd"><span id="updtxt"></span><a id="updlink"></a><a onclick="$('#upd').classList.remove('show')" style="margin-left:auto;color:#fff">✕</a></div>
@@ -208,7 +206,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 const TXT={
  spanish:{sinId:'Este juego está en tu cuenta de {t}, pero TasloStacks todavía no sabe cuál es. Si nos avisás cuál es, en la próxima versión aparece con su nombre para todos. Código:',avisar:'Avisar cuál es',
   noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Tocá para ver tus medallas.',abriendo:'Abriendo',contacto:'Contacto:',gratis:'Gratis',descuento:'Descuento',buscandoOf:'Buscando ofertas en GOG y Steam…',noOficial:'TasloStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
-  buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
+  buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],ordenNC:['Más populares','Orden: nombre','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
@@ -228,7 +226,7 @@ const TXT={
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TasloStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
   noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Click to see your medals.',abriendo:'Opening',contacto:'Contact:',gratis:'Free',descuento:'On sale',buscandoOf:'Looking for deals on GOG and Steam…',noOficial:'TasloStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
-  buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
+  buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],ordenNC:['Most popular','Sort: name','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
@@ -250,7 +248,7 @@ const TXT={
 const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
 const L=TXT[IDIOMA];
 document.documentElement.lang=IDIOMA==='english'?'en':'es';
-$('#brand').title=L.web; [...$('#orden').options].forEach((o,i)=>o.textContent=L.orden[i]); $('#empty').textContent=L.sinRes; $('#updtxt').innerHTML=L.nueva+' <b id="updtag"></b>'; $('#updlink').textContent=L.bajarNueva;
+$('#brand').title=L.web; $('#empty').textContent=L.sinRes; $('#updtxt').innerHTML=L.nueva+' <b id="updtag"></b>'; $('#updlink').textContent=L.bajarNueva;
 
 // ---------- juegos ----------
 const norm=n=>n.toLowerCase().replace(/[™®©]/g,'').replace(/&/g,' and ')
@@ -278,7 +276,10 @@ const LOGO={"Steam": "M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.3
 const logo=(s,c,n)=>LOGO[s]?`<svg class="lg" viewBox="0 0 24 24" width="${n}" height="${n}" fill="${c}" aria-label="${esc(s)}"><title>${esc(s)}</title><path d="${LOGO[s]}"/></svg>`:`<b style="color:${c}">${esc(s)}</b>`;
 const BG={Steam:'#1b3a5c',Epic:'#3a3a3a',Xbox:'#1f4020',EA:'#5c2020','Battle.net':'#0f3a66',Rockstar:'#5c4310',Riot:'#5c1020',Ubisoft:'#10305c',GOG:'#3d1a40',Amazon:'#5c3a00','itch.io':'#5c2222'};
 const peso=g=>g.installed?(g.sizeGB||0):(g.reqGB||0);
-let tsel=new Set(), soloInst=false, gens=new Set(), orden='nombre', abiertos=new Set(['si']), BUSCA={si:'',no:'',nc:''};  // Instalados arranca abierto, No instalados cerrado
+let abiertos=new Set(['si']), BUSCA={si:'',no:'',nc:''};
+// filtros de cada grupo por separado: tiendas (t), géneros (gens) y orden. No comprados arranca en el orden del catálogo (los más populares)
+const FIL={si:{t:new Set(),gens:new Set(),orden:'nombre'},no:{t:new Set(),gens:new Set(),orden:'nombre'},nc:{t:new Set(),gens:new Set(),orden:'popular'}};
+let genAbierto='';  // el desplegable de géneros que estaba abierto, para que no se cierre al redibujar  // Instalados arranca abierto, No instalados cerrado
 const ST={ok:['var(--ok)',L.tLeida],parcial:['var(--warn)',L.tParcial],no:['var(--bad)',L.tNo]};
 const TODAS=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft','GOG','Amazon','itch.io'];
 
@@ -286,17 +287,6 @@ function cabecera(){
   $('#tiendas').innerHTML=T.map((t,i)=>`<div class="tnd ${t.st==='no'?'no':''}" data-t="${i}" title="${esc(t.n)}: ${ST[t.st][1]} — ${esc(t.info)}. ${L.clicCfg}">
     <span class="ic" style="background:${t.c}">${logo(t.n,'#fff',12)}</span>${esc(t.n)}<span class="dot" style="background:${ST[t.st][0]}"></span></div>`).join('');
   $('#sub').textContent=`${J.length} ${L.juegos} · ${J.filter(g=>g.installed).length} ${L.instalados.toLowerCase()}`;
-  const cuenta=s=>RAW.filter(g=>g.store===s).length, cuentaInst=s=>RAW.filter(g=>g.store===s&&g.installed).length;
-  const visibles=TODAS.filter(s=>cuenta(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera));
-  const tiendas=['todos',...visibles];
-  $('#instchip').innerHTML=`${L.instalados}<span class="sw ${soloInst?'on':''}"></span>`;
-  $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size?'on':''):t==='inst'?'tog':(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?`${L.instalados}<span class="sw ${soloInst?'on':''}"></span>`:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55" title="${cuentaInst(t)} ${L.instalados.toLowerCase()} ${L.de} ${cuenta(t)}">${cuentaInst(t)}/${cuenta(t)}</span>`}</span>`).join('');
-  const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
-  const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
-  $('#generos').innerHTML=`<label class="todos"><input type="checkbox" data-g="__todos" ${gens.size?'':'checked'}> ${L.todos}</label>`+
-    topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${gens.has(x)?'checked':''}> ${esc(x)}<small>${cnt[x]}</small></label>`).join('');
-  $('#gensum').textContent=gens.size?`${L.generos}: ${[...gens].slice(0,2).join(', ')}${gens.size>2?' +'+(gens.size-2):''} ▾`:L.generos+' ▾';
-  $('#gensum').classList.toggle('on',gens.size>0);
   menu();
 }
 const PAL=['#7c9cff','#ffa94d','#b07cff','#ffd43b','#ff7ca8','#69db7c','#4dabf7','#ff8787','#38d9a9','#e599f7','#a9e34b','#74c0fc'];  // ordenados para que dos seguidos se distingan bien
@@ -322,7 +312,7 @@ function discos(){
     <div class="bar">${d.juegos.map((x,i)=>`<i title="${esc(x.name)} · ${x.gb} GB" style="width:${x.gb/d.totalGB*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}<i class="o" style="width:${o}%" title="${L.otros}"></i></div></div>`}).join('');
   const portada=n=>(RAW.find(g=>g.name===n)||{}).cover||'';
   const det=!$('#discos').open?'':D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} ${L.juegos}, ${d.juegosGB} GB</h3>
-    <div class="dcuerpo"><div class="jgrid">${d.juegos.map((x,i)=>`<div class="jrow"><span><img class="jthumb" loading="lazy" referrerpolicy="no-referrer" src="${esc(portada(x.name))}" alt="" onerror="this.style.visibility='hidden'"><i style="flex:none;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div>${torta(d)}</div></div>`).join('');
+    <div class="dcuerpo"><div class="jgrid">${d.juegos.map((x,i)=>`<div class="jrow"><span><img class="jthumb" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(chica(portada(x.name)))}" alt="" onerror="this.style.visibility='hidden'"><i style="flex:none;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div>${torta(d)}</div></div>`).join('');
   const estaba=$('#discos').open;
   $('#discos').innerHTML=`<summary><b>💾 ${L.discos}</b>${mini}<span class="flecha">${L.verJuegos} ▾</span></summary>
     ${alerta.length?`<div style="margin:0 16px 10px;padding:8px 12px;border-radius:3px;background:rgba(229,83,75,.15);color:var(--bad);font-size:13px">⚠ ${L.pocoEsp} ${alerta.map(d=>d.letra).join(', ')}: ${L.pocoEsp2}</div>`:''}
@@ -330,8 +320,17 @@ function discos(){
     <div class="ddet">${det}</div>`;
   $('#discos').open=estaba;
 }
+// portadas livianas: cada tienda da la imagen en otro tamaño cambiando el link; las tarjetas miden ~200 px de ancho
+// (medido el 07/11/2026: Epic 248 → 30 KB, Xbox 647 → 58 KB, GOG 74 → 33 KB; Steam ya viene chica)
+function chica(u){
+  if(!u) return u;
+  if(u.includes('cdn1.epicgames.com')||u.includes('cdn2.unrealengine.com')) return u.split('?')[0]+'?h=480&quality=medium&resize=1&w=360';
+  if(u.includes('store-images.s-microsoft.com')) return u.split('?')[0]+'?w=300&h=450';
+  if(/images\.gog-statics\.com\/[0-9a-f]+\.(jpg|png)$/.test(u)) return u.replace(/\.(jpg|png)$/,'_glx_vertical_cover.webp');
+  return u;
+}
 const ph=g=>`<div class="ph" style="background:linear-gradient(145deg,${BG[g.store]||'#333'},#15161c)">${esc(g.name)}</div>`;
-const img=g=>g.cover?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(g.cover)}" alt="" data-n="${esc(g.name)}" data-s="${esc(g.store)}" onerror="sinPortada(this)">`:ph(g);
+const img=g=>g.cover?`<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(chica(g.cover))}" alt="" data-n="${esc(g.name)}" data-s="${esc(g.store)}" onerror="sinPortada(this)">`:ph(g);
 // si un link falla: Steam sin portada vertical -> imagen horizontal; si tampoco, el nombre sobre color
 function sinPortada(el){const s=el.getAttribute('src')||'';
   if(s.includes('/library_600x900.jpg')&&!el.dataset.h){el.dataset.h='1';el.src=s.replace('library_600x900.jpg','header.jpg');return;}
@@ -353,10 +352,28 @@ function cargarOfertas(){
   if(ofEstado) return; ofEstado='bajando';
   api('ofertas').then(r=>{OFERTAS={GOG:new Set((r&&r.GOG)||[]),Steam:new Set((r&&r.Steam)||[])};},()=>{OFERTAS={GOG:new Set(),Steam:new Set()};}).then(()=>{ofEstado='listo';render();});
 }
-function noComprados(){
-  if(soloInst||gens.size) return [];
-  const tengo=new Set(J.map(g=>norm(g.name))), desc=SOLO_DESC&&ofEstado==='listo';
-  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t))&&(!tsel.size||Object.keys(j.st).some(s=>tsel.has(s)))&&coincide(j.t,'nc')&&(!desc||enOferta(j)));
+// No comprados antes de los filtros del grupo (lo que no tenés); los filtros se aplican aparte para poder contar por tienda
+function noCompradosBase(){
+  const tengo=new Set(J.map(g=>norm(g.name)));
+  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t)));
+}
+function noComprados(base){
+  const f=FIL.nc, desc=SOLO_DESC&&ofEstado==='listo';
+  const l=base.filter(j=>(!f.t.size||Object.keys(j.st).some(s=>f.t.has(s)))&&(!f.gens.size||[...f.gens].some(x=>(j.g||[]).includes(x)))&&coincide(j.t,'nc')&&(!desc||enOferta(j)));
+  if(f.orden==='nombre') l.sort((a,b)=>a.t.localeCompare(b.t,'es')); else if(f.orden==='anio') l.sort((a,b)=>(b.y||0)-(a.y||0));
+  return l;
+}
+// la fila de filtros de un grupo: tiendas con su cantidad, orden y géneros. tiendasDe/generosDe dicen de qué es cada cosa
+function filtrosGrupo(k,base,tiendasDe,generosDe,ordenes){
+  const f=FIL[k], cuenta={}, gcnt={};
+  base.forEach(x=>{tiendasDe(x).forEach(s=>cuenta[s]=(cuenta[s]||0)+1);(generosDe(x)||[]).forEach(g=>gcnt[g]=(gcnt[g]||0)+1);});
+  const tiendas=TODAS.filter(s=>cuenta[s]), topG=Object.keys(gcnt).sort((a,b)=>gcnt[b]-gcnt[a]).slice(0,30);
+  const chips=`<span class="chip ${f.t.size?'':'on'}" data-gt="${k}" data-t="todos">${L.todos}</span>`+tiendas.map(s=>`<span class="chip ${f.t.has(s)?'on':''}" data-gt="${k}" data-t="${esc(s)}">${logo(s,sc(s),12)} ${esc(s)} <span style="opacity:.55">${cuenta[s]}</span></span>`).join('');
+  const sel=`<select data-orden="${k}">${ordenes.map(([v,t])=>`<option value="${v}"${f.orden===v?' selected':''}>${t}</option>`).join('')}</select>`;
+  const gen=topG.length?`<details class="dd der gdd" data-gen="${k}"${genAbierto===k?' open':''}><summary class="chip${f.gens.size?' on':''}">${f.gens.size?`${L.generos}: ${[...f.gens].slice(0,2).map(esc).join(', ')}${f.gens.size>2?' +'+(f.gens.size-2):''}`:L.generos} ▾</summary><div class="menu">`
+    +`<label class="todos"><input type="checkbox" data-g="__todos" ${f.gens.size?'':'checked'}> ${L.todos}</label>`
+    +topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${f.gens.has(x)?'checked':''}> ${esc(x)}<small>${gcnt[x]}</small></label>`).join('')+`</div></details>`:'';
+  return `<div class="gfil"><div class="chips">${chips}</div><div class="ordgen">${sel}${gen}</div></div>`;
 }
 // tocar un juego no comprado: si está en una sola tienda se abre ahí; si está en varias, elegís en cuál
 // mientras se abre una tienda la app queda en espera, así no se toca dos veces; la ventanita se saca al terminar
@@ -371,7 +388,7 @@ function verNC(j){
   const st=Object.keys(j.st), ir=s=>{const v=j.st[s];abriendo(api('ver_en_tienda',s,Array.isArray(v)?v[0]:v,Array.isArray(v)?v[1]:''),s);};
   if(st.length===1) return ir(st[0]);
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
-    <div class="cov">${j.c?`<img referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}</div>
+    <div class="cov">${j.c?`<img decoding="async" referrerpolicy="no-referrer" src="${esc(chica(j.c))}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}</div>
     <div style="flex:1;min-width:0"><h2>${esc(j.t)}</h2><p style="margin:0 0 12px;font-size:14px;color:var(--mu)">${L.ncElegir}</p>
       <div class="acts">${st.map(s=>{const p=(PRECIO[CAT.indexOf(j)]||{})[s];return `<button class="btn" data-ir="${esc(s)}">${logo(s,sc(s),18)} ${esc(s)}${p?` · ${fmtPrecio(p)}`:''}</button>`;}).join('')}</div></div>`;
   $('#modal').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{ir(b.dataset.ir);cerrar();});
@@ -386,7 +403,7 @@ function paginado(k,lista,tarjeta){
   return `<div class="grid">${n?`<div class="card sigpag" data-pg="${k}" data-d="-1"><b>‹</b>${L.antPag}</div>`:''}${lista.slice(n*POR_PAG,(n+1)*POR_PAG).map(tarjeta).join('')}${n<total-1?`<div class="card sigpag" data-pg="${k}" data-d="1"><b>›</b>${L.sigPag}</div>`:''}</div>`
     +(total>1?`<div class="pager"><span>${L.pagina} ${n+1} ${L.de} ${total}</span></div>`:'');
 }
-const cardNC=j=>{const st=Object.keys(j.st);return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
+const cardNC=j=>{const st=Object.keys(j.st);return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(chica(j.c))}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
   <span class="tag conp">${st.map(s=>`<i class="tp" data-s="${esc(s)}">${logo(s,sc(s),20)}<b class="pr"></b></i>`).join('')}</span><div class="nm">${esc(j.t)}</div></div>`;};
 // precios de No comprados: se piden solo para la página que se ve y se olvidan al plegar el grupo
 let PRECIO={}, PRECIO_PEND=new Set();
@@ -408,36 +425,33 @@ function preciosPagina(){
     .then(()=>{faltan.forEach(k=>PRECIO_PEND.delete(k));document.querySelectorAll('.grupo[data-s="nc"] .card[data-c]').forEach(pintarPrecio);});
 }
 function render(){
-  let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
-    &&(!gens.size||[...gens].some(x=>(g.genres||[]).includes(x))));
   const by={nombre:(a,b)=>a.name.localeCompare(b.name,'es'),valor:(a,b)=>(b.revPct||0)-(a.revPct||0),peso:(a,b)=>peso(b)-peso(a),anio:(a,b)=>(b.anio||0)-(a.anio||0)};
-  list.sort(by[orden]);
+  const filtra=(lista,k)=>{const f=FIL[k];return lista.filter(g=>(!f.t.size||g.stores.some(s=>f.t.has(s)))&&(!f.gens.size||[...f.gens].some(x=>(g.genres||[]).includes(x)))&&coincide(g.name,k)).sort(by[f.orden]||by.nombre);};
+  const ordLib=['nombre','valor','peso','anio'].map((v,i)=>[v,L.orden[i]]), ordNC=['popular','nombre','anio'].map((v,i)=>[v,L.ordenNC[i]]);
   const card=g=>`<div class="card${g.installed?'':' off'}" data-i="${J.indexOf(g)}">${img(g)}
     <span class="tag">${g.stores.map(s=>logo(s,sc(s),20)).join('')}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
     <div class="nm">${esc(g.name)}</div></div>`;
-  const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
+  const inst=J.filter(g=>g.installed), no=J.filter(g=>!g.installed);
   const foco=document.activeElement&&document.activeElement.dataset.q, cursor=foco&&document.activeElement.selectionStart;  // al redibujar se sigue escribiendo
   const buscador=k=>`<input class="qgrupo" data-q="${k}" autocomplete="off" placeholder="${esc(L.buscar)}" value="${esc(BUSCA[k])}">`;
   const nada=lista=>lista.length?'':`<p class="catayuda">${L.sinRes}</p>`;
-  const instV=inst.filter(g=>coincide(g.name,'si')), noV=no.filter(g=>coincide(g.name,'no'));
-  let h=inst.length?`<details class="grupo" data-s="si"${abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${instV.length}</span><span class="flecha">▾</span></summary>${abiertos.has('si')?`${buscador('si')}${nada(instV)}<div class="grid">${instV.map(card).join('')}</div>`:''}</details>`:'';
+  const instV=filtra(inst,'si'), noV=filtra(no,'no'), deJuego=g=>g.stores, generoJuego=g=>g.genres;
+  let h=inst.length?`<details class="grupo" data-s="si"${abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${instV.length}</span><span class="flecha">▾</span></summary>${abiertos.has('si')?`${filtrosGrupo('si',inst,deJuego,generoJuego,ordLib)}${buscador('si')}${nada(instV)}<div class="grid">${instV.map(card).join('')}</div>`:''}</details>`:'';
   if(no.length){const abierto=abiertos.has('no');
-    h+=`<details class="grupo" data-s="no"${abierto?' open':''}><summary><b>${L.noInst}</b> <span>${noV.length}</span><span class="flecha">▾</span></summary>${abierto?buscador('no')+nada(noV)+paginado('no',noV,card):''}</details>`;}
+    h+=`<details class="grupo" data-s="no"${abierto?' open':''}><summary><b>${L.noInst}</b> <span>${noV.length}</span><span class="flecha">▾</span></summary>${abierto?filtrosGrupo('no',no,deJuego,generoJuego,ordLib)+buscador('no')+nada(noV)+paginado('no',noV,card):''}</details>`;}
   if(!abiertos.has('nc')&&catEstado==='listo'){CAT=[];catEstado='';PRECIO={};OFERTAS=null;ofEstado='';SOLO_DESC=false;}  // plegado: se suelta de la memoria y al desplegar se vuelve a leer
-  const nc=noComprados(), hayNC=!soloInst&&!gens.size&&(catEstado!=='listo'||CAT.length>0);
+  const ncBase=catEstado==='listo'?noCompradosBase():[], nc=noComprados(ncBase), hayNC=catEstado!=='listo'||CAT.length>0;
   if(hayNC){const abierto=abiertos.has('nc');
     if(abierto) cargarCatalogo();
     h+=`<details class="grupo" data-s="nc"${abierto?' open':''}><summary><b>${L.noComprados}</b> <span>${catEstado==='listo'?nc.length:''}</span><span class="flecha">▾</span></summary>`
-      +(!abierto?'':catEstado==='listo'?`<p class="catayuda">${L.catAyuda}</p><div class="qfila"><span class="chip tog" data-desc>${L.descuento}<span class="sw ${SOLO_DESC?'on':''}"></span></span>${buscador('nc')}</div>${SOLO_DESC&&ofEstado!=='listo'?`<p class="catayuda cargando">${L.buscandoOf}</p>`:nada(nc)+paginado('nc',nc,cardNC)}`:`<p class="catayuda cargando">${L.cargandoCat}</p>`)+`</details>`;}
+      +(!abierto?'':catEstado==='listo'?`<p class="catayuda">${L.catAyuda}</p>${filtrosGrupo('nc',ncBase,j=>Object.keys(j.st),j=>j.g,ordNC)}<div class="qfila"><span class="chip tog" data-desc>${L.descuento}<span class="sw ${SOLO_DESC?'on':''}"></span></span>${buscador('nc')}</div>${SOLO_DESC&&ofEstado!=='listo'?`<p class="catayuda cargando">${L.buscandoOf}</p>`:nada(nc)+paginado('nc',nc,cardNC)}`:`<p class="catayuda cargando">${L.cargandoCat}</p>`)+`</details>`;}
   if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?L.vacio:L.buscando}</div>`;
   $('#grid').innerHTML=h; preciosPagina();
   if(foco){const q=document.querySelector(`[data-q="${foco}"]`);if(q){q.focus();q.setSelectionRange(cursor,cursor);}}
   $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);
     if(d.open?!d.querySelector('.grid,.cargando'):d.querySelector('.grid,.cargando'))render();}));  // cada grupo se dibuja al abrirlo y se suelta al plegarlo
-  const vacias=[...tsel].filter(s=>!RAW.some(g=>g.store===s));
-  $('#empty').innerHTML=!list.length&&vacias.length?vacias.map(s=>{const t=T.find(x=>x.n===s);const g=(GUIA[IDIOMA]||{})[s]||{};
-    return `<div style="max-width:560px;margin:0 auto 10px">${logo(s,sc(s),28)}<p style="margin:8px 0 4px;color:var(--tx);font-weight:700">${esc(s)}: 0 ${L.juegos}</p><p style="margin:0 0 8px">${esc(g.lee||'')}</p>${t?`<button class="btn" onclick="tienda(T[${T.indexOf(t)}])">${L.verTienda}</button>`:''}</div>`;}).join(''):L.sinRes;
-  $('#empty').style.display=list.length||hayNC||!RAW.length?'none':'block';
+  $('#grid').querySelectorAll('details.gdd').forEach(d=>d.addEventListener('toggle',()=>{genAbierto=d.open?d.dataset.gen:(genAbierto===d.dataset.gen?'':genAbierto);}));
+  $('#empty').style.display='none';
 }
 function progreso(){
   const p=$('#prog');
@@ -614,20 +628,21 @@ $('#grid').addEventListener('click',e=>{if(e.target.closest('[data-desc]')){SOLO
   if(c.dataset.c!=null) verNC(CAT[+c.dataset.c]); else abrir(J[+c.dataset.i]);});
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();document.querySelectorAll('details.gdd[open]').forEach(d=>d.open=false);}});
 $('#discos').addEventListener('toggle',discos);
 $('#nivel').addEventListener('click',verMedallas);  // la lista de juegos se dibuja al abrir el panel y se suelta al cerrarlo
 let esperaQ;$('#grid').addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)return;BUSCA[k]=e.target.value;clearTimeout(esperaQ);esperaQ=setTimeout(render,150);});
-$('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
-$('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;
-  if(t==='todos'){tsel.clear();}else if(t==='inst'){soloInst=!soloInst;}else{tsel.has(t)?tsel.delete(t):tsel.add(t);}
-  document.querySelectorAll('#filtros .chip').forEach(x=>{const k=x.dataset.t;if(k==='inst'){x.querySelector('.sw').classList.toggle('on',soloInst);return;}x.classList.toggle('on',k==='todos'?!tsel.size:tsel.has(k));});render();});
-$('#instchip').addEventListener('click',()=>{soloInst=!soloInst;$('#instchip .sw').classList.toggle('on',soloInst);render();});
-$('#generos').addEventListener('change',e=>{const i=e.target;if(!i||!i.dataset.g)return;const g=i.dataset.g;
-  if(g==='__todos'){gens.clear();}else{i.checked?gens.add(g):gens.delete(g);}
-  cabecera();render();$('#ddgen').open=true;});
+// filtros dentro de cada grupo (los dibuja render)
+$('#grid').addEventListener('click',e=>{const c=e.target.closest('[data-gt]');if(!c)return;e.stopPropagation();const f=FIL[c.dataset.gt], t=c.dataset.t;
+  if(t==='todos') f.t.clear(); else f.t.has(t)?f.t.delete(t):f.t.add(t);
+  render();},true);
+$('#grid').addEventListener('change',e=>{const o=e.target.dataset.orden;if(o){FIL[o].orden=e.target.value;render();return;}
+  const g=e.target.dataset.g, d=e.target.closest('.gdd');if(!g||!d)return;const f=FIL[d.dataset.gen];
+  if(g==='__todos') f.gens.clear(); else e.target.checked?f.gens.add(g):f.gens.delete(g);
+  genAbierto=d.dataset.gen; render();});
 document.addEventListener('click',e=>{if(!e.target.isConnected)return;  // el clic redibujó el menú: no es un clic afuera
-  for(const id of ['ddgen','ddmenu']){const d=document.getElementById(id);if(d&&d.open&&!e.target.closest('#'+id))d.open=false;}});
+  const d=document.getElementById('ddmenu');if(d&&d.open&&!e.target.closest('#ddmenu'))d.open=false;
+  document.querySelectorAll('details.gdd[open]').forEach(g=>{if(!e.target.closest('details.gdd')||e.target.closest('details.gdd')!==g){g.open=false;if(genAbierto===g.dataset.gen)genAbierto='';}});});
 
 // ---------- tarjeta de cada tienda ----------
 const GUIA={

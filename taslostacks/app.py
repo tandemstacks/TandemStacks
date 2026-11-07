@@ -551,5 +551,11 @@ def main():
                                                                  lambda: bool(NUC.cfg.get("cerrar_launchers", True)), NUC.sumar_jugado)).start()
     covers.limpiar_descargadas()
     # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones
+    # el visor (WebView2) sin lo que no usamos: caché de imágenes con tope de 64 MB (antes crecía sin límite, 175 MB medidos),
+    # sin aceleración gráfica (medido: el proceso de gráficos bajaba de 119 a 21 MB, el visor de 315 a 201 MB),
+    # sin descargas de componentes ni funciones de Edge en segundo plano. Se puede pisar con la variable de entorno.
+    os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+                          "--disk-cache-size=67108864 --disable-gpu --disable-background-networking --disable-component-update "
+                          "--disable-features=Translate,msEdgeTranslate,msSmartScreenProtection,OptimizationHints,MediaRouter,msShoppingTrigger,msEdgeSidebarV2")
     webview.start(lambda: threading.Thread(target=arranque, daemon=True).start(), icon=icono,
                   private_mode=False, storage_path=os.path.join(paths.DATA, "visor"))

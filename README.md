@@ -21,11 +21,14 @@ Comunidad: [Discord](https://discord.gg/CKqByMZ2m) · [Instagram @taslostacks](h
 - **EA, Xbox, Ubisoft, Amazon Games**: lo instalado (sus bibliotecas no se pueden leer desde la PC; Ubisoft y Amazon las guardan cifradas).
 - Un juego que tenés en varias tiendas aparece **una sola vez**, con los logos de todas.
 - Fichas (descripción, géneros, año, estudio, porcentaje de reseñas de la comunidad de Steam) se bajan solas y quedan en caché. Las portadas son links directos a cada tienda: la app no guarda imágenes.
-- **No deja nada corriendo**: ningún launcher se abre al iniciar Windows por culpa de TasloStacks y, si abrís un juego desde acá, el launcher que se abrió se cierra cuando terminás (configurable).
+- **No deja nada corriendo**: ningún launcher se abre al iniciar Windows por culpa de TasloStacks y, cuando terminás de jugar, se cierran todos los launchers abiertos, mientras TasloStacks esté abierto (configurable).
 - Botón para **sacar los launchers del inicio de Windows** (los deshabilita como el Administrador de tareas).
 - Menú ⚙ con modo oscuro, español / inglés y desinstalar.
-- Barra de discos con cuánto ocupa cada juego y aviso cuando queda poco espacio.
-- Filtros por tienda (multiselección), género, instalados; búsqueda; orden por nombre, valoración, peso o año.
+- Barra de discos con cuánto ocupa cada juego (con miniaturas y un gráfico de torta) y aviso cuando queda poco espacio.
+- Filtros por tienda (multiselección), género e instalados; un buscador dentro de cada grupo; orden por nombre, valoración, peso o año.
+- **No comprados**: juegos de los catálogos públicos de GOG, Steam y Xbox Game Pass que no tenés, para comprarlos o verlos en su tienda.
+- **Nivel** según las horas que jugás con TasloStacks abierta, y barra de progreso de las descargas de Steam.
+- Consume poco: lo que no está a la vista no se carga, y minimizada casi no usa memoria ni procesador.
 
 ## Instalar
 
@@ -65,6 +68,10 @@ Borrar esas dos carpetas deja todo como recién instalado.
 ## Cómo está hecho
 
 Python 3.12 + [pywebview](https://pywebview.flowrl.com/) (ventana con WebView2), [psutil](https://github.com/giampaolo/psutil) y [Pillow](https://python-pillow.org/). La interfaz es un HTML con CSS y JS sin frameworks. Fuentes de datos: manifiestos y registro de Windows de cada launcher, Steam Web API, Steam Store API, SteamSpy, tienda Epic (portadas). Logos de tiendas: [Simple Icons](https://simpleicons.org/).
+
+## Donaciones
+
+TasloStacks es sin fines de lucro y hoy no recibe plata. Más adelante va a buscar patrocinios, y **todo lo que entre se dona** a lugares **de Montevideo (Uruguay)** que la comunidad propone y elige por votación en Discord. La comunidad puede ser de cualquier país, pero las donaciones siempre van a Montevideo. Cada donación se publica con su monto y su comprobante.
 
 ## Contacto
 

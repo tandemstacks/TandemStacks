@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Cierre automático de launchers: al lanzar un juego se anota qué launchers ya estaban abiertos; cuando el juego
-termina se cierran solo los que abrió ese lanzamiento (si el usuario tenía uno abierto, se respeta)."""
-import os, time, threading, subprocess, winreg
+"""Cierre automático de launchers: cuando termina un juego (lanzado desde donde sea) se cierran todos los launchers abiertos.
+Si queda otro juego andando no se toca nada, para no cortarlo."""
+import os, time, subprocess, winreg
 import psutil
 from . import paths
+
+INTERVALO = 5   # segundos entre cada mirada mientras hay un juego andando
+REPOSO = 15     # sin juegos se mira menos seguido: recorrer los procesos gasta
+MINIMO = 30     # lo que dura menos que esto no era un juego (parches, instaladores, un error al abrir)
+GENERICOS = {"launcher.exe": "rockstar", "agent.exe": "battle.net", "butler.exe": "itch"}  # nombres que usan otros programas: se mira también la ruta
+AYUDANTES = ("crash", "reporter", "unins")  # procesos que pueden quedar en la carpeta del juego después de cerrarlo
 
 def _procs():
     for pr in psutil.process_iter(["name", "exe"]):
@@ -12,55 +18,66 @@ def _procs():
         except Exception:
             pass
 
+def _es_de(nombre, ruta, d):
+    return nombre in d["procs"] and GENERICOS.get(nombre, "") in ruta
+
 def abiertos(launchers):
     vivos = set()
-    for _, n, _ in _procs():
+    for _, n, e in _procs():
         for l, d in launchers.items():
-            if n in d["procs"]:
+            if _es_de(n, e, d):
                 vivos.add(l)
     return vivos
 
-def juego_corriendo(store, carpeta):
-    if store == "Steam":
-        try:
-            k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
-            return str(winreg.QueryValueEx(k, "RunningAppID")[0]) not in ("0", "")
-        except OSError:
-            return False
-    c = (carpeta or "").lower().replace("/", "\\").rstrip("\\")
-    return bool(c) and any(e.startswith(c + "\\") for _, _, e in _procs())
+def algun_juego(carpetas):
+    """Steam avisa en el registro qué juego corre; los demás se reconocen por un proceso dentro de su carpeta."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as k:
+            if str(winreg.QueryValueEx(k, "RunningAppID")[0]) not in ("0", ""):
+                return True
+    except OSError:
+        pass
+    prefijos = tuple(c.lower().replace("/", "\\").rstrip("\\") + "\\" for c in carpetas if c)
+    return bool(prefijos) and any(e.startswith(prefijos) and not any(a in n for a in AYUDANTES) for _, n, e in _procs())
 
 def cerrar(l, launchers):
     d = launchers[l]
     if l == "Steam" and d.get("exe") and os.path.exists(d["exe"]):
         subprocess.Popen([d["exe"], "-shutdown"], creationflags=0x08000000)
         time.sleep(8)
-    victimas = [pr for pr, n, _ in _procs() if n in d["procs"]]
+    victimas = [pr for pr, n, e in _procs() if _es_de(n, e, d)]
     for pr in victimas:
         try: pr.terminate()
         except Exception: pass
-    psutil.wait_procs(victimas, timeout=8)
+    try: psutil.wait_procs(victimas, timeout=8)
+    except psutil.Error: pass  # servicios de Windows (EABackgroundService): no dejan ni esperarlos
     for pr in victimas:
         try:
             if pr.is_running(): pr.kill()
         except Exception: pass
     paths.log("launcher cerrado:", l)
 
-def _vigilar(store, carpeta, antes, launchers):
-    t0 = time.time()
-    while not juego_corriendo(store, carpeta):
-        if time.time() - t0 > 240:
-            return  # no arrancó (canceló, está instalando...): no se toca nada
-        time.sleep(3)
-    while juego_corriendo(store, carpeta):
-        time.sleep(5)
-    time.sleep(5)
-    for l in abiertos(launchers) - antes:
-        try: cerrar(l, launchers)
-        except Exception as e: paths.log("cerrar", l, e)
-
-def lanzar(store, carpeta, arrancar, launchers, vigilar=True):
-    antes = abiertos(launchers) if vigilar else set()
-    arrancar()
-    if vigilar and (store == "Steam" or carpeta):
-        threading.Thread(target=_vigilar, args=(store, carpeta, antes, launchers), daemon=True).start()
+def vigilar(carpetas, launchers, activo, sumar):
+    """Hilo de toda la sesión. carpetas, launchers y activo son funciones: la biblioteca y la configuración cambian mientras corre.
+    sumar(segundos) recibe el tiempo con algún juego abierto, para el contador de horas."""
+    desde = ultimo = None
+    while True:
+        time.sleep(INTERVALO if desde else REPOSO)
+        try:
+            if algun_juego(carpetas()):
+                ahora = time.time()
+                desde = desde or ahora
+                if ultimo: sumar(min(ahora - ultimo, 60))  # el tope evita contar horas si la PC se suspendió
+                ultimo = ahora
+            elif desde:
+                time.sleep(INTERVALO)  # algunos juegos se reabren solos al arrancar
+                if algun_juego(carpetas()):
+                    continue
+                duro, desde, ultimo = time.time() - desde, None, None
+                if duro >= MINIMO and activo():
+                    ls = launchers()
+                    for l in abiertos(ls):
+                        try: cerrar(l, ls)
+                        except Exception as e: paths.log("cerrar", l, e)
+        except Exception as e:
+            paths.log("vigilar juegos", e)

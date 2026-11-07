@@ -58,6 +58,9 @@ Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; 
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\{#AppName}"
+; sin esto queda la carpeta vacía y al reinstalar avisa "la carpeta ya existe"
+Type: filesandordirs; Name: "{app}\_internal"
+Type: dirifempty; Name: "{app}"
 
 [Code]
 // Si la app está abierta, Windows no deja reemplazar ni borrar sus archivos y la instalación

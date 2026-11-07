@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Steam: usuario, juegos instalados (todas las bibliotecas), biblioteca completa (Web API) y fichas (appdetails + SteamSpy)."""
-import os, re, json, time, glob, difflib, threading, urllib.request, urllib.parse
+import os, re, json, time, glob, difflib, threading, winreg, urllib.request, urllib.parse
 from . import paths
 from .detect import reg, HKCU
 
@@ -58,6 +58,27 @@ def instalados():
                 continue
             out[aid] = {"name": name, "gb": round(int(val("SizeOnDisk") or 0) / 1073741824, 1), "drive": lib[:2].upper(),
                         "dir": os.path.join(lib, "steamapps", "common", val("installdir"))}
+    return out
+
+def descargas():
+    """Lo que Steam está bajando ahora: [{"name", "pct"}] por los appmanifest. Si Steam está cerrado no hay nada que mostrar."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess") as k:
+            if not winreg.QueryValueEx(k, "pid")[0]:
+                return []
+    except OSError:
+        return []
+    out = []
+    for lib in _bibliotecas():
+        for f in glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf")):
+            try:
+                t = open(f, encoding="utf-8", errors="ignore").read()
+            except Exception:
+                continue
+            val = lambda k: (re.search(r'"%s"\s*"([^"]*)"' % k, t) or [None, ""])[1]
+            total, hecho = int(val("BytesToDownload") or 0), int(val("BytesDownloaded") or 0)
+            if total and hecho < total and int(val("StateFlags") or 0) & 2:  # 2 = le falta bajar algo
+                out.append({"name": val("name"), "pct": int(hecho * 100 / total)})
     return out
 
 def huella_instalados():

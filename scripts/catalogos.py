@@ -7,10 +7,15 @@ que se publican con la landing. La app los baja de ahí: nadie tiene que iniciar
 Formato de cada juego (claves cortas para que el archivo pese poco):
   i = id en la tienda, t = título, s = slug de la página, c = portada vertical, y = año, g = géneros
 """
-import json, os, re, time, urllib.request
+import json, os, re, time, urllib.parse, urllib.request
 
 SALIDA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "catalogo")
 UA = {"User-Agent": "TasloStacks (+https://github.com/taslostacks/TasloStacks)"}
+# Regla del dueño (07/11/2026): los juegos +18 por contenido sexual no aparecen en el catálogo. x = marcado para sacar.
+GOG_ADULTOS = {"nsfw", "hentai"}  # "sexual-content" y "nudity" no sirven: incluyen Disco Elysium, Cyberpunk...
+STEAM_ETIQUETAS = ("Hentai", "NSFW", "Sexual Content", "Nudity")  # solo para saber a quiénes preguntarle a la tienda: traen falsos positivos
+STEAM_ADULTOS = {3, 4}  # avisos de contenido de la tienda: 3 = solo adultos, sexual; 4 = desnudos o sexo frecuentes
+STEAM_VISTOS = os.path.join(SALIDA, "steam_adultos.json")  # appid -> es +18, para no volver a preguntar cada semana
 
 def bajar(url):
     for intento in range(4):
@@ -29,7 +34,8 @@ def gog():
         paginas = d.get("pages", 1)
         for p in d.get("products", []):
             juegos.append({"i": p["id"], "t": p["title"], "s": p.get("slug", ""), "c": p.get("coverVertical", ""),
-                           "y": (p.get("releaseDate") or "")[:4], "g": [x["name"] for x in p.get("genres", [])][:3]})
+                           "y": (p.get("releaseDate") or "")[:4], "g": [x["name"] for x in p.get("genres", [])][:3],
+                           **({"x": 1} if GOG_ADULTOS & {x["slug"] for x in p.get("tags", [])} else {})})
         pagina += 1
         time.sleep(0.4)  # sin apuro: no cargarle el servidor a GOG
     return juegos
@@ -42,6 +48,38 @@ def steam(paginas=10):
         for j in bajar("https://steamspy.com/api.php?request=all&page=%d" % p).values():
             if j.get("name"):
                 juegos.append({"i": str(j["appid"]), "t": j["name"]})
+    return juegos
+
+def steam_adultos(juegos):
+    """Marca los +18 de Steam. Pregunta solo por los que tienen etiquetas sospechosas (la tienda deja 200 consultas cada 5 minutos)."""
+    try:
+        vistos = json.load(open(STEAM_VISTOS, encoding="utf-8"))
+    except Exception:
+        vistos = {}
+    ids, dudosos = {j["i"] for j in juegos}, set()
+    for t in STEAM_ETIQUETAS:
+        dudosos |= set(bajar("https://steamspy.com/api.php?request=tag&tag=" + urllib.parse.quote(t))) & ids
+        time.sleep(1.2)
+    faltan = sorted(dudosos - set(vistos))
+    print("Steam: %d dudosos, faltan preguntar %d" % (len(dudosos), len(faltan)), flush=True)
+    for n, a in enumerate(faltan):
+        while True:
+            try:
+                r = urllib.request.urlopen(urllib.request.Request("https://store.steampowered.com/api/appdetails?cc=US&l=english&appids=" + a, headers=UA), timeout=30)
+                d = (json.loads(r.read()).get(a) or {}).get("data") or {}
+                vistos[a] = bool(STEAM_ADULTOS & set((d.get("content_descriptors") or {}).get("ids") or []))
+                break
+            except Exception as e:
+                print("Steam: esperando 5 minutos (%s)" % e, flush=True)
+                time.sleep(300)
+        time.sleep(2)
+        if n % 50 == 49:
+            json.dump(vistos, open(STEAM_VISTOS, "w", encoding="utf-8"))
+            print("Steam: %d de %d" % (n + 1, len(faltan)), flush=True)
+    os.makedirs(SALIDA, exist_ok=True)
+    json.dump(vistos, open(STEAM_VISTOS, "w", encoding="utf-8"))
+    for j in juegos:
+        if vistos.get(j["i"]): j["x"] = 1
     return juegos
 
 def xbox():
@@ -66,11 +104,13 @@ def norm(n):
 def juntar(gog_, steam_, xbox_):
     """Un juego por nombre, con el id de cada tienda donde está: st = {"GOG": [id, slug], "Steam": appid, "Xbox": id}.
     Portada: la de GOG o Xbox si hay; si no, la de Steam por appid."""
-    todos = {}
+    todos, fuera = {}, set()
     for tienda, lista in (("GOG", gog_), ("Steam", steam_), ("Xbox", xbox_)):
         for j in lista:
             k = norm(j["t"])
             if not k: continue
+            if j.get("x"):  # marcado en una tienda: se va de todas
+                fuera.add(k); continue
             e = todos.setdefault(k, {"t": j["t"], "st": {}})
             e["st"].setdefault(tienda, [j["i"], j["s"]] if tienda == "GOG" else j["i"])
             if not e.get("c") and j.get("c"): e["c"] = j["c"]
@@ -79,7 +119,7 @@ def juntar(gog_, steam_, xbox_):
     for e in todos.values():
         if not e.get("c") and "Steam" in e["st"]:
             e["c"] = "https://steamcdn-a.akamaihd.net/steam/apps/%s/library_600x900.jpg" % e["st"]["Steam"]
-    return list(todos.values())
+    return [e for k, e in todos.items() if k not in fuera]
 
 def guardar(tienda, juegos):
     os.makedirs(SALIDA, exist_ok=True)
@@ -88,6 +128,6 @@ def guardar(tienda, juegos):
     print(tienda, len(juegos), "juegos")
 
 if __name__ == "__main__":
-    g, s, x = gog(), steam(), xbox()
-    guardar("gog", g)
+    g, s, x = gog(), steam_adultos(steam()), xbox()
+    guardar("gog", [j for j in g if not j.get("x")])
     guardar("todos", juntar(g, s, x))

@@ -6,6 +6,7 @@ APP = "TasloStacks"
 DATA = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), APP)
 CACHE = os.path.join(DATA, "cache")
 CONFIG = os.path.join(os.environ.get("APPDATA", DATA), APP, "config.json")
+NIVEL = os.path.join(os.path.dirname(CONFIG), "nivel.json")  # horas jugadas: junto a la config, sobrevive a desinstalar
 HTML = os.path.join(DATA, "biblioteca.html")
 LOG = os.path.join(DATA, "taslostacks.log")
 
@@ -29,7 +30,7 @@ DEFAULT = {
     "steam_api_key": "",      # https://steamcommunity.com/dev/apikey (opcional: sin clave solo se ven los juegos instalados de Steam)
     "steam_id": "",           # se detecta solo del último usuario que entró a Steam
     "launchers": {},          # {"Steam": {"exe": "..."}} para corregir una ruta a mano
-    "cerrar_launchers": True, # al cerrar el juego, cerrar el launcher que se abrió para jugarlo
+    "cerrar_launchers": True, # al cerrar un juego, cerrar todos los launchers abiertos
     "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam
     "tema": "claro",          # "claro" u "oscuro"
     "repo": "taslostacks/TasloStacks",  # usuario/repo de GitHub para avisar de versiones nuevas

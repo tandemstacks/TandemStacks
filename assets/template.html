@@ -26,14 +26,14 @@ header{position:sticky;top:0;z-index:5;background:var(--panel);border-top:5px so
 .gear:hover{background:var(--card)}.gear::-webkit-details-marker{display:none}.gear{list-style:none;padding:0}.gear svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .desinst{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--mu);cursor:pointer;background:none;border:none;padding:0}.desinst svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.desinst:hover{color:var(--bad)}
 .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
-#q{flex:1;min-width:220px;font:inherit;padding:10px 14px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);outline:none;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
-#q:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
+.qgrupo{display:block;box-sizing:border-box;width:calc(100% - 32px);margin:2px 16px 14px;font:inherit;padding:10px 14px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);outline:none;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.qgrupo:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.12),0 0 0 2px var(--acc)}
 select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:var(--bg);color:var(--tx);box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chips{display:flex;gap:8px 12px;flex-wrap:wrap;margin-top:10px}
 /* tiendas a la izquierda; orden y géneros a la derecha, contra el borde */
-.filafilt{display:flex;gap:10px;align-items:flex-start;margin-top:10px}
+.filafilt{display:flex;gap:10px;align-items:flex-start;margin-top:12px}
 .filafilt .chips{flex:1;margin-top:0}
-.ordgen{display:flex;gap:6px;align-items:center;margin-left:auto}
+.ordgen{display:flex;gap:12px;align-items:center;margin-left:auto;flex:none}
 .ordgen select{padding:0 8px;font-size:12px;letter-spacing:.3px;text-transform:uppercase;box-shadow:var(--sh);cursor:pointer}
 /* misma altura para tiendas, orden y géneros: quedan alineados */
 .filafilt .chip,.ordgen select{height:28px;box-sizing:border-box;padding-top:0;padding-bottom:0}
@@ -82,8 +82,8 @@ main{padding:16px 22px 60px}
 .jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));column-gap:28px}
 .dcard{background:var(--bg);border-radius:3px;padding:12px}
 .dcard h3{margin:0 0 6px;font-size:14px}
-.jrow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--ln)}
-.jrow span:last-child{color:var(--mu)}
+.jrow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--ln)}.jrow span:first-child{display:flex;align-items:center;min-width:0}.dcuerpo{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.dcuerpo .jgrid{flex:1;min-width:300px}.dtorta{flex:none;width:360px;max-width:100%;display:block}.dtorta path{cursor:default;transition:opacity .15s}.dtorta:hover path:not(:hover){opacity:.55}.dtorta text{font-size:11px;fill:var(--tx)}.dtorta line{stroke:var(--mu);stroke-width:1}.jthumb{width:28px;height:42px;object-fit:cover;border-radius:2px;margin-right:9px;flex:none;background:var(--card)}
+.jrow span:last-child{color:var(--mu);flex:none;white-space:nowrap}
 .ley{font-size:12px;color:var(--mu);display:flex;gap:12px;margin-top:6px}
 .ley i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
@@ -146,7 +146,17 @@ main{padding:16px 22px 60px}
 .cfg .chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:14px;text-transform:none;letter-spacing:0;color:var(--tx)}
 .cfg .acts{margin-top:18px}
 .cfg a{color:var(--acc);cursor:pointer}
-.catayuda{color:var(--mut);font-size:13px;margin:4px 0 14px}
+.catayuda{color:var(--mu);font-size:13px;margin:4px 0 14px;padding:0 16px}
+.grupo{scroll-margin-top:190px}
+.nivel{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu);margin-right:6px;cursor:default}.nivel b{color:var(--tx);text-transform:uppercase;letter-spacing:.4px;font-size:13px}.nbar{width:120px;height:6px;border-radius:3px;background:var(--card);overflow:hidden}.nbar i{display:block;height:100%;background:var(--acc)}
+#descargas{display:flex;flex-direction:column;gap:6px;margin-top:10px}#descargas:empty{display:none}.dl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu)}.dl b{color:var(--tx);font-weight:600}.dl .nbar{flex:1;width:auto}
+.pager{display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 16px 28px;font-size:13px;color:var(--mu)}
+.card.sigpag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:var(--bg);color:var(--mu);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}.card.sigpag b{font-size:30px;line-height:1;color:var(--acc)}.card.sigpag:hover{color:var(--tx)}
+/* carga por sector: el giro solo existe mientras hay algo cargando, y cada portada brilla hasta que llega */
+.cargando{display:flex;align-items:center;justify-content:center;gap:10px;padding:26px 16px;margin:0}.cargando::before{content:"";width:18px;height:18px;border-radius:50%;border:3px solid var(--card);border-top-color:var(--acc);animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.card img:not(.ok){background:linear-gradient(100deg,var(--card) 40%,var(--bg) 50%,var(--card) 60%);background-size:220% 100%;animation:brillo 1.3s linear infinite}
+@keyframes brillo{from{background-position:120% 0}to{background-position:-120% 0}}
 @media (max-width:640px){.modal{flex-direction:column}.modal .cov{width:150px}.stats{grid-template-columns:1fr 1fr}.tiendas{margin-left:0}.cfg .lrow{grid-template-columns:90px 1fr 70px 34px}}
 </style>
 </head>
@@ -154,16 +164,13 @@ main{padding:16px 22px 60px}
 <header>
   <div class="top">
     <div class="brand" id="brand" onclick="api('abrir_url','https://taslostacks.github.io/TasloStacks/')"><img class="logo" id="logo" alt=""><div><h1>Taslo<span>Stacks</span></h1><small id="sub"></small></div></div>
-    <div class="tiendas"><span id="tiendas" style="display:none"></span>
+    <div class="tiendas"><span id="tiendas" style="display:none"></span><div class="nivel" id="nivel"></div>
       <details class="dd der" id="ddmenu"><summary class="gear" id="gear" title="Menú">⚙</summary><div class="menu" id="menu"></div></details>
     </div>
   </div>
-  <div class="tools">
-    <input id="q" autocomplete="off">
-    <span class="count" id="count"></span>
-  </div>
+  <div id="descargas"></div>
   <div class="filafilt"><div class="chips" id="filtros"></div>
-    <div class="ordgen"><select id="orden"><option value="nombre"></option><option value="valor"></option><option value="peso"></option><option value="anio"></option></select>
+    <div class="ordgen"><span class="chip tog" id="instchip" data-t="inst"></span><select id="orden"><option value="nombre"></option><option value="valor"></option><option value="peso"></option><option value="anio"></option></select>
       <details class="dd der" id="ddgen"><summary class="chip" id="gensum"></summary><div class="menu" id="generos"></div></details></div>
   </div>
   <div class="prog" id="prog"><span id="progtxt"></span><div class="pb"><i id="progbar" style="width:0%"></i></div></div>
@@ -193,7 +200,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 // ---------- idioma ----------
 const TXT={
  spanish:{sinId:'Este juego está en tu cuenta de {t}, pero TasloStacks todavía no sabe cuál es. Si nos avisás cuál es, en la próxima versión aparece con su nombre para todos. Código:',avisar:'Avisar cuál es',
-  noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',catMas:'Se muestran {n}: buscá para ver otros.',
+  noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Cada nivel pide 5 horas más que el anterior.',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
   buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
@@ -210,10 +217,10 @@ const TXT={
   cBienvenida:'¡Bienvenido a TasloStacks!',cTitulo:'Configuración',cIntro0:'Junta todos tus juegos en una sola pantalla:',cIntro1:'Detecté esto en tu PC; revisalo y guardá. ',
   cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal.',guardar:'Guardar',cSteamAv:'<b>Steam: hoy solo ves tus juegos instalados.</b> Para ver también los que tenés comprados pero no instalados, conectá tu cuenta de Steam. Es gratis y lleva 1 minuto: pegás una clave que te da Steam.',cSteamBtn:'Conectar mi cuenta de Steam',cInicioTxt:'Muchos launchers (Steam, Epic, EA…) se abren solos al prender la PC y quedan gastando memoria aunque no juegues. Este botón hace que <b>dejen de abrirse solos</b>. No los desinstala ni borra nada: cuando elegís un juego en TasloStacks, el launcher se abre en ese momento. Se puede deshacer desde Administrador de tareas → Inicio. El anti-trampas de Riot (Vanguard) no se toca.',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>taslostacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
-  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',cCerrar:'Cerrar el launcher cuando termino de jugar (si lo abrió TasloStacks)',
+  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',descSteam:'Esta descripción no es original de Epic',cCerrar:'Cerrar todos los launchers cuando termino de jugar',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TasloStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
-  noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',catMas:'Showing {n}: search to see others.',
+  noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Each level takes 5 hours more than the last.',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
   buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
@@ -230,13 +237,13 @@ const TXT={
   cBienvenida:'Welcome to TasloStacks!',cTitulo:'Settings',cIntro0:'All your games in one screen:',cIntro1:'This is what I found on your PC; review and save.',
   cIntro2:'Everything is detected automatically. Only change something if a path is wrong.',guardar:'Save',cSteamAv:'<b>Steam: right now you only see your installed games.</b> To also see games you own but have not installed, connect your Steam account. It is free and takes 1 minute: you paste a key that Steam gives you.',cSteamBtn:'Connect my Steam account',cInicioTxt:'Many launchers (Steam, Epic, EA…) open by themselves when the PC starts and use memory even when you are not playing. This button makes them <b>stop opening on their own</b>. It does not uninstall or delete anything: when you pick a game in TasloStacks, the launcher opens at that moment. You can undo it from Task Manager → Startup. The Riot anti-cheat (Vanguard) is never touched.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
   cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>taslostacks</i>). Your profile must have <b>game details</b> set to public.',
-  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',cCerrar:'Close the launcher when I finish playing (if TasloStacks opened it)',
+  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',descSteam:'This description is not original from Epic',cCerrar:'Close all launchers when I finish playing',
   cGuardar:'Save and scan',cInicio:'Windows startup',cInicioBtn:'Remove launchers from startup',cInicioAct:'start with Windows',cInicioOk:'No launcher starts with Windows',cInicioAdmin:'These are set for all users and need administrator rights (remove them from Task Manager → Startup):',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
 };
 const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
 const L=TXT[IDIOMA];
 document.documentElement.lang=IDIOMA==='english'?'en':'es';
-$('#q').placeholder=L.buscar; $('#brand').title=L.web; [...$('#orden').options].forEach((o,i)=>o.textContent=L.orden[i]); $('#empty').textContent=L.sinRes; $('#updtxt').innerHTML=L.nueva+' <b id="updtag"></b>'; $('#updlink').textContent=L.bajarNueva;
+$('#brand').title=L.web; [...$('#orden').options].forEach((o,i)=>o.textContent=L.orden[i]); $('#empty').textContent=L.sinRes; $('#updtxt').innerHTML=L.nueva+' <b id="updtag"></b>'; $('#updlink').textContent=L.bajarNueva;
 
 // ---------- juegos ----------
 const norm=n=>n.toLowerCase().replace(/[™®©]/g,'').replace(/&/g,' and ')
@@ -264,7 +271,7 @@ const LOGO={"Steam": "M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.3
 const logo=(s,c,n)=>LOGO[s]?`<svg class="lg" viewBox="0 0 24 24" width="${n}" height="${n}" fill="${c}" aria-label="${esc(s)}"><title>${esc(s)}</title><path d="${LOGO[s]}"/></svg>`:`<b style="color:${c}">${esc(s)}</b>`;
 const BG={Steam:'#1b3a5c',Epic:'#3a3a3a',Xbox:'#1f4020',EA:'#5c2020','Battle.net':'#0f3a66',Rockstar:'#5c4310',Riot:'#5c1020',Ubisoft:'#10305c',GOG:'#3d1a40',Amazon:'#5c3a00','itch.io':'#5c2222'};
 const peso=g=>g.installed?(g.sizeGB||0):(g.reqGB||0);
-let tsel=new Set(), soloInst=false, gens=new Set(), texto='', orden='nombre', abiertos=new Set(['si']);  // Instalados arranca abierto, No instalados cerrado
+let tsel=new Set(), soloInst=false, gens=new Set(), orden='nombre', abiertos=new Set(['si']), BUSCA={si:'',no:'',nc:''};  // Instalados arranca abierto, No instalados cerrado
 const ST={ok:['var(--ok)',L.tLeida],parcial:['var(--warn)',L.tParcial],no:['var(--bad)',L.tNo]};
 const TODAS=['Steam','Epic','EA','Xbox','Riot','Battle.net','Rockstar','Ubisoft','GOG','Amazon','itch.io'];
 
@@ -274,7 +281,8 @@ function cabecera(){
   $('#sub').textContent=`${J.length} ${L.juegos} · ${J.filter(g=>g.installed).length} ${L.instalados.toLowerCase()}`;
   const cuenta=s=>RAW.filter(g=>g.store===s).length, cuentaInst=s=>RAW.filter(g=>g.store===s&&g.installed).length;
   const visibles=TODAS.filter(s=>cuenta(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera));
-  const tiendas=['todos',...visibles,'inst'];
+  const tiendas=['todos',...visibles];
+  $('#instchip').innerHTML=`${L.instalados}<span class="sw ${soloInst?'on':''}"></span>`;
   $('#filtros').innerHTML=tiendas.map(t=>`<span class="chip ${t==='todos'?(!tsel.size?'on':''):t==='inst'?'tog':(tsel.has(t)?'on':'')}${t!=='todos'&&t!=='inst'&&!cuenta(t)?' vacia':''}" data-t="${t}" ${t!=='todos'&&t!=='inst'&&!cuenta(t)?`title="${esc(t)}: 0 ${L.juegos}"`:''}>${t==='todos'?L.todos:t==='inst'?`${L.instalados}<span class="sw ${soloInst?'on':''}"></span>`:logo(t,sc(t),12)+' '+t+` <span style="opacity:.55" title="${cuentaInst(t)} ${L.instalados.toLowerCase()} ${L.de} ${cuenta(t)}">${cuentaInst(t)}/${cuenta(t)}</span>`}</span>`).join('');
   const cnt={}; J.forEach(g=>(g.genres||[]).forEach(x=>cnt[x]=(cnt[x]||0)+1));
   const topG=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,30);
@@ -284,7 +292,20 @@ function cabecera(){
   $('#gensum').classList.toggle('on',gens.size>0);
   menu();
 }
-const PAL=['#7c9cff','#b07cff','#ff7ca8','#ffa94d','#ffd43b','#69db7c','#38d9a9','#4dabf7','#e599f7','#ff8787','#a9e34b','#74c0fc'];
+const PAL=['#7c9cff','#ffa94d','#b07cff','#ffd43b','#ff7ca8','#69db7c','#4dabf7','#ff8787','#38d9a9','#e599f7','#a9e34b','#74c0fc'];  // ordenados para que dos seguidos se distingan bien
+// torta de cuánto ocupa cada juego del disco: mismos colores que la barra y la lista; las porciones chicas solo se nombran en la lista y al pasar el mouse
+function torta(d){
+  const tot=d.juegos.reduce((a,x)=>a+x.gb,0); if(!tot) return '';
+  const cx=180,cy=105,R=72,MIN=.04; let a=-Math.PI/2, porciones='', nombres='';
+  d.juegos.forEach((x,i)=>{
+    const f=x.gb/tot, b=a+f*2*Math.PI, med=(a+b)/2, pto=(ang,r)=>`${(cx+r*Math.cos(ang)).toFixed(1)} ${(cy+r*Math.sin(ang)).toFixed(1)}`, tip=`<title>${esc(x.name)} · ${x.gb} GB · ${Math.round(f*100)}%</title>`;
+    if(f>=.9999) porciones+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${PAL[i%PAL.length]}">${tip}</circle>`;
+    else if(f>0) porciones+=`<path d="M${cx} ${cy}L${pto(a,R)}A${R} ${R} 0 ${f>.5?1:0} 1 ${pto(b,R)}Z" fill="${PAL[i%PAL.length]}" stroke="var(--bg)" stroke-width="2">${tip}</path>`;
+    if(f>=MIN){const der=Math.cos(med)>=0, n=x.name.length>20?x.name.slice(0,19)+'…':x.name, [lx,ly]=pto(med,R+11).split(' ');
+      nombres+=`<line x1="${pto(med,R+1).split(' ')[0]}" y1="${pto(med,R+1).split(' ')[1]}" x2="${lx}" y2="${ly}"></line><text x="${+lx+(der?3:-3)}" y="${+ly+4}" text-anchor="${der?'start':'end'}">${esc(n)}</text>`;}
+    a=b;});
+  return `<svg class="dtorta" viewBox="0 0 360 210" role="img" aria-label="${esc(d.letra)}">${porciones}${nombres}</svg>`;
+}
 function discos(){
   if(!D.length){$('#discos').style.display='none';return;}
   $('#discos').style.display='';
@@ -292,8 +313,9 @@ function discos(){
   const mini=D.map(d=>{const o=(d.usadoGB-d.juegosGB)/d.totalGB*100, poco=alerta.includes(d);
     return `<div class="dmini"><div class="lbl"><span><b style="color:var(--tx)">${d.letra}</b> · ${L.juegos} ${d.juegosGB} GB</span><span style="${poco?'color:var(--bad);font-weight:700':''}">${poco?'⚠ ':''}${d.libreGB} GB ${L.libres} ${d.totalGB}</span></div>
     <div class="bar">${d.juegos.map((x,i)=>`<i title="${esc(x.name)} · ${x.gb} GB" style="width:${x.gb/d.totalGB*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}<i class="o" style="width:${o}%" title="${L.otros}"></i></div></div>`}).join('');
-  const det=D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} ${L.juegos}, ${d.juegosGB} GB</h3>
-    <div class="jgrid">${d.juegos.map((x,i)=>`<div class="jrow"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div></div>`).join('');
+  const portada=n=>(RAW.find(g=>g.name===n)||{}).cover||'';
+  const det=!$('#discos').open?'':D.map(d=>`<div class="dcard"><h3>${d.letra} — ${d.juegos.length} ${L.juegos}, ${d.juegosGB} GB</h3>
+    <div class="dcuerpo"><div class="jgrid">${d.juegos.map((x,i)=>`<div class="jrow"><span><img class="jthumb" loading="lazy" referrerpolicy="no-referrer" src="${esc(portada(x.name))}" alt="" onerror="this.style.visibility='hidden'"><i style="flex:none;width:10px;height:10px;border-radius:3px;margin-right:7px;background:${PAL[i%PAL.length]}"></i>${esc(x.name)}</span><span>${x.gb} GB</span></div>`).join('')||`<div class="jrow"><span>${L.sinJuegos}</span><span></span></div>`}</div>${torta(d)}</div></div>`).join('');
   const estaba=$('#discos').open;
   $('#discos').innerHTML=`<summary><b>💾 ${L.discos}</b>${mini}<span class="flecha">${L.verJuegos} ▾</span></summary>
     ${alerta.length?`<div style="margin:0 16px 10px;padding:8px 12px;border-radius:3px;background:rgba(229,83,75,.15);color:var(--bad);font-size:13px">⚠ ${L.pocoEsp} ${alerta.map(d=>d.letra).join(', ')}: ${L.pocoEsp2}</div>`:''}
@@ -314,12 +336,13 @@ const resTxt=p=>L.rev[p>=95?0:p>=80?1:p>=70?2:p>=40?3:p>=20?4:5];
 
 // ---------- No comprados: catálogo público de GOG (lo arma GitHub cada semana) ----------
 // Los juegos que ya tenés en cualquier tienda (mismo nombre) no se repiten: quedan en su tarjeta de siempre.
-let CAT=[];
-const cargarCatalogo=()=>api('catalogo','todos').then(d=>{CAT=(d&&d.juegos)||[];render();}).catch(()=>{});
+let CAT=[], catEstado='';  // el catálogo pesa: se baja recién al desplegar No comprados o al buscar
+const cargarCatalogo=()=>{if(catEstado)return;catEstado='bajando';api('catalogo','todos').then(d=>{CAT=(d&&d.juegos)||[];}).catch(()=>{}).then(()=>{catEstado='listo';render();});};
+const coincide=(n,k)=>{const q=BUSCA[k].toLowerCase().trim();return !q||n.toLowerCase().includes(q);};  // cada grupo tiene su buscador
 function noComprados(){
   if(soloInst||gens.size) return [];
   const tengo=new Set(J.map(g=>norm(g.name)));
-  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t))&&(!tsel.size||Object.keys(j.st).some(s=>tsel.has(s)))&&(!texto||j.t.toLowerCase().includes(texto)));
+  return CAT.filter(j=>!j.tuyo&&!tengo.has(norm(j.t))&&(!tsel.size||Object.keys(j.st).some(s=>tsel.has(s)))&&coincide(j.t,'nc'));
 }
 // tocar un juego no comprado: si está en una sola tienda se abre ahí; si está en varias, elegís en cuál
 function verNC(j){
@@ -333,15 +356,18 @@ function verNC(j){
   $('#bg').classList.add('show');
 }
 // son miles: se dibujan de a tandas a medida que bajás (y las portadas se piden recién al verse, loading=lazy)
-const NC={lista:[],n:0,TANDA:96};
+const POR_PAG=24, PAG={no:0,nc:0}, PAGN={};
+// una página de la lista: lo demás no se dibuja hasta que lo pidas
+function paginado(k,lista,tarjeta){
+  if(PAGN[k]!==lista.length){PAGN[k]=lista.length;PAG[k]=0;}  // cambió el filtro o la búsqueda: vuelve a la primera
+  const total=Math.max(1,Math.ceil(lista.length/POR_PAG)), n=PAG[k]=Math.min(PAG[k],total-1);
+  return `<div class="grid">${n?`<div class="card sigpag" data-pg="${k}" data-d="-1"><b>‹</b>${L.antPag}</div>`:''}${lista.slice(n*POR_PAG,(n+1)*POR_PAG).map(tarjeta).join('')}${n<total-1?`<div class="card sigpag" data-pg="${k}" data-d="1"><b>›</b>${L.sigPag}</div>`:''}</div>`
+    +(total>1?`<div class="pager"><span>${L.pagina} ${n+1} ${L.de} ${total}</span></div>`:'');
+}
 const cardNC=j=>{const st=Object.keys(j.st);return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
   <span class="tag">${st.map(s=>logo(s,sc(s),20)).join('')}</span><div class="nm">${esc(j.t)}</div></div>`;};
-window.addEventListener('scroll',()=>{const g=document.getElementById('ncgrid');
-  if(!g||NC.n>=NC.lista.length||g.getBoundingClientRect().bottom>innerHeight+800)return;
-  g.insertAdjacentHTML('beforeend',NC.lista.slice(NC.n,NC.n+NC.TANDA).map(cardNC).join('')); NC.n+=NC.TANDA;},{passive:true,capture:true});
 function render(){
   let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
-    &&(!texto||g.name.toLowerCase().includes(texto))
     &&(!gens.size||[...gens].some(x=>(g.genres||[]).includes(x))));
   const by={nombre:(a,b)=>a.name.localeCompare(b.name,'es'),valor:(a,b)=>(b.revPct||0)-(a.revPct||0),peso:(a,b)=>peso(b)-peso(a),anio:(a,b)=>(b.anio||0)-(a.anio||0)};
   list.sort(by[orden]);
@@ -349,21 +375,28 @@ function render(){
     <span class="tag">${g.stores.map(s=>logo(s,sc(s),20)).join('')}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
     <div class="nm">${esc(g.name)}</div></div>`;
   const inst=list.filter(g=>g.installed), no=list.filter(g=>!g.installed);
-  let h=inst.length?`<details class="grupo" data-s="si"${texto||abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${inst.length}</span><span class="flecha">▾</span></summary><div class="grid">${inst.map(card).join('')}</div></details>`:'';
-  if(no.length) h+=`<details class="grupo" data-s="no"${texto||abiertos.has('no')?' open':''}><summary><b>${L.noInst}</b> <span>${no.length}</span><span class="flecha">▾</span></summary><div class="grid">${no.map(card).join('')}</div></details>`;
-  const nc=NC.lista=noComprados(); NC.n=Math.min(NC.TANDA,nc.length);
-  if(nc.length){const abierto=(texto||abiertos.has('nc'));
-    h+=`<details class="grupo" data-s="nc"${abierto?' open':''}><summary><b>${L.noComprados}</b> <span>${nc.length}</span><span class="flecha">▾</span></summary>`
-      +(abierto?`<p class="catayuda">${L.catAyuda}</p><div class="grid" id="ncgrid">${nc.slice(0,NC.n).map(cardNC).join('')}</div>`:'')+`</details>`;}
+  const foco=document.activeElement&&document.activeElement.dataset.q, cursor=foco&&document.activeElement.selectionStart;  // al redibujar se sigue escribiendo
+  const buscador=k=>`<input class="qgrupo" data-q="${k}" autocomplete="off" placeholder="${esc(L.buscar)}" value="${esc(BUSCA[k])}">`;
+  const nada=lista=>lista.length?'':`<p class="catayuda">${L.sinRes}</p>`;
+  const instV=inst.filter(g=>coincide(g.name,'si')), noV=no.filter(g=>coincide(g.name,'no'));
+  let h=inst.length?`<details class="grupo" data-s="si"${abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${instV.length}</span><span class="flecha">▾</span></summary>${abiertos.has('si')?`${buscador('si')}${nada(instV)}<div class="grid">${instV.map(card).join('')}</div>`:''}</details>`:'';
+  if(no.length){const abierto=abiertos.has('no');
+    h+=`<details class="grupo" data-s="no"${abierto?' open':''}><summary><b>${L.noInst}</b> <span>${noV.length}</span><span class="flecha">▾</span></summary>${abierto?buscador('no')+nada(noV)+paginado('no',noV,card):''}</details>`;}
+  if(!abiertos.has('nc')&&catEstado==='listo'){CAT=[];catEstado='';}  // plegado: se suelta de la memoria y al desplegar se vuelve a leer
+  const nc=noComprados(), hayNC=!soloInst&&!gens.size&&(catEstado!=='listo'||CAT.length>0);
+  if(hayNC){const abierto=abiertos.has('nc');
+    if(abierto) cargarCatalogo();
+    h+=`<details class="grupo" data-s="nc"${abierto?' open':''}><summary><b>${L.noComprados}</b> <span>${catEstado==='listo'?nc.length:''}</span><span class="flecha">▾</span></summary>`
+      +(!abierto?'':catEstado==='listo'?`<p class="catayuda">${L.catAyuda}</p>${buscador('nc')}${nada(nc)}${paginado('nc',nc,cardNC)}`:`<p class="catayuda cargando">${L.cargandoCat}</p>`)+`</details>`;}
   if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?L.vacio:L.buscando}</div>`;
   $('#grid').innerHTML=h;
-  $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{if(!texto)d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);
-    if(d.dataset.s==='nc'&&d.open&&!d.querySelector('.grid'))render();}));  // No comprados se dibuja recién al abrirlo (son miles)
+  if(foco){const q=document.querySelector(`[data-q="${foco}"]`);if(q){q.focus();q.setSelectionRange(cursor,cursor);}}
+  $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);
+    if(d.open?!d.querySelector('.grid,.cargando'):d.querySelector('.grid,.cargando'))render();}));  // cada grupo se dibuja al abrirlo y se suelta al plegarlo
   const vacias=[...tsel].filter(s=>!RAW.some(g=>g.store===s));
   $('#empty').innerHTML=!list.length&&vacias.length?vacias.map(s=>{const t=T.find(x=>x.n===s);const g=(GUIA[IDIOMA]||{})[s]||{};
     return `<div style="max-width:560px;margin:0 auto 10px">${logo(s,sc(s),28)}<p style="margin:8px 0 4px;color:var(--tx);font-weight:700">${esc(s)}: 0 ${L.juegos}</p><p style="margin:0 0 8px">${esc(g.lee||'')}</p>${t?`<button class="btn" onclick="tienda(T[${T.indexOf(t)}])">${L.verTienda}</button>`:''}</div>`;}).join(''):L.sinRes;
-  $('#empty').style.display=list.length||nc.length||!RAW.length?'none':'block';
-  $('#count').textContent=`${list.length} ${L.de} ${J.length}`;
+  $('#empty').style.display=list.length||hayNC||!RAW.length?'none':'block';
 }
 function progreso(){
   const p=$('#prog');
@@ -375,6 +408,17 @@ function progreso(){
   c.classList.remove('fuera');
   $('#cargatxt').textContent=textoEstado();
   $('#cargapb').classList.toggle('ind',!EST.total);$('#cargabar').style.width=EST.total?(EST.hecho/EST.total*100)+'%':'';
+}
+// nivel: cada uno pide 5 horas más que el anterior (nivel 2 a las 5 h, 3 a las 15 h, 4 a las 30 h...)
+function nivel(){
+  if(EST.jugado==null) return;
+  const h=EST.jugado/3600; let n=1; while(5*n*(n+1)/2<=h)n++;
+  const desde=5*(n-1)*n/2, hasta=5*n*(n+1)/2, num=x=>x.toLocaleString(IDIOMA==='english'?'en':'es',{maximumFractionDigits:x<10?1:0});
+  $('#nivel').title=L.nivelAyuda;
+  $('#nivel').innerHTML=`<b>${L.nivel} ${n}</b><div class="nbar"><i style="width:${(h-desde)/(hasta-desde)*100}%"></i></div><span>${num(h)} / ${hasta} h</span>`;
+}
+function descargas(){
+  $('#descargas').innerHTML=(EST.descargas||[]).map(d=>`<div class="dl"><span>${L.bajando} <b>${esc(d.name)}</b></span><div class="nbar"><i style="width:${d.pct}%"></i></div><span>${d.pct}%</span></div>`).join('');
 }
 function todo(){agrupar();cabecera();discos();render();progreso();}
 
@@ -479,7 +523,7 @@ function abrir(g){
       <div class="meta">${g.stores.length>1?L.loTenes+' ':''}${g.stores.map(s=>`<span style="color:${sc(s)};display:inline-flex;align-items:center;gap:5px;line-height:1">${logo(s,sc(s),13)}${s}</span>`).join(' ')}${g.anio?` · ${esc(g.anio)}`:''}${g.dev?` · ${esc(g.dev)}`:''}${g.clasif?` · ${esc(g.clasif)}`:''} · ${g.installed?`<span style="color:var(--ok)">${L.instalado}</span>`:L.noInstalado}</div>
       ${g.genres?`<div class="pills">${g.genres.map(x=>`<span class="pill">${esc(x)}</span>`).join('')}</div>`:''}
       <div class="stats">${cajas.join('')}</div>
-      ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:''}
+      ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:g.descSteam?`<div class="desc">${esc(g.descSteam)}<div style="font-size:12px;color:var(--mu);margin-top:4px">${L.descSteam}</div></div>`:''}
       ${g.desconocido?`<div class="aviso"><span>?</span><div>${L.sinId.replace('{t}',esc(g.store))} <b>${esc(g.desconocido.slice(0,12))}</b></div></div>
         <div class="acts" style="margin-bottom:8px"><button class="btn pri" onclick="avisarJuego('${esc(g.store)}','${esc(g.desconocido)}')">✉ ${L.avisar}</button></div>`:''}
       <div class="acts" id="acts">${botones(g)}</div>
@@ -497,16 +541,21 @@ function avisarJuego(tienda,h){
 }
 window.avisarJuego=avisarJuego;
 const cerrar=()=>{$('#bg').classList.remove('show');$('#cfgbg').classList.remove('show');};
-$('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(!c)return;
+['load','error'].forEach(ev=>$('#grid').addEventListener(ev,e=>{if(e.target.tagName==='IMG')e.target.classList.add('ok');},true));  // la portada llegó: se apaga su animación
+$('#grid').addEventListener('click',e=>{const p=e.target.closest('[data-pg]');
+  if(p){const k=p.dataset.pg;PAG[k]+=+p.dataset.d;render();document.querySelector(`.grupo[data-s="${k}"]`).scrollIntoView();return;}
+  const c=e.target.closest('.card');if(!c)return;
   if(c.dataset.c!=null) verNC(CAT[+c.dataset.c]); else abrir(J[+c.dataset.i]);});
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});
-$('#q').addEventListener('input',e=>{texto=e.target.value.toLowerCase().trim();render();});
+$('#discos').addEventListener('toggle',discos);  // la lista de juegos se dibuja al abrir el panel y se suelta al cerrarlo
+let esperaQ;$('#grid').addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)return;BUSCA[k]=e.target.value;clearTimeout(esperaQ);esperaQ=setTimeout(render,150);});
 $('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
 $('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;
   if(t==='todos'){tsel.clear();}else if(t==='inst'){soloInst=!soloInst;}else{tsel.has(t)?tsel.delete(t):tsel.add(t);}
   document.querySelectorAll('#filtros .chip').forEach(x=>{const k=x.dataset.t;if(k==='inst'){x.querySelector('.sw').classList.toggle('on',soloInst);return;}x.classList.toggle('on',k==='todos'?!tsel.size:tsel.has(k));});render();});
+$('#instchip').addEventListener('click',()=>{soloInst=!soloInst;$('#instchip .sw').classList.toggle('on',soloInst);render();});
 $('#generos').addEventListener('change',e=>{const i=e.target;if(!i||!i.dataset.g)return;const g=i.dataset.g;
   if(g==='__todos'){gens.clear();}else{i.checked?gens.add(g):gens.delete(g);}
   cabecera();render();$('#ddgen').open=true;});
@@ -622,8 +671,8 @@ let versionVista=EST.version||0;
 function textoEstado(){return (L.msgs[EST.msg]||EST.msg||L.trabajando).replace('%s',EST.de||'')+(!EST.total?'':EST.fase==='actualizando'?` ${Math.round(EST.hecho/EST.total*100)}%`:` ${EST.hecho}/${EST.total}`);}
 function sincronizar(){
   api('estado').then(e=>{
-    const cambio=e.version!==versionVista; EST=e; progreso();
-    if(cambio){versionVista=e.version; api('datos').then(d=>{RAW=d.juegos;D=d.discos;T=d.tiendas;EST=d.estado;todo();});}
+    const cambio=e.version!==versionVista; EST=e; progreso(); nivel(); descargas();
+    if(cambio){versionVista=e.version; api('datos').then(d=>{RAW=d.juegos;D=d.discos;T=d.tiendas;EST=Object.assign({},EST,d.estado);todo();});}
   }).catch(()=>{});
 }
 todo();
@@ -631,8 +680,7 @@ try{if(sessionStorage.getItem('menuAbierto')){sessionStorage.removeItem('menuAbi
 function alArrancar(){
   // mientras trabaja pregunta cada 1 s para que el texto vaya cambiando; quieto, cada 4 s
   (function ciclo(){sincronizar();setTimeout(ciclo,EST.fase&&EST.fase!=='listo'?1000:4000);})();
-  if(CONF.primer_arranque) setTimeout(()=>configuracion(true),800);
-  setTimeout(cargarCatalogo,1500);
+  if(CONF.primer_arranque){api('preferencia','primer_arranque',false);setTimeout(()=>configuracion(true),800);}  // se muestra una sola vez
   setTimeout(()=>api('version_nueva').then(tag=>{if(tag){$('#updtag').textContent=tag;$('#updlink').onclick=()=>api('actualizar').then(r=>{if(r==='ok'){$('#upd').classList.remove('show');EST={fase:'actualizando',msg:'Descargando la actualización…',hecho:0,total:0};progreso();}});$('#upd').classList.add('show');}}).catch(()=>{}),3000);
 }
 if(window.pywebview&&window.pywebview.api) alArrancar(); else window.addEventListener('pywebviewready',alArrancar);

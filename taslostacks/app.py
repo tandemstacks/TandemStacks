@@ -11,6 +11,10 @@ class Nucleo:
     def __init__(self):
         self.cfg = paths.cargar()
         self.launchers = {}
+        self.minimizada = False
+        try: self.jugado = float(json.load(open(paths.NIVEL, encoding="utf-8"))["segundos"])
+        except Exception: self.jugado = 0.0
+        self._guardado = time.time()
         self.juegos = []
         self.tiendas = []
         self.estado = {"fase": "inicio", "hecho": 0, "total": 0, "version": 0, "msg": "", "de": ""}
@@ -179,10 +183,23 @@ class Nucleo:
         partes.append("|".join(sorted(str(e.get("DisplayName")) for e in detect.uninstall_entries() if "electronic arts" in str(e.get("Publisher", "")).lower() or str(e.get("_key", "")).startswith("Uplay Install"))))
         return "\n".join(partes)
 
+    def sumar_jugado(self, seg):
+        """Contador de horas para el nivel. Se escribe como mucho una vez por minuto."""
+        self.jugado += seg
+        if time.time() - self._guardado < 60:
+            return
+        self._guardado = time.time()
+        try:
+            with open(paths.NIVEL + ".tmp", "w", encoding="utf-8") as f:
+                json.dump({"segundos": round(self.jugado)}, f)
+            os.replace(paths.NIVEL + ".tmp", paths.NIVEL)
+        except OSError as e:
+            paths.log("nivel", e)
+
     def vigilar(self):
         antes = self.huella()
         while True:
-            time.sleep(12)
+            time.sleep(60 if self.minimizada else 12)
             try:
                 ahora = self.huella()
                 if ahora != antes:
@@ -252,7 +269,10 @@ class Api:
         return {"juegos": [build.publico(g, NUC.cfg.get("idioma", "spanish")) for g in NUC.juegos], "discos": build.discos(NUC.juegos), "tiendas": NUC.tiendas, "estado": NUC.estado}
 
     def estado(self):
-        return NUC.estado
+        """Lo pide la página cada pocos segundos, solo con la ventana a la vista (minimizada queda suspendida)."""
+        try: bajando = steam.descargas()
+        except Exception: bajando = []
+        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando)
 
     def ficha(self, ids):
         """Datos de la tienda de cada juego de la tarjeta, pedidos al abrir la ficha (con caché). {id: {...}}"""
@@ -290,7 +310,7 @@ class Api:
 
     def preferencia(self, clave, valor):
         """Guarda una preferencia suelta. Cambiar el idioma rehace las fichas de Steam (vienen traducidas de la tienda)."""
-        if clave not in ("tema", "idioma", "cerrar_launchers"):
+        if clave not in ("tema", "idioma", "cerrar_launchers", "primer_arranque"):
             return False
         cambio_idioma = clave == "idioma" and valor != NUC.cfg.get("idioma")
         NUC.cfg[clave] = valor
@@ -387,11 +407,9 @@ class Api:
         """tipo=run|install|uninstall&appid=N (Steam) · lanzar=id · desinstalar=id (otras tiendas) · abrir=Tienda (launcher)."""
         q = urllib.parse.parse_qs(q)
         tipo, appid, que, lz = q.get("tipo", [""])[0], q.get("appid", [""])[0], q.get("abrir", [""])[0], q.get("lanzar", [""])[0]
-        vig = bool(NUC.cfg.get("cerrar_launchers", True))
         if tipo in ("install", "uninstall", "run") and re.fullmatch(r"\d{1,9}", appid):
             uri = "steam://%s/%s" % (tipo, appid)
-            if tipo == "run": watch.lanzar("Steam", "", lambda: os.startfile(uri), NUC.launchers, vig)
-            else: os.startfile(uri)
+            os.startfile(uri)
             return True
         des = q.get("desinstalar", [""])[0]
         if des:  # desinstalar un juego de otra tienda: comando propio si la tienda lo tiene, si no Aplicaciones instaladas de Windows
@@ -407,10 +425,31 @@ class Api:
             g = next((x for x in NUC.juegos if x["id"] == lz and x.get("launch")), None)
             if not g: return False
             d = g["launch"]
-            arrancar = (lambda: subprocess.Popen(d, cwd=os.path.dirname(d[0]))) if isinstance(d, list) else (lambda: os.startfile(d))
-            watch.lanzar(g["store"], g.get("dir", "") if g.get("installed") else "", arrancar, NUC.launchers, vig)
+            if isinstance(d, list): subprocess.Popen(d, cwd=os.path.dirname(d[0]))
+            else: os.startfile(d)
             return True
         return False
+
+def _minimizada(ventana, si):
+    """Minimizada no se ve nada: el visor baja su memoria y se suspende, así la página tampoco queda consultando."""
+    NUC.minimizada = si
+    try:
+        from System import Action
+        from Microsoft.Web.WebView2.Core import CoreWebView2MemoryUsageTargetLevel as Nivel
+        f = ventana.native
+        def hacer():
+            w = f.webview
+            if si:
+                w.Visible = False
+                w.CoreWebView2.MemoryUsageTargetLevel = Nivel.Low
+                w.CoreWebView2.TrySuspendAsync()
+            else:
+                w.CoreWebView2.Resume()
+                w.CoreWebView2.MemoryUsageTargetLevel = Nivel.Normal
+                w.Visible = True
+        f.Invoke(Action(hacer))
+    except Exception as e:
+        paths.log("minimizada", si, e)
 
 def _poner_icono(ventana, icono):
     try:
@@ -445,12 +484,17 @@ def main():
     v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
+    v.events.minimized += lambda: _minimizada(v, True)
+    v.events.restored += lambda: _minimizada(v, False)
+    v.events.maximized += lambda: _minimizada(v, False)  # una ventana maximizada vuelve por acá al sacarla de la barra
     def arranque():
         try:
             NUC.escanear()
         except Exception:
             import traceback; paths.log("escaneo inicial", traceback.format_exc())  # sin esto un error deja la página vieja sin rastro
         threading.Thread(target=NUC.vigilar, daemon=True).start()
+        threading.Thread(target=watch.vigilar, daemon=True, args=(lambda: [g.get("dir") for g in NUC.juegos if g.get("installed")], lambda: NUC.launchers,
+                                                                 lambda: bool(NUC.cfg.get("cerrar_launchers", True)), NUC.sumar_jugado)).start()
     covers.limpiar_descargadas()
     # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones
     webview.start(lambda: threading.Thread(target=arranque, daemon=True).start(), icon=icono,

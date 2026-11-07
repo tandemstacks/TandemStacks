@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Datos de la ficha que salen de la tienda de cada juego y se piden SOLO al abrir la ficha (nunca en segundo plano).
-Con caché en disco (por idioma). Si la tienda no da un dato, no se muestra: nada se completa con otra tienda.
+Con caché en disco (por idioma). Si la tienda no da un dato, no se muestra. Única excepción: si Epic no tiene descripción, va la de Steam, aclarado en la ficha.
    Steam: logros del usuario, de los archivos de Steam (appcache/stats). Si no están, Web API con la clave (caché 6 h).
    Epic: página de la tienda por slug (store-content); solo vale si su namespace es el del catálogo local. Caché 30 días.
    Xbox: displaycatalog de Microsoft por ProductId (descripción, estudio, categorías, clasificación, puntuación). Caché 30 días."""
 import os, re, json, time, struct, threading, unicodedata, urllib.parse
 from . import paths
-from .steam import http_json, steam_path
+from .steam import http_json, steam_path, buscar_appid, ficha as steam_ficha
 
 CARPETA = os.path.join(paths.CACHE, "fichas")
 _lock = threading.Lock()
@@ -143,7 +143,12 @@ def epic(g, idioma):
             if "404" not in str(e):
                 paths.log("ficha epic", titulo, e); return {}
         _guardar(nombre, d)
-    return _limpio(d)
+    d = _limpio(d)
+    if not d.get("desc"):  # va aparte de "desc": la página aclara de dónde salió, y otra tienda de la misma tarjeta puede tener la suya
+        appid = buscar_appid(titulo)
+        if appid:
+            d["descSteam"] = steam_ficha(appid, idioma).get("desc", "")
+    return d
 
 # ---------- Xbox / Microsoft Store ----------
 XBOX_CAT = {"Action & adventure": "Acción y aventura", "Family & kids": "Familia", "Simulation": "Simulación", "Shooter": "Disparos",

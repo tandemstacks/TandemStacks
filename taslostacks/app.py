@@ -4,6 +4,7 @@ import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, ur
 from concurrent.futures import ThreadPoolExecutor
 import webview
 from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, VERSION
+from . import precios as precios_tiendas
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io"]
 
@@ -400,6 +401,12 @@ class Api:
         if tienda == "Xbox" and re.fullmatch(r"[0-9A-Z]{12}", gid):
             os.startfile("ms-windows-store://pdp/?productid=" + gid); return True
         return False
+
+    def precios(self, items):
+        """Precios de la página de No comprados que se está viendo (ver precios.py)."""
+        try: return precios_tiendas.de(items or [])
+        except Exception as e:
+            paths.log("precios", e); return {}
 
     def esperar_tienda(self, tienda):
         """La página la llama después de abrir una tienda y queda en espera: vuelve cuando el launcher ya está corriendo

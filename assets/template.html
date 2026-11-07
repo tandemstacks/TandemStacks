@@ -155,6 +155,9 @@ main{padding:16px 22px 60px}
 .nivel{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--mu);margin-right:6px;cursor:default}.nivel b{color:var(--tx);text-transform:uppercase;letter-spacing:.4px;font-size:13px}.nbar{width:120px;height:6px;border-radius:3px;background:var(--card);overflow:hidden}.nbar i{display:block;height:100%;background:var(--acc)}
 #descargas{display:flex;flex-direction:column;gap:6px;margin-top:10px}#descargas:empty{display:none}.dl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu)}.dl b{color:var(--tx);font-weight:600}.dl .nbar{flex:1;width:auto}
 .pager{display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 16px 28px;font-size:13px;color:var(--mu)}
+.card .precio{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}.precio span{display:inline-flex;align-items:center;gap:4px;background:rgba(10,10,12,.84);color:#fff;font-size:11px;font-weight:700;padding:3px 6px;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.35)}.precio em{font-style:normal;color:#7ee081}
+.precio.pend::before{content:'';width:58px;height:19px;border-radius:3px;background:linear-gradient(100deg,rgba(20,20,24,.7) 40%,rgba(90,90,100,.7) 50%,rgba(20,20,24,.7) 60%);background-size:220% 100%;animation:brillo 1.3s linear infinite}
+.card:hover .precio{opacity:0}
 .card.sigpag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:var(--bg);color:var(--mu);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}.card.sigpag b{font-size:30px;line-height:1;color:var(--acc)}.card.sigpag:hover{color:var(--tx)}
 /* carga por sector: el giro solo existe mientras hay algo cargando, y cada portada brilla hasta que llega */
 .cargando{display:flex;align-items:center;justify-content:center;gap:10px;padding:26px 16px;margin:0}.cargando::before{content:"";width:18px;height:18px;border-radius:50%;border:3px solid var(--card);border-top-color:var(--acc);animation:gira .8s linear infinite}
@@ -204,7 +207,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 // ---------- idioma ----------
 const TXT={
  spanish:{sinId:'Este juego está en tu cuenta de {t}, pero TasloStacks todavía no sabe cuál es. Si nos avisás cuál es, en la próxima versión aparece con su nombre para todos. Código:',avisar:'Avisar cuál es',
-  noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Tocá para ver tus medallas.',abriendo:'Abriendo',contacto:'Contacto:',noOficial:'TasloStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
+  noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Tocá para ver tus medallas.',abriendo:'Abriendo',contacto:'Contacto:',gratis:'Gratis',noOficial:'TasloStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
   buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
@@ -224,7 +227,7 @@ const TXT={
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',descSteam:'Esta descripción no es original de Epic',cCerrar:'Cerrar todos los launchers cuando termino de jugar',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TasloStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
-  noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Click to see your medals.',abriendo:'Opening',contacto:'Contact:',noOficial:'TasloStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
+  noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Click to see your medals.',abriendo:'Opening',contacto:'Contact:',gratis:'Free',noOficial:'TasloStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
   buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
@@ -363,7 +366,7 @@ function verNC(j){
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
     <div class="cov">${j.c?`<img referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}</div>
     <div style="flex:1;min-width:0"><h2>${esc(j.t)}</h2><p style="margin:0 0 12px;font-size:14px;color:var(--mu)">${L.ncElegir}</p>
-      <div class="acts">${st.map(s=>`<button class="btn" data-ir="${esc(s)}">${logo(s,sc(s),18)} ${esc(s)}</button>`).join('')}</div></div>`;
+      <div class="acts">${st.map(s=>{const p=(PRECIO[CAT.indexOf(j)]||{})[s];return `<button class="btn" data-ir="${esc(s)}">${logo(s,sc(s),18)} ${esc(s)}${p?` · ${fmtPrecio(p)}`:''}</button>`;}).join('')}</div></div>`;
   $('#modal').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{ir(b.dataset.ir);cerrar();});
   $('#bg').classList.add('show');
 }
@@ -377,7 +380,24 @@ function paginado(k,lista,tarjeta){
     +(total>1?`<div class="pager"><span>${L.pagina} ${n+1} ${L.de} ${total}</span></div>`:'');
 }
 const cardNC=j=>{const st=Object.keys(j.st);return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
-  <span class="tag">${st.map(s=>logo(s,sc(s),20)).join('')}</span><div class="nm">${esc(j.t)}</div></div>`;};
+  <span class="tag">${st.map(s=>logo(s,sc(s),20)).join('')}</span><div class="precio"></div><div class="nm">${esc(j.t)}</div></div>`;};
+// precios de No comprados: se piden solo para la página que se ve y se olvidan al plegar el grupo
+let PRECIO={}, PRECIO_PEND=new Set();
+function fmtPrecio(p){
+  if(p.gratis) return L.gratis; if(p.pass) return 'Game Pass'; if(p.txt) return esc(p.txt);
+  try{return new Intl.NumberFormat(IDIOMA==='english'?'en-US':'es-UY',{style:'currency',currency:p.m}).format(p.v);}catch(e){return `${esc(p.m)} ${p.v}`;}
+}
+function pintarPrecio(c){const k=c.dataset.c, p=PRECIO[k], el=c.querySelector('.precio'); if(!el) return;
+  el.classList.toggle('pend',!p);
+  el.innerHTML=p?Object.keys(CAT[k].st).filter(s=>p[s]).map(s=>`<span>${logo(s,'#fff',11)}${fmtPrecio(p[s])}${p[s].d?`<em>-${p[s].d}%</em>`:''}</span>`).join(''):'';}
+function preciosPagina(){
+  const cards=[...document.querySelectorAll('.grupo[data-s="nc"] .card[data-c]')]; if(!cards.length) return;
+  cards.forEach(pintarPrecio);
+  const faltan=cards.map(c=>c.dataset.c).filter(k=>!PRECIO[k]&&!PRECIO_PEND.has(k)); if(!faltan.length) return;
+  faltan.forEach(k=>PRECIO_PEND.add(k));
+  api('precios',faltan.map(k=>({k,st:CAT[k].st}))).then(r=>{Object.assign(PRECIO,r||{});},()=>{faltan.forEach(k=>PRECIO[k]={});})
+    .then(()=>{faltan.forEach(k=>PRECIO_PEND.delete(k));document.querySelectorAll('.grupo[data-s="nc"] .card[data-c]').forEach(pintarPrecio);});
+}
 function render(){
   let list=J.filter(g=>(!tsel.size||g.stores.some(s=>tsel.has(s)))&&(!soloInst||g.installed)
     &&(!gens.size||[...gens].some(x=>(g.genres||[]).includes(x))));
@@ -394,14 +414,14 @@ function render(){
   let h=inst.length?`<details class="grupo" data-s="si"${abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${instV.length}</span><span class="flecha">▾</span></summary>${abiertos.has('si')?`${buscador('si')}${nada(instV)}<div class="grid">${instV.map(card).join('')}</div>`:''}</details>`:'';
   if(no.length){const abierto=abiertos.has('no');
     h+=`<details class="grupo" data-s="no"${abierto?' open':''}><summary><b>${L.noInst}</b> <span>${noV.length}</span><span class="flecha">▾</span></summary>${abierto?buscador('no')+nada(noV)+paginado('no',noV,card):''}</details>`;}
-  if(!abiertos.has('nc')&&catEstado==='listo'){CAT=[];catEstado='';}  // plegado: se suelta de la memoria y al desplegar se vuelve a leer
+  if(!abiertos.has('nc')&&catEstado==='listo'){CAT=[];catEstado='';PRECIO={};}  // plegado: se suelta de la memoria y al desplegar se vuelve a leer
   const nc=noComprados(), hayNC=!soloInst&&!gens.size&&(catEstado!=='listo'||CAT.length>0);
   if(hayNC){const abierto=abiertos.has('nc');
     if(abierto) cargarCatalogo();
     h+=`<details class="grupo" data-s="nc"${abierto?' open':''}><summary><b>${L.noComprados}</b> <span>${catEstado==='listo'?nc.length:''}</span><span class="flecha">▾</span></summary>`
       +(!abierto?'':catEstado==='listo'?`<p class="catayuda">${L.catAyuda}</p>${buscador('nc')}${nada(nc)}${paginado('nc',nc,cardNC)}`:`<p class="catayuda cargando">${L.cargandoCat}</p>`)+`</details>`;}
   if(!RAW.length) h=`<div class="empty">${EST.fase==='listo'?L.vacio:L.buscando}</div>`;
-  $('#grid').innerHTML=h;
+  $('#grid').innerHTML=h; preciosPagina();
   if(foco){const q=document.querySelector(`[data-q="${foco}"]`);if(q){q.focus();q.setSelectionRange(cursor,cursor);}}
   $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);
     if(d.open?!d.querySelector('.grid,.cargando'):d.querySelector('.grid,.cargando'))render();}));  // cada grupo se dibuja al abrirlo y se suelta al plegarlo

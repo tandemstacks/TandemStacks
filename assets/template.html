@@ -155,9 +155,8 @@ main{padding:16px 22px 60px}
 .nivel{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--mu);margin-right:6px;cursor:default}.nivel b{color:var(--tx);text-transform:uppercase;letter-spacing:.4px;font-size:13px}.nbar{width:120px;height:6px;border-radius:3px;background:var(--card);overflow:hidden}.nbar i{display:block;height:100%;background:var(--acc)}
 #descargas{display:flex;flex-direction:column;gap:6px;margin-top:10px}#descargas:empty{display:none}.dl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu)}.dl b{color:var(--tx);font-weight:600}.dl .nbar{flex:1;width:auto}
 .pager{display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 16px 28px;font-size:13px;color:var(--mu)}
-.card .precio{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}.precio span{display:inline-flex;align-items:center;gap:4px;background:rgba(10,10,12,.84);color:#fff;font-size:11px;font-weight:700;padding:3px 6px;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.35)}.precio em{font-style:normal;color:#7ee081}
-.precio.pend::before{content:'';width:58px;height:19px;border-radius:3px;background:linear-gradient(100deg,rgba(20,20,24,.7) 40%,rgba(90,90,100,.7) 50%,rgba(20,20,24,.7) 60%);background-size:220% 100%;animation:brillo 1.3s linear infinite}
-.card:hover .precio{opacity:0}
+.tag.conp{flex-wrap:wrap;max-width:calc(100% - 14px);row-gap:4px}.tag .tp{display:inline-flex;align-items:center;gap:4px}.tag .pr{font-size:11px;font-weight:700;color:var(--tx);white-space:nowrap}.tag .pr:empty{display:none}.tag .pr em{font-style:normal;color:#2f9e44;margin-left:3px}
+.tag.pend .pr:empty{display:inline-block;width:36px;height:12px;border-radius:2px;background:linear-gradient(100deg,var(--card) 40%,var(--bg) 50%,var(--card) 60%);background-size:220% 100%;animation:brillo 1.3s linear infinite}
 .card.sigpag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:var(--bg);color:var(--mu);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}.card.sigpag b{font-size:30px;line-height:1;color:var(--acc)}.card.sigpag:hover{color:var(--tx)}
 /* carga por sector: el giro solo existe mientras hay algo cargando, y cada portada brilla hasta que llega */
 .cargando{display:flex;align-items:center;justify-content:center;gap:10px;padding:26px 16px;margin:0}.cargando::before{content:"";width:18px;height:18px;border-radius:50%;border:3px solid var(--card);border-top-color:var(--acc);animation:gira .8s linear infinite}
@@ -380,16 +379,17 @@ function paginado(k,lista,tarjeta){
     +(total>1?`<div class="pager"><span>${L.pagina} ${n+1} ${L.de} ${total}</span></div>`:'');
 }
 const cardNC=j=>{const st=Object.keys(j.st);return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" referrerpolicy="no-referrer" src="${esc(j.c)}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
-  <span class="tag">${st.map(s=>logo(s,sc(s),20)).join('')}</span><div class="precio"></div><div class="nm">${esc(j.t)}</div></div>`;};
+  <span class="tag conp">${st.map(s=>`<i class="tp" data-s="${esc(s)}">${logo(s,sc(s),20)}<b class="pr"></b></i>`).join('')}</span><div class="nm">${esc(j.t)}</div></div>`;};
 // precios de No comprados: se piden solo para la página que se ve y se olvidan al plegar el grupo
 let PRECIO={}, PRECIO_PEND=new Set();
 function fmtPrecio(p){
   if(p.gratis) return L.gratis; if(p.pass) return 'Game Pass'; if(p.txt) return esc(p.txt);
   try{return new Intl.NumberFormat(IDIOMA==='english'?'en-US':'es-UY',{style:'currency',currency:p.m}).format(p.v);}catch(e){return `${esc(p.m)} ${p.v}`;}
 }
-function pintarPrecio(c){const k=c.dataset.c, p=PRECIO[k], el=c.querySelector('.precio'); if(!el) return;
-  el.classList.toggle('pend',!p);
-  el.innerHTML=p?Object.keys(CAT[k].st).filter(s=>p[s]).map(s=>`<span>${logo(s,'#fff',11)}${fmtPrecio(p[s])}${p[s].d?`<em>-${p[s].d}%</em>`:''}</span>`).join(''):'';}
+// el precio va al lado del logo de cada tienda, arriba de la tarjeta
+function pintarPrecio(c){const k=c.dataset.c, p=PRECIO[k], tag=c.querySelector('.tag.conp'); if(!tag) return;
+  tag.classList.toggle('pend',!p);
+  tag.querySelectorAll('.tp').forEach(t=>{const v=p&&p[t.dataset.s];t.querySelector('.pr').innerHTML=v?`${fmtPrecio(v)}${v.d?`<em>-${v.d}%</em>`:''}`:'';});}
 function preciosPagina(){
   const cards=[...document.querySelectorAll('.grupo[data-s="nc"] .card[data-c]')]; if(!cards.length) return;
   cards.forEach(pintarPrecio);

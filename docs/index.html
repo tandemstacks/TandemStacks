@@ -276,7 +276,7 @@ document.getElementById('logos').innerHTML=['Steam','Epic','GOG','EA','Xbox','Ri
 const RAM=[['Epic',782,'var(--tx)'],['Steam',650,'#3d9ad8'],['Riot',597,'#eb0029'],['Rockstar',498,'#fcaf17'],['EA',374,'#ff4747'],['Ubisoft',361,'#2f7dff'],['Battle.net',354,'#148eff'],['GOG',331,'#a659c7'],['Amazon',144,'#ff9900'],['itch.io',116,'#fa5c5c']];
 document.getElementById('ramlista').innerHTML=RAM.map(([s,mb,c])=>
   `<div class="f"><span><svg viewBox="0 0 24 24" fill="${c}" aria-hidden="true"><path d="${LOGO[s]}"/></svg>${s}</span><div class="b"><i style="width:${mb/782*100}%;background:${c}"></i></div><b>${mb} MB</b></div>`).join('')+
-  `<div class="tot"><span>Todos juntos</span><em>≈ 4,2 GB</em></div><div class="tot"><span>TasloStacks</span><em>≈ 280 MB</em></div><small>TasloStacks abre solo el launcher que hace falta para jugar y lo cierra al terminar. Y te deja sacarlos del inicio de Windows.</small>`;
+  `<div class="tot"><span>Todos juntos</span><em>≈ 4,2 GB</em></div><div class="tot"><span>TasloStacks</span><em>≈ 280 MB</em></div><small>TasloStacks abre solo el launcher que hace falta para jugar y, cuando terminás, cierra los launchers que quedaron abiertos. Y te deja sacarlos del inicio de Windows.</small>`;
 
 document.querySelectorAll('.discord').forEach(a=>{
   if(DISCORD){a.href=DISCORD;a.target='_blank';a.rel='noopener';}

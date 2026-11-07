@@ -415,6 +415,12 @@ class Api:
         except Exception as e:
             paths.log("precios", e); return {}
 
+    def ofertas(self):
+        """Juegos con descuento hoy en GOG y Steam, para el interruptor Descuento de No comprados."""
+        try: return precios_tiendas.ofertas()
+        except Exception as e:
+            paths.log("ofertas", e); return {}
+
     def esperar_tienda(self, tienda):
         """La página la llama después de abrir una tienda y queda en espera: vuelve cuando el launcher ya está corriendo
         (o a los 12 s: algunos juegos arrancan sin su launcher), así no se toca dos veces mientras se abre."""

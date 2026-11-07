@@ -3,7 +3,7 @@
 (24 juegos) y quedan 6 horas en memoria: los precios cambian seguido, no vale la pena guardarlos en disco.
 Cada precio vuelve como {"txt": "$U 740,00"} (Steam ya lo da escrito) o {"v": 4.99, "m": "USD"} para que la página
 lo escriba en su idioma; "gratis" y "pass" (Game Pass) son marcas. "d" es el descuento en %."""
-import ctypes, json, threading, time, urllib.parse
+import ctypes, json, re, threading, time, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from . import paths
 from .steam import http_json
@@ -50,6 +50,39 @@ def _xbox(ids, cc):
         v, base = pr.get("ListPrice"), pr.get("MSRP") or 0
         # el catálogo es de PC Game Pass: sin precio propio se juega con la suscripción
         out[p["ProductId"]] = {"pass": 1} if not v else {"v": v, "m": pr.get("CurrencyCode", "USD"), "d": round(100 - v * 100 / base) if base and v < base else 0}
+    return out
+
+_ofertas = {}
+
+def _gog_ofertas(cc):
+    """Ids de GOG con descuento hoy (su catálogo público filtra por descuento, de a 48 por página)."""
+    base = "https://catalog.gog.com/v1/catalog?limit=48&discounted=eq:true&productType=in:game&countryCode=%s&currencyCode=USD&page=%%d" % cc
+    primera = http_json(base % 1, 20)
+    pags = [primera] + list(ThreadPoolExecutor(4).map(lambda n: http_json(base % n, 20), range(2, int(primera.get("pages", 1)) + 1)))
+    return [str(p["id"]) for d in pags for p in d.get("products", [])]
+
+def _steam_ofertas(cc, paginas=40):
+    """Appids de Steam en oferta: las 4000 más relevantes de su búsqueda pública (son decenas de miles; el catálogo
+    de TasloStacks son los más jugados, así que casi todos los que importan están entre esas)."""
+    url = "https://store.steampowered.com/search/results/?query&count=100&specials=1&infinite=1&cc=%s&start=%%d" % cc
+    def una(n):
+        try: return re.findall(r'data-ds-appid="(\d+)"', http_json(url % (n * 100), 20).get("results_html", ""))
+        except Exception as e:
+            paths.log("ofertas steam", n, e); return []
+    with ThreadPoolExecutor(4) as ex:
+        return [a for lote in ex.map(una, range(paginas)) for a in lote]
+
+def ofertas():
+    """{"GOG": [ids], "Steam": [appids]} con descuento hoy. Se pide solo al prender el interruptor Descuento; 6 h en memoria."""
+    cc = pais()
+    if time.time() - _ofertas.get(cc, (0, None))[0] < VIDA:
+        return _ofertas[cc][1]
+    out = {}
+    for t, f in (("GOG", _gog_ofertas), ("Steam", _steam_ofertas)):
+        try: out[t] = f(cc)
+        except Exception as e:
+            paths.log("ofertas", t, e); out[t] = []
+    _ofertas[cc] = (time.time(), out)
     return out
 
 PEDIR = {"Steam": (_steam, 100), "GOG": (_gog, 50), "Xbox": (_xbox, 20)}

@@ -79,6 +79,10 @@ TasloStacks es sin fines de lucro y hoy no recibe plata. **Estamos buscando patr
 
 Dudas, errores o ideas: abrí un [issue](../../issues).
 
+## Aviso
+
+TasloStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.
+
 ## Licencia
 
 [MIT](LICENSE). Los nombres y logos de las tiendas son de sus dueños.

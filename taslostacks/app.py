@@ -446,12 +446,13 @@ class Api:
         return False
 
 def _tamano_inicial():
-    """Arranca grande según la pantalla (60 % del ancho y 85 % del alto), nunca menos de 1400 × 900 ni más de lo que entra."""
+    """Arranca grande según la pantalla (60 % del ancho y 85 % del alto) y centrada, nunca menos de 1400 × 900 ni más de lo que entra."""
     try:
         p = webview.screens[0]
-        return (int(min(max(p.width * 0.6, 1400), p.width * 0.92)), int(min(max(p.height * 0.85, 900), p.height * 0.92)))
+        w, h = int(min(max(p.width * 0.6, 1400), p.width * 0.92)), int(min(max(p.height * 0.85, 900), p.height * 0.92))
+        return w, h, max(0, (p.width - w) // 2), max(0, (p.height - h) // 2 - 20)  # un poco más arriba por la barra de tareas
     except Exception:
-        return 1400, 900
+        return 1400, 900, None, None
 
 def _minimizada(ventana, si):
     """Minimizada no se ve nada: el visor baja su memoria y se suspende, así la página tampoco queda consultando."""
@@ -504,8 +505,8 @@ def main():
         build.escribir([], [], NUC.cfg, NUC.estado)
         try: open(marca, "w").write(huella)
         except OSError: pass
-    ancho, alto = _tamano_inicial()
-    v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto,
+    ancho, alto, x, y = _tamano_inicial()
+    v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
     v.events.minimized += lambda: _minimizada(v, True)

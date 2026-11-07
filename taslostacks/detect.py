@@ -2,6 +2,12 @@
 """Detección de launchers instalados (registro de Windows + rutas típicas). La config puede corregir cualquier ruta."""
 import os, json, glob, winreg
 
+def _itch():
+    """itch.exe vive en app-<versión>; itch-setup.exe es solo el instalador. Se usa la versión más nueva."""
+    apps = glob.glob(os.path.join(LAD, r"itch\app-*\itch.exe"))
+    ver = lambda p: [int(x) for x in os.path.basename(os.path.dirname(p))[4:].split(".") if x.isdigit()]
+    return max(apps, key=ver) if apps else os.path.join(LAD, r"itch\itch-setup.exe")
+
 HKLM, HKCU = winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER
 PF, PF86 = os.environ.get("ProgramFiles", r"C:\Program Files"), os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
 LAD = os.environ.get("LOCALAPPDATA", "")
@@ -124,7 +130,7 @@ LAUNCHERS = {
     },
     "itch.io": {
         "color": "#fa5c5c",
-        "exe": lambda: os.path.join(LAD, r"itch\itch-setup.exe"),
+        "exe": lambda: _itch(),
         "abrir": lambda exe: "itch://library",
         "bajar": "https://itch.io/app",
         "procs": ["itch.exe", "butler.exe"],

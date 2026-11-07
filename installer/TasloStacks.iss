@@ -61,6 +61,8 @@ Type: filesandordirs; Name: "{localappdata}\{#AppName}"
 ; sin esto queda la carpeta vacía y al reinstalar avisa "la carpeta ya existe"
 Type: filesandordirs; Name: "{app}\_internal"
 Type: dirifempty; Name: "{app}"
+; la configuración (con la clave de Steam si la cargaste) se va; las horas del nivel (nivel.json) quedan por si reinstalás
+Type: files; Name: "{userappdata}\{#AppName}\config.json*"
 
 [Code]
 // Si la app está abierta, Windows no deja reemplazar ni borrar sus archivos y la instalación

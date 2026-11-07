@@ -95,17 +95,53 @@ def xbox():
         time.sleep(0.3)
     return juegos
 
+def itch(paginas=10):
+    """Los más vendidos y mejor puntuados de itch.io para Windows (sus listados públicos en RSS, 36 por página).
+    i = link de la página del juego; pr = precio tal cual lo publica itch."""
+    juegos, vistos = [], set()
+    for lista, n in (("top-sellers", paginas), ("top-rated", paginas // 2)):
+        for p in range(1, n + 1):
+            try:
+                x = urllib.request.urlopen(urllib.request.Request("https://itch.io/games/%s.xml?page=%d" % (lista, p), headers=UA), timeout=30).read().decode("utf-8", "replace")
+            except Exception:
+                break
+            for it in re.findall(r"<item>(.*?)</item>", x, re.S):
+                val = lambda k: (re.search(r"<%s>(.*?)</%s>" % (k, k), it, re.S) or [None, ""])[1].strip()
+                link, titulo = val("link"), val("plainTitle")
+                if not link or link in vistos or "<windows>yes</windows>" not in it:
+                    continue
+                vistos.add(link)
+                precio = val("price")
+                juegos.append({"i": link, "t": titulo, "c": val("imageurl"), "pr": "" if precio in ("", "$0.00") else precio})
+            time.sleep(0.5)
+    return juegos
+
+# Battle.net y Rockstar no tienen catálogo público: son pocos juegos de PC y se listan a mano, con su página de compra
+# (verificadas el 07/11/2026). "sa" = appid de Steam, solo para tomar la portada si el juego también está ahí.
+BATTLENET = [("World of Warcraft", "world-of-warcraft-subscription", None), ("Diablo IV", "diablo-iv", 2344520),
+             ("Diablo II: Resurrected", "diablo-ii-resurrected", None), ("Diablo III", "diablo-iii", None),
+             ("Warcraft III: Reforged", "warcraft-iii-reforged", None), ("Call of Duty: Black Ops 6", "call-of-duty-black-ops-6", 2933620),
+             ("Crash Bandicoot 4: It's About Time", "crash-bandicoot-4-its-about-time", 1378990)]
+ROCKSTAR = [("Grand Theft Auto V", "buy-gta-v", 271590), ("Red Dead Redemption 2", "buy-red-dead-redemption-2", 1174180),
+            ("Red Dead Redemption", "buy-red-dead-redemption", 2668510), ("L.A. Noire", "buy-la-noire", 110800),
+            ("Max Payne 3", "buy-max-payne-3", 204100), ("Bully: Scholarship Edition", "buy-bully-scholarship-edition", 12200)]
+PORTADA_STEAM = "https://steamcdn-a.akamaihd.net/steam/apps/%s/library_600x900.jpg"
+
+def fijos(lista, base):
+    return [{"i": base + slug, "t": t, "c": PORTADA_STEAM % sa if sa else ""} for t, slug, sa in lista]
+
 def norm(n):
     """Igual que norm() de la plantilla: mismo juego en otra tienda = mismo nombre normalizado."""
     n = re.sub(r"[™®©]", "", n.lower()).replace("&", " and ")
     n = re.sub(r"[-:–]?\s*(the )?(definitive|complete|special|celebration|game of the year|goty|enhanced|deluxe|remastered|director'?s cut|steam|legacy)( edition)?\b", "", n)
     return re.sub(r"[^a-z0-9]+", " ", n).strip()
 
-def juntar(gog_, steam_, xbox_):
-    """Un juego por nombre, con el id de cada tienda donde está: st = {"GOG": [id, slug], "Steam": appid, "Xbox": id}.
-    Portada: la de GOG o Xbox si hay; si no, la de Steam por appid."""
+def juntar(gog_, steam_, xbox_, otras=()):
+    """Un juego por nombre, con el id de cada tienda donde está: st = {"GOG": [id, slug], "Steam": appid, "Xbox": id,
+    "itch.io" / "Battle.net" / "Rockstar": link de su página}. Portada: la de GOG o Xbox si hay; si no, la de Steam por appid.
+    pr = precios que vienen en el catálogo (itch.io), para las tiendas sin consulta de precios."""
     todos, fuera = {}, set()
-    for tienda, lista in (("GOG", gog_), ("Steam", steam_), ("Xbox", xbox_)):
+    for tienda, lista in (("GOG", gog_), ("Steam", steam_), ("Xbox", xbox_)) + tuple(otras):
         for j in lista:
             k = norm(j["t"])
             if not k: continue
@@ -114,6 +150,7 @@ def juntar(gog_, steam_, xbox_):
             e = todos.setdefault(k, {"t": j["t"], "st": {}})
             e["st"].setdefault(tienda, [j["i"], j["s"]] if tienda == "GOG" else j["i"])
             if not e.get("c") and j.get("c"): e["c"] = j["c"]
+            if j.get("pr"): e.setdefault("pr", {})[tienda] = j["pr"]
             for x in ("y", "g"):
                 if j.get(x) and not e.get(x): e[x] = j[x]
     for e in todos.values():
@@ -129,5 +166,7 @@ def guardar(tienda, juegos):
 
 if __name__ == "__main__":
     g, s, x = gog(), steam_adultos(steam()), xbox()
+    otras = (("itch.io", itch()), ("Battle.net", fijos(BATTLENET, "https://us.shop.battle.net/en-us/product/")),
+             ("Rockstar", fijos(ROCKSTAR, "https://store.rockstargames.com/game/")))
     guardar("gog", [j for j in g if not j.get("x")])
-    guardar("todos", juntar(g, s, x))
+    guardar("todos", juntar(g, s, x, otras))

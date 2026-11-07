@@ -397,7 +397,8 @@ function fmtPrecio(p){
 // el precio va al lado del logo de cada tienda, arriba de la tarjeta
 function pintarPrecio(c){const k=c.dataset.c, p=PRECIO[k], tag=c.querySelector('.tag.conp'); if(!tag) return;
   tag.classList.toggle('pend',!p);
-  tag.querySelectorAll('.tp').forEach(t=>{const v=p&&p[t.dataset.s];t.querySelector('.pr').innerHTML=v?`${fmtPrecio(v)}${v.d?`<em>-${v.d}%</em>`:''}`:'';});}
+  const pr=CAT[k].pr||{};  // itch.io trae el precio en el catálogo
+  tag.querySelectorAll('.tp').forEach(t=>{const v=(p&&p[t.dataset.s])||(pr[t.dataset.s]&&{txt:pr[t.dataset.s]});t.querySelector('.pr').innerHTML=v?`${fmtPrecio(v)}${v.d?`<em>-${v.d}%</em>`:''}`:'';});}
 function preciosPagina(){
   const cards=[...document.querySelectorAll('.grupo[data-s="nc"] .card[data-c]')]; if(!cards.length) return;
   cards.forEach(pintarPrecio);

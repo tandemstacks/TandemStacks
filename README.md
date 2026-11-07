@@ -71,7 +71,7 @@ Python 3.12 + [pywebview](https://pywebview.flowrl.com/) (ventana con WebView2),
 
 ## Donaciones
 
-TasloStacks es sin fines de lucro y hoy no recibe plata. **Estamos buscando patrocinios** u otras formas de generar ingresos que nos permitan hacer donaciones, y **todo lo que entre se dona** a lugares **de Montevideo (Uruguay)** que la comunidad propone y elige por votación en Discord. La comunidad puede ser de cualquier país, pero las donaciones siempre van a Montevideo. Cada donación se publica con su monto y su comprobante.
+TasloStacks es sin fines de lucro y hoy no recibe plata. **Estamos buscando patrocinios** u otras formas de generar ingresos que nos permitan hacer donaciones, y **todo lo que entre se dona** a lugares que la comunidad propone y elige por votación en Discord. **Por ahora son de Montevideo (Uruguay)**, por logística: así podemos conocer de cerca el lugar que eligió la gente y dar garantías de a dónde va el dinero. La comunidad puede ser de cualquier país. Cada donación se publica con su monto y su comprobante.
 
 ## Contacto
 

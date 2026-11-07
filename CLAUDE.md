@@ -21,7 +21,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - `assets/template.html`: toda la UI (CSS + JS sin frameworks). La página no se recarga: cada 4 s pide `estado()` y si cambió `version` pide `datos()` y re-renderiza manteniendo filtros. Primer arranque (`CONF.primer_arranque`) abre la Configuración con bienvenida. Juegos repetidos entre tiendas se agrupan por nombre normalizado en una tarjeta. Filtro de tiendas multiselección; "Instalados" se combina. Logos de tiendas: SVG inline de Simple Icons (Xbox dibujado a mano).
 - Estética (pedida por el dueño): industrial, naranja `#ff6a00` + blanco, sin bordes, sombras, radios 3–5 px, fuente Bahnschrift, títulos en mayúsculas con barra naranja. Logo: `assets/hacer-logo.py` → `logo.png` / `icon.ico` (cuadrado naranja con una S de bloques).
 
-## No comprados (02/11/2026, sin publicar)
+## No comprados (02/11/2026, publicado en la v1.3.4)
 
 - Tercer grupo de la biblioteca, abajo de Instalados / No instalados: juegos de los **catálogos públicos de GOG, Steam y Xbox** que no tenés en ninguna tienda (mismo nombre normalizado = misma tarjeta, no se repite). Si está en varias tiendas, la tarjeta muestra sus logos y al tocarla se elige dónde abrirla.
 - `scripts/catalogos.py` junta `catalog.gog.com/v1/catalog`, los 10.000 más jugados de Steam (SteamSpy `request=all`, 1 página por minuto) y PC Game Pass (`catalog.gamepass.com/sigls` + `displaycatalog`) → `docs/catalogo/todos.json` (`t`, `c`, `st: {GOG: [id, slug], Steam: appid, Xbox: id}`; ~14.500 juegos, 2,6 MB), publicado con la landing. Tarda ~12 min.

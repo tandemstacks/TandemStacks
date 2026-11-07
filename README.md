@@ -25,9 +25,9 @@ Comunidad: [Discord](https://discord.gg/CKqByMZ2m) · [Instagram @taslostacks](h
 - Botón para **sacar los launchers del inicio de Windows** (los deshabilita como el Administrador de tareas).
 - Menú ⚙ con modo oscuro, español / inglés y desinstalar.
 - Barra de discos con cuánto ocupa cada juego (con miniaturas y un gráfico de torta) y aviso cuando queda poco espacio.
-- Filtros por tienda (multiselección), género e instalados; un buscador dentro de cada grupo; orden por nombre, valoración, peso o año.
-- **No comprados**: juegos de los catálogos públicos de GOG, Steam y Xbox Game Pass que no tenés, para comprarlos o verlos en su tienda.
-- **Nivel** según las horas que jugás con TasloStacks abierta, y barra de progreso de las descargas de Steam.
+- Cada grupo (Instalados, No instalados, No comprados) tiene sus propios filtros: tiendas, géneros, orden y un buscador.
+- **No comprados**: juegos de 8 tiendas (Steam, GOG, Xbox Game Pass, itch.io, Ubisoft, EA, Battle.net y Rockstar) que no tenés, con el **precio de cada tienda en tu moneda** y un interruptor para ver solo los que están **en oferta**. Sin juegos +18 por contenido sexual.
+- **Nivel** del 1 al 100 según las horas que jugás con TasloStacks abierta, con una **medalla cada 5 niveles**, y barra de progreso de las descargas de Steam.
 - Consume poco: lo que no está a la vista no se carga, y minimizada casi no usa memoria ni procesador.
 
 ## Instalar

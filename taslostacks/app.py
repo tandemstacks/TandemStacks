@@ -234,8 +234,15 @@ class Nucleo:
                     f.write(b); self.estado["hecho"] += len(b)
             self.estado.update(msg="Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
             time.sleep(2)  # que la página llegue a mostrar el mensaje
-            subprocess.Popen([destino, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"],
-                             creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
+            # si se instaló "para todos los usuarios" (Program Files), el instalador en silencio por defecto pone una copia
+            # aparte solo para este usuario y los accesos siguen abriendo la vieja: hay que pedirle que pise la de todos
+            todos = _en_program_files(sys.executable)
+            args = ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/ALLUSERS" if todos else "/CURRENTUSER"]
+            if todos:  # necesita permisos de administrador: Windows pregunta
+                if ctypes.windll.shell32.ShellExecuteW(None, "runas", destino, " ".join(args), None, 1) <= 32:
+                    raise RuntimeError("no se dieron permisos de administrador para actualizar")
+            else:
+                subprocess.Popen([destino] + args, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
             time.sleep(1)
             os._exit(0)
         except Exception as e:
@@ -451,6 +458,12 @@ class Api:
             else: os.startfile(d)
             return g["store"]  # la página espera a que abra su launcher
         return False
+
+def _en_program_files(ruta):
+    """True si TasloStacks está instalada para todos los usuarios (Program Files) y no solo para este."""
+    bases = [os.environ.get(v, "") for v in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432")]
+    r = os.path.abspath(ruta).lower()
+    return any(b and r.startswith(os.path.abspath(b).lower() + os.sep) for b in bases)
 
 def _tamano_inicial():
     """Arranca grande según la pantalla (60 % del ancho y 85 % del alto) y centrada, nunca menos de 1400 × 900 ni más de lo que entra."""

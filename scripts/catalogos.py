@@ -134,6 +134,7 @@ def _en_paralelo(f, lista, hilos=4):
     with ThreadPoolExecutor(hilos) as ex:
         return [r for r in ex.map(f, lista) if r]
 
+NO_JUEGO_UBI = re.compile(r"(dlc|season pass|pack|soundtrack|add-?on|expansion|bundle of|credits|coins|currency|upgrade)", re.I)
 EDICION = re.compile(r"\s+(standard|deluxe|gold|ultimate|complete|premium|collector'?s|digital deluxe)\s+edition$", re.I)
 
 def ubisoft():
@@ -143,8 +144,9 @@ def ubisoft():
     urls = sorted(set(re.findall(r"<loc>(https://store\.ubisoft\.com/us/[a-z0-9-]+/[0-9a-f]{24}\.html)", mapa)))
     def leer(url):
         h = _pagina(url)
-        t = re.search(r"<title>Buy (.+?) for PC \|", h)
-        if not t or '"productTypeDetail":"games"' not in h or '"adultgame":"yes"' in h:
+        # las páginas viejas no dicen "Buy ... for PC" sino "... on PC & More": también se venden ahí
+        t = re.search(r"<title>(?:Buy )?(.+?) (?:for PC \||on PC &amp; More)", h)
+        if not t or '"adultgame":"yes"' in h or NO_JUEGO_UBI.search(t.group(1)):
             return None
         titulo = EDICION.sub("", html_texto(t.group(1)))
         precio = re.search(r'"price":"([\d.]+)","priceCurrency":"USD"', h)

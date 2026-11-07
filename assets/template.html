@@ -149,7 +149,10 @@ main{padding:16px 22px 60px}
 .cfg a{color:var(--acc);cursor:pointer}
 .catayuda{color:var(--mu);font-size:13px;margin:4px 0 14px;padding:0 16px}
 .grupo{scroll-margin-top:190px}
-.nivel{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu);margin-right:6px;cursor:default}.nivel b{color:var(--tx);text-transform:uppercase;letter-spacing:.4px;font-size:13px}.nbar{width:120px;height:6px;border-radius:3px;background:var(--card);overflow:hidden}.nbar i{display:block;height:100%;background:var(--acc)}
+.medalla{display:block;flex:none}.medalla text{font:700 30px Bahnschrift,sans-serif;fill:#fff}
+.medgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px 10px;margin-top:16px}.medgrid div{text-align:center;font-size:12px;color:var(--mu);line-height:1.3}.medgrid div b{display:block;color:var(--tx);font-size:13px;margin-top:4px}.medgrid .no{opacity:.4;filter:grayscale(1)}
+.dlg.ancho{max-width:620px;max-height:88vh;overflow:auto;position:relative}.dlg h3{margin:0 0 6px;text-transform:uppercase;letter-spacing:.4px}.dlg .x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:22px;color:var(--mu);cursor:pointer}
+.nivel{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--mu);margin-right:6px;cursor:default}.nivel b{color:var(--tx);text-transform:uppercase;letter-spacing:.4px;font-size:13px}.nbar{width:120px;height:6px;border-radius:3px;background:var(--card);overflow:hidden}.nbar i{display:block;height:100%;background:var(--acc)}
 #descargas{display:flex;flex-direction:column;gap:6px;margin-top:10px}#descargas:empty{display:none}.dl{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mu)}.dl b{color:var(--tx);font-weight:600}.dl .nbar{flex:1;width:auto}
 .pager{display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 16px 28px;font-size:13px;color:var(--mu)}
 .card.sigpag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:var(--bg);color:var(--mu);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}.card.sigpag b{font-size:30px;line-height:1;color:var(--acc)}.card.sigpag:hover{color:var(--tx)}
@@ -201,7 +204,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 // ---------- idioma ----------
 const TXT={
  spanish:{sinId:'Este juego está en tu cuenta de {t}, pero TasloStacks todavía no sabe cuál es. Si nos avisás cuál es, en la próxima versión aparece con su nombre para todos. Código:',avisar:'Avisar cuál es',
-  noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Cada nivel pide 5 horas más que el anterior.',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
+  noComprados:'No comprados',catAyuda:'Juegos de GOG, Steam y Xbox Game Pass que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Tocá para ver tus medallas.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
   buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
@@ -221,7 +224,7 @@ const TXT={
   cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',descSteam:'Esta descripción no es original de Epic',cCerrar:'Cerrar todos los launchers cuando termino de jugar',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TasloStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
-  noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Each level takes 5 hours more than the last.',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
+  noComprados:'Not owned',catAyuda:'GOG, Steam and Xbox Game Pass games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Click to see your medals.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
   buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
@@ -410,13 +413,30 @@ function progreso(){
   $('#cargatxt').textContent=textoEstado();
   $('#cargapb').classList.toggle('ind',!EST.total);$('#cargabar').style.width=EST.total?(EST.hecho/EST.total*100)+'%':'';
 }
-// nivel: cada uno pide 5 horas más que el anterior (nivel 2 a las 5 h, 3 a las 15 h, 4 a las 30 h...)
+// nivel: del 1 al 100, cada uno pide un poco más que el anterior. Horas para llegar al nivel n = 2190 × ((n−1)/99)^1,5:
+// nivel 2 a las 2 h, 10 a las 60 h, 50 a las 763 h y 100 a las 2190 h (casi 3 años jugando 2 h por día). Cambiando NIV_HORAS se escala todo.
+const NIV_MAX=100, NIV_HORAS=2190, NIV_EXP=1.5;
+const horasNivel=n=>n<=1?0:NIV_HORAS*Math.pow((n-1)/(NIV_MAX-1),NIV_EXP);
+const nivelDe=h=>{let n=1;while(n<NIV_MAX&&horasNivel(n+1)<=h)n++;return n;};
+const numH=x=>x.toLocaleString(IDIOMA==='english'?'en':'es',{maximumFractionDigits:x<10?1:0});
+// una medalla cada 5 niveles; el color dice el rango (bronce hasta el 25, plata hasta el 50, oro hasta el 75, platino hasta el 95, leyenda el 100)
+const MED_COL=['#c07a3c','#9aa3ad','#e0a91b','#3fb6cc','#ff6a00'];
+const rango=n=>n>=100?4:n>75?3:n>50?2:n>25?1:0;
+const medalla=(n,t)=>`<svg class="medalla" width="${t}" height="${t}" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 90 27v46L50 96 10 73V27z" fill="${MED_COL[rango(n)]}"/><path d="M50 14 81 32v36L50 86 19 68V32z" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="3"/><text x="50" y="61" text-anchor="middle">${n}</text></svg>`;
 function nivel(){
   if(EST.jugado==null) return;
-  const h=EST.jugado/3600; let n=1; while(5*n*(n+1)/2<=h)n++;
-  const desde=5*(n-1)*n/2, hasta=5*n*(n+1)/2, num=x=>x.toLocaleString(IDIOMA==='english'?'en':'es',{maximumFractionDigits:x<10?1:0});
+  const h=EST.jugado/3600, n=nivelDe(h), ult=Math.floor(n/5)*5;
+  const desde=horasNivel(n), hasta=n<NIV_MAX?horasNivel(n+1):desde, pct=n<NIV_MAX?(h-desde)/(hasta-desde)*100:100;
   $('#nivel').title=L.nivelAyuda;
-  $('#nivel').innerHTML=`<b>${L.nivel} ${n}</b><div class="nbar"><i style="width:${(h-desde)/(hasta-desde)*100}%"></i></div><span>${num(h)} / ${hasta} h</span>`;
+  $('#nivel').innerHTML=`${ult?medalla(ult,22):''}<b>${L.nivel} ${n}</b><div class="nbar"><i style="width:${pct}%"></i></div><span>${n<NIV_MAX?`${numH(h)} / ${numH(hasta)} h`:L.nivelMax}</span>`;
+}
+// las medallas se dibujan solo al abrir la ventana y se sacan de la página al cerrarla
+function verMedallas(){
+  const h=(EST.jugado||0)/3600, n=nivelDe(h), d=document.createElement('div'); d.className='dlgbg';
+  const lista=Array.from({length:NIV_MAX/5},(_,i)=>(i+1)*5).map(m=>`<div class="${m<=n?'':'no'}">${medalla(m,56)}<b>${L.nivel} ${m}</b>${L.medTiers[rango(m)]}<br>${m<=n?L.medLograda:L.medFalta.replace('{h}',numH(horasNivel(m)))}</div>`).join('');
+  d.innerHTML=`<div class="dlg ancho"><button class="x" aria-label="${L.cerrar||'×'}">×</button><h3>${L.medallas}</h3><div>${L.medAyuda}</div><div class="medgrid">${lista}</div></div>`;
+  d.addEventListener('click',e=>{if(e.target===d||e.target.classList.contains('x'))d.remove();});
+  document.body.appendChild(d);
 }
 function descargas(){
   $('#descargas').innerHTML=(EST.descargas||[]).map(d=>`<div class="dl"><span>${L.bajando} <b>${esc(d.name)}</b></span><div class="nbar"><i style="width:${d.pct}%"></i></div><span>${d.pct}%</span></div>`).join('');
@@ -557,7 +577,8 @@ $('#grid').addEventListener('click',e=>{const p=e.target.closest('[data-pg]');
 $('#bg').addEventListener('click',e=>{if(e.target.id==='bg'||e.target.classList.contains('x'))cerrar();});
 $('#cfgbg').addEventListener('click',e=>{if(e.target.id==='cfgbg'||e.target.classList.contains('x'))cerrar();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){cerrar();cerrarMenu();$('#ddgen').open=false;}});
-$('#discos').addEventListener('toggle',discos);  // la lista de juegos se dibuja al abrir el panel y se suelta al cerrarlo
+$('#discos').addEventListener('toggle',discos);
+$('#nivel').addEventListener('click',verMedallas);  // la lista de juegos se dibuja al abrir el panel y se suelta al cerrarlo
 let esperaQ;$('#grid').addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)return;BUSCA[k]=e.target.value;clearTimeout(esperaQ);esperaQ=setTimeout(render,150);});
 $('#orden').addEventListener('change',e=>{orden=e.target.value;render();});
 $('#filtros').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const t=c.dataset.t;

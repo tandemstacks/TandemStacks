@@ -126,6 +126,16 @@ section.bloque{padding:72px 0}
 footer{padding:36px 0 48px;color:var(--mu);font-size:14px}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer a{color:var(--mu)}
+.hero p.mision{color:#c9c9c4;font-size:16px;max-width:680px;margin:-12px auto 28px}.hero p.mision b{color:#fff}.hero p.mision a{color:var(--acc);text-decoration:none;white-space:nowrap}
+.fin{background:var(--osc);color:#fff;border-radius:6px;padding:40px 36px;border-left:6px solid var(--acc)}
+.fin small{color:var(--acc);text-transform:uppercase;letter-spacing:1.5px;font-size:13px}
+.fin h2{font-size:clamp(28px,4.4vw,46px);margin:6px 0 12px}.fin h2 em{font-style:normal;color:var(--acc)}
+.fin p{color:#c9c9c4;max-width:760px;margin:0 0 24px}.fin p b{color:#fff}
+.fpasos{list-style:none;padding:0;margin:0 0 26px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;counter-reset:f}
+.fpasos li{background:var(--osc2);border-radius:4px;padding:18px 18px 18px 64px;position:relative;counter-increment:f}
+.fpasos li::before{content:counter(f);position:absolute;left:16px;top:16px;width:34px;height:34px;border-radius:4px;background:var(--acc);color:#fff;font:800 19px/34px 'Barlow Condensed',sans-serif;text-align:center}
+.fpasos b{display:block;font-size:17px;margin-bottom:4px}.fpasos span{color:#c9c9c4;font-size:14px}
+@media (max-width:760px){.fpasos{grid-template-columns:1fr}.fin{padding:30px 22px}}
 </style>
 </head>
 <body>
@@ -133,6 +143,7 @@ footer a{color:var(--mu)}
   <div class="wrap nav">
     <a class="marca" href="#"><img src="logo.png" alt="">Taslo<span>Stacks</span></a>
     <nav class="links">
+      <a href="#fin">Nuestro fin</a>
       <a href="#que-hace">Qué hace</a>
       <a href="#confianza">Seguridad</a>
       <a href="#como">Cómo funciona</a>
@@ -145,9 +156,10 @@ footer a{color:var(--mu)}
 
 <section class="hero">
   <div class="wrap">
-    <div class="chip">Gratis · Windows 10/11 · <b id="ver">última versión</b></div>
+    <div class="chip">Gratis · Sin fines de lucro · Windows 10/11 · <b id="ver">última versión</b></div>
     <h1>Todas tus bibliotecas de juegos en <em>una sola pantalla</em></h1>
     <p class="lead">Steam, Epic, GOG, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft, Amazon Games e itch.io juntos. Sin cuentas, sin configurar nada: se detecta todo solo.</p>
+    <p class="mision"><b>Sin fines de lucro:</b> todo lo que genere TasloStacks se dona a lugares que elige la comunidad. <a href="#fin">Conocé nuestro fin →</a></p>
     <div class="ctas">
       <a class="btn pri" id="bajar" href="https://github.com/taslostacks/TasloStacks/releases/latest">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg>
@@ -168,6 +180,22 @@ footer a{color:var(--mu)}
   <small>Funciona con</small>
   <div class="logos" id="logos"></div>
 </div>
+
+<section class="bloque" id="fin">
+  <div class="wrap">
+    <div class="fin">
+      <small>Nuestro fin</small>
+      <h2>TasloStacks existe para <em>donar</em></h2>
+      <p>Es un proyecto sin fines de lucro. Hoy no recibe plata: estamos buscando patrocinios y otras formas de generar ingresos. <b>Todo lo que entre se dona</b> a lugares que elige la comunidad.</p>
+      <ol class="fpasos">
+        <li><b>Generamos ingresos</b><span>Con patrocinios u otras formas que no cambien la app: sin publicidad en ella y sin juntar tus datos.</span></li>
+        <li><b>La comunidad vota</b><span>En el Discord se proponen lugares y se eligen por votación. Por ahora son de Montevideo (Uruguay), para poder conocerlos de cerca.</span></li>
+        <li><b>Donamos y lo mostramos</b><span>Cada donación se publica con su monto y su comprobante.</span></li>
+      </ol>
+      <a class="btn dc discord" href="#comunidad"><span>Proponer y votar en el Discord</span></a>
+    </div>
+  </div>
+</section>
 
 <section class="bloque" id="que-hace">
   <div class="wrap">

@@ -3,7 +3,7 @@
 (24 juegos) y quedan 6 horas en memoria: los precios cambian seguido, no vale la pena guardarlos en disco.
 Cada precio vuelve como {"txt": "$U 740,00"} (Steam ya lo da escrito) o {"v": 4.99, "m": "USD"} para que la página
 lo escriba en su idioma; "gratis" y "pass" (Game Pass) son marcas. "d" es el descuento en %."""
-import ctypes, json, re, threading, time, urllib.parse
+import ctypes, json, re, threading, time, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from . import paths
 from .steam import http_json
@@ -72,13 +72,24 @@ def _steam_ofertas(cc, paginas=40):
     with ThreadPoolExecutor(4) as ex:
         return [a for lote in ex.map(una, range(paginas)) for a in lote]
 
+def _itch_ofertas(cc, paginas=10):
+    """Links de itch.io en oferta (su listado público on-sale, 36 por página)."""
+    def una(n):
+        try:
+            x = urllib.request.urlopen(urllib.request.Request("https://itch.io/games/on-sale.xml?page=%d" % n, headers={"User-Agent": "TasloStacks"}), timeout=20).read().decode("utf-8", "replace")
+            return re.findall(r"<link>([^<]+)</link>", x)[1:]  # el primero es el del propio listado
+        except Exception as e:
+            paths.log("ofertas itch", n, e); return []
+    with ThreadPoolExecutor(4) as ex:
+        return [u for lote in ex.map(una, range(1, paginas + 1)) for u in lote]
+
 def ofertas():
-    """{"GOG": [ids], "Steam": [appids]} con descuento hoy. Se pide solo al prender el interruptor Descuento; 6 h en memoria."""
+    """{"GOG": [ids], "Steam": [appids], "itch.io": [links]} con descuento hoy. Las demás tiendas no publican sus ofertas. Se pide solo al prender el interruptor Descuento; 6 h en memoria."""
     cc = pais()
     if time.time() - _ofertas.get(cc, (0, None))[0] < VIDA:
         return _ofertas[cc][1]
     out = {}
-    for t, f in (("GOG", _gog_ofertas), ("Steam", _steam_ofertas)):
+    for t, f in (("GOG", _gog_ofertas), ("Steam", _steam_ofertas), ("itch.io", _itch_ofertas)):
         try: out[t] = f(cc)
         except Exception as e:
             paths.log("ofertas", t, e); out[t] = []

@@ -5,6 +5,10 @@ Set-Location $PSScriptRoot
 $version = (Select-String -Path "taslostacks\__init__.py" -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
 Write-Host "TasloStacks $version" -ForegroundColor Cyan
 
+# 0) la página no puede tener errores de JavaScript: la app se queda en la pantalla de carga
+python scripts/revisar_js.py
+if ($LASTEXITCODE -ne 0) { throw "La plantilla tiene un error de JavaScript" }
+
 # 1) exe
 if (Test-Path dist) { Remove-Item dist -Recurse -Force }
 if (Test-Path build) { Remove-Item build -Recurse -Force }

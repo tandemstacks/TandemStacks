@@ -445,6 +445,14 @@ class Api:
             return g["store"]  # la página espera a que abra su launcher
         return False
 
+def _tamano_inicial():
+    """Arranca grande según la pantalla (60 % del ancho y 85 % del alto), nunca menos de 1400 × 900 ni más de lo que entra."""
+    try:
+        p = webview.screens[0]
+        return (int(min(max(p.width * 0.6, 1400), p.width * 0.92)), int(min(max(p.height * 0.85, 900), p.height * 0.92)))
+    except Exception:
+        return 1400, 900
+
 def _minimizada(ventana, si):
     """Minimizada no se ve nada: el visor baja su memoria y se suspende, así la página tampoco queda consultando."""
     NUC.minimizada = si
@@ -496,7 +504,8 @@ def main():
         build.escribir([], [], NUC.cfg, NUC.estado)
         try: open(marca, "w").write(huella)
         except OSError: pass
-    v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=1400, height=900,
+    ancho, alto = _tamano_inicial()
+    v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
     v.events.minimized += lambda: _minimizada(v, True)

@@ -391,13 +391,28 @@ class Api:
         ok = lambda n: NUC.launchers.get(n, {}).get("ok")
         gid = str(gid)
         if tienda.lower() == "gog" and re.fullmatch(r"\d{1,12}", gid):
-            if ok("GOG"): os.startfile("goggalaxy://openGameView/" + gid)
+            if ok("GOG"): os.startfile("goggalaxy://openGameView/" + gid); return "GOG"
             elif re.fullmatch(r"[a-z0-9_]{1,120}", str(slug)): os.startfile("https://www.gog.com/en/game/" + slug)
             return True
         if tienda == "Steam" and re.fullmatch(r"\d{1,9}", gid):
-            os.startfile(("steam://store/" if ok("Steam") else "https://store.steampowered.com/app/") + gid); return True
+            os.startfile(("steam://store/" if ok("Steam") else "https://store.steampowered.com/app/") + gid)
+            return "Steam" if ok("Steam") else True
         if tienda == "Xbox" and re.fullmatch(r"[0-9A-Z]{12}", gid):
             os.startfile("ms-windows-store://pdp/?productid=" + gid); return True
+        return False
+
+    def esperar_tienda(self, tienda):
+        """La página la llama después de abrir una tienda y queda en espera: vuelve cuando el launcher ya está corriendo
+        (o a los 12 s: algunos juegos arrancan sin su launcher), así no se toca dos veces mientras se abre."""
+        l = NUC.launchers.get(tienda) or {}
+        if not l.get("ok") or not l.get("procs"):
+            time.sleep(1.5); return False
+        fin = time.time() + 12
+        while time.time() < fin:
+            if watch.abiertos({tienda: l}):
+                time.sleep(1.5)  # que llegue a mostrar su ventana
+                return True
+            time.sleep(0.5)
         return False
 
     def abrir_datos(self):
@@ -410,7 +425,7 @@ class Api:
         if tipo in ("install", "uninstall", "run") and re.fullmatch(r"\d{1,9}", appid):
             uri = "steam://%s/%s" % (tipo, appid)
             os.startfile(uri)
-            return True
+            return "Steam"
         des = q.get("desinstalar", [""])[0]
         if des:  # desinstalar un juego de otra tienda: comando propio si la tienda lo tiene, si no Aplicaciones instaladas de Windows
             g = next((x for x in NUC.juegos if x["id"] == des), None)
@@ -418,16 +433,16 @@ class Api:
             if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]))
             elif u: os.startfile(u)
             else: os.startfile("ms-settings:appsfeatures")
-            return True
+            return g["store"] if u and g else True
         if que in NUC.launchers:
-            os.startfile(NUC.launchers[que]["abrir"]); return True
+            os.startfile(NUC.launchers[que]["abrir"]); return que
         if lz:
             g = next((x for x in NUC.juegos if x["id"] == lz and x.get("launch")), None)
             if not g: return False
             d = g["launch"]
             if isinstance(d, list): subprocess.Popen(d, cwd=os.path.dirname(d[0]))
             else: os.startfile(d)
-            return True
+            return g["store"]  # la página espera a que abra su launcher
         return False
 
 def _minimizada(ventana, si):

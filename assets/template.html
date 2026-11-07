@@ -368,7 +368,8 @@ function filtrosGrupo(k,base,tiendasDe,generosDe,ordenes){
   const f=FIL[k], cuenta={}, gcnt={};
   base.forEach(x=>{tiendasDe(x).forEach(s=>cuenta[s]=(cuenta[s]||0)+1);(generosDe(x)||[]).forEach(g=>gcnt[g]=(gcnt[g]||0)+1);});
   const tiendas=TODAS.filter(s=>cuenta[s]), topG=Object.keys(gcnt).sort((a,b)=>gcnt[b]-gcnt[a]).slice(0,30);
-  const chips=`<span class="chip ${f.t.size?'':'on'}" data-gt="${k}" data-t="todos">${L.todos}</span>`+tiendas.map(s=>`<span class="chip ${f.t.has(s)?'on':''}" data-gt="${k}" data-t="${esc(s)}">${logo(s,sc(s),12)} ${esc(s)} <span style="opacity:.55">${cuenta[s]}</span></span>`).join('');
+  // sin ninguna tienda marcada se ven todas; se marca una, varias o todas
+  const chips=tiendas.map(s=>`<span class="chip ${f.t.has(s)?'on':''}" data-gt="${k}" data-t="${esc(s)}">${logo(s,sc(s),12)} ${esc(s)} <span style="opacity:.55">${cuenta[s]}</span></span>`).join('');
   const sel=`<select data-orden="${k}">${ordenes.map(([v,t])=>`<option value="${v}"${f.orden===v?' selected':''}>${t}</option>`).join('')}</select>`;
   const gen=topG.length?`<details class="dd der gdd" data-gen="${k}"${genAbierto===k?' open':''}><summary class="chip${f.gens.size?' on':''}">${f.gens.size?`${L.generos}: ${[...f.gens].slice(0,2).map(esc).join(', ')}${f.gens.size>2?' +'+(f.gens.size-2):''}`:L.generos} ▾</summary><div class="menu">`
     +`<label class="todos"><input type="checkbox" data-g="__todos" ${f.gens.size?'':'checked'}> ${L.todos}</label>`
@@ -634,7 +635,7 @@ $('#nivel').addEventListener('click',verMedallas);  // la lista de juegos se dib
 let esperaQ;$('#grid').addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)return;BUSCA[k]=e.target.value;clearTimeout(esperaQ);esperaQ=setTimeout(render,150);});
 // filtros dentro de cada grupo (los dibuja render)
 $('#grid').addEventListener('click',e=>{const c=e.target.closest('[data-gt]');if(!c)return;e.stopPropagation();const f=FIL[c.dataset.gt], t=c.dataset.t;
-  if(t==='todos') f.t.clear(); else f.t.has(t)?f.t.delete(t):f.t.add(t);
+  f.t.has(t)?f.t.delete(t):f.t.add(t);
   render();},true);
 $('#grid').addEventListener('change',e=>{const o=e.target.dataset.orden;if(o){FIL[o].orden=e.target.value;render();return;}
   const g=e.target.dataset.g, d=e.target.closest('.gdd');if(!g||!d)return;const f=FIL[d.dataset.gen];

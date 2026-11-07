@@ -101,9 +101,14 @@ def itch(paginas=10):
     juegos, vistos = [], set()
     for lista, n in (("top-sellers", paginas), ("top-rated", paginas // 2)):
         for p in range(1, n + 1):
-            try:
-                x = urllib.request.urlopen(urllib.request.Request("https://itch.io/games/%s.xml?page=%d" % (lista, p), headers=UA), timeout=30).read().decode("utf-8", "replace")
-            except Exception:
+            x = ""
+            for intento in range(3):  # itch a veces corta si se le pide seguido
+                try:
+                    x = urllib.request.urlopen(urllib.request.Request("https://itch.io/games/%s.xml?page=%d" % (lista, p), headers=UA), timeout=30).read().decode("utf-8", "replace")
+                    break
+                except Exception as e:
+                    print("itch.io %s página %d: %s" % (lista, p, e), flush=True); time.sleep(5 * (intento + 1))
+            if not x:
                 break
             for it in re.findall(r"<item>(.*?)</item>", x, re.S):
                 val = lambda k: (re.search(r"<%s>(.*?)</%s>" % (k, k), it, re.S) or [None, ""])[1].strip()

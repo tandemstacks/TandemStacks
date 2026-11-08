@@ -1,8 +1,8 @@
-# Rehace el catálogo de No comprados (docs/catalogo/) una vez por semana, con las 8 tiendas y sin juegos +18 por contenido sexual.
+# Rehace el catálogo de No comprados (docs/catalogo/) una vez por día, con las 8 tiendas y sin juegos +18 por contenido sexual.
 name: Catálogo de No comprados
 on:
   schedule:
-    - cron: "0 6 * * 1"   # lunes 06:00 UTC (03:00 en Uruguay)
+    - cron: "0 6 * * *"   # todos los días a las 06:00 UTC (03:00 en Uruguay)
   workflow_dispatch:       # también se puede correr a mano desde la pestaña Actions
 permissions:
   contents: write

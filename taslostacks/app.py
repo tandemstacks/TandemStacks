@@ -218,8 +218,9 @@ class Nucleo:
                 return a.get("browser_download_url", "")
         return ""
 
-    def actualizar(self):
-        """Baja el instalador nuevo mostrando el avance, lo corre en silencio y cierra la app (el instalador la vuelve a abrir)."""
+    def actualizar(self, solo=False):
+        """Baja el instalador nuevo mostrando el avance, lo corre en silencio y cierra la app (el instalador la vuelve a abrir).
+        solo=True: es la actualización automática al abrir; si falla, la app sigue igual sin abrir páginas."""
         try:
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % self.cfg.get("repo"), 15)
             url = self._link_setup(j)
@@ -248,7 +249,8 @@ class Nucleo:
         except Exception as e:
             paths.log("actualizar", e)
             self.estado.update(fase="listo", msg="", de="", hecho=0, total=0)
-            os.startfile("https://github.com/%s/releases/latest" % self.cfg.get("repo"))  # plan B: la página de descarga
+            if not solo:
+                os.startfile("https://github.com/%s/releases/latest" % self.cfg.get("repo"))  # plan B: la página de descarga
 
     def version_nueva(self):
         # solo avisa si la de GitHub es MÁS nueva (no alcanza con que sea distinta: la caché puede tener una vieja)
@@ -542,6 +544,14 @@ def main():
     v.events.restored += lambda: _minimizada(v, False)
     v.events.maximized += lambda: _minimizada(v, False)  # una ventana maximizada vuelve por acá al sacarla de la barra
     def arranque():
+        # versión nueva: se actualiza sola al abrir, sin preguntar (pedido del dueño, 07/11/2026). Solo el programa instalado,
+        # no corriendo desde el código. Si la descarga o la instalación fallan, la app sigue con la versión que tiene.
+        if getattr(sys, "frozen", False):
+            try:
+                if NUC.version_nueva():
+                    NUC.actualizar(solo=True)
+            except Exception as e:
+                paths.log("actualizar al abrir", e)
         try:
             NUC.escanear()
         except Exception:

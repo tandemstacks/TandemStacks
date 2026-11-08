@@ -160,6 +160,17 @@ main{padding:16px 22px 60px}
 .qfila{display:flex;gap:10px;align-items:center;margin:2px 16px 14px}.qfila .qgrupo{margin:0;width:auto;flex:1}.qfila .chip.tog{flex:none;height:40px}
 .tag.conp{flex-wrap:wrap;max-width:calc(100% - 14px);row-gap:4px}.tag .tp{display:inline-flex;align-items:center;gap:4px}.tag .pr{font-size:11px;font-weight:700;color:var(--tx);white-space:nowrap}.tag .pr:empty{display:none}.tag .pr em{font-style:normal;color:#2f9e44;margin-left:3px}
 .tag.pend .pr:empty{display:inline-block;width:36px;height:12px;border-radius:2px;background:linear-gradient(100deg,var(--card) 40%,var(--bg) 50%,var(--card) 60%);background-size:220% 100%;animation:brillo 1.3s linear infinite}
+.lista{display:flex;flex-direction:column;gap:6px;padding:0 16px 16px}
+.lista .card{aspect-ratio:auto;height:66px;display:flex;align-items:center;gap:14px;padding:0 14px 0 0;contain-intrinsic-size:auto 66px}
+.lista .card:hover{transform:none;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.lista .card>img,.lista .card>.ph{width:44px;height:66px;flex:none;font-size:9px;padding:2px;object-fit:cover}
+.lista .card .nm{position:static;opacity:1;background:none;color:var(--tx);padding:0;font-size:14px;order:2;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lista .card .tag{position:static;order:3;box-shadow:none;background:none;padding:0;max-width:none;flex-wrap:nowrap}
+.lista .card .fx{display:block;order:4;color:var(--mu);font-size:12px;white-space:nowrap;min-width:90px;text-align:right}
+.lista .card .inst{position:static;order:5;box-shadow:none}
+.lista .card.sigpag{height:44px;flex-direction:row;padding:0}.lista .card.sigpag b{font-size:20px}
+.card .fx{display:none}
+.vista{display:inline-flex;box-shadow:var(--sh);border-radius:3px;overflow:hidden}.vista button{border:none;background:var(--bg);color:var(--mu);height:28px;width:32px;cursor:pointer;font-size:15px;line-height:1}.vista button.on{background:var(--acc);color:#fff}
 .card.sigpag{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:var(--bg);color:var(--mu);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}.card.sigpag b{font-size:30px;line-height:1;color:var(--acc)}.card.sigpag:hover{color:var(--tx)}
 /* carga por sector: el giro solo existe mientras hay algo cargando, y cada portada brilla hasta que llega */
 .cargando{display:flex;align-items:center;justify-content:center;gap:10px;padding:26px 16px;margin:0}.cargando::before{content:"";width:18px;height:18px;border-radius:50%;border:3px solid var(--card);border-top-color:var(--acc);animation:gira .8s linear infinite}
@@ -206,7 +217,7 @@ const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.a
 const TXT={
  spanish:{sinId:'Este juego está en tu cuenta de {t}, pero TasloStacks todavía no sabe cuál es. Si nos avisás cuál es, en la próxima versión aparece con su nombre para todos. Código:',avisar:'Avisar cuál es',
   noComprados:'No comprados',catAyuda:'Juegos de las tiendas que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',sinOfertas:'No hay ofertas con estos filtros. Solo GOG, Steam e itch.io publican qué juegos están en oferta.',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TasloStacks abierta. Tocá para ver tus medallas.',abriendo:'Abriendo',contacto:'Contacto:',gratis:'Gratis',descuento:'Descuento',buscandoOf:'Buscando ofertas en {t}…',noPublica:'{t} no publica qué juegos están en oferta. Las tiendas que sí lo hacen son GOG, Steam e itch.io.',noPublican:'{t} no publican qué juegos están en oferta. Las tiendas que sí lo hacen son GOG, Steam e itch.io.',noOficial:'TasloStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
-  buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],ordenNC:['Más populares','Orden: nombre','Más nuevos'],generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
+  buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],ordenNC:['Más populares','Orden: nombre','Más nuevos'],grilla:'Ver en grilla',enLista:'Ver en lista',porPag:'{n} por página',generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
@@ -226,7 +237,7 @@ const TXT={
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TasloStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
   noComprados:'Not owned',catAyuda:'Store games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',sinOfertas:'No deals with these filters. Only GOG, Steam and itch.io publish which games are on sale.',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TasloStacks open. Click to see your medals.',abriendo:'Opening',contacto:'Contact:',gratis:'Free',descuento:'On sale',buscandoOf:'Looking for deals on {t}…',noPublica:'{t} does not publish which games are on sale. GOG, Steam and itch.io do.',noPublican:'{t} do not publish which games are on sale. GOG, Steam and itch.io do.',noOficial:'TasloStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
-  buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],ordenNC:['Most popular','Sort: name','Newest'],generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
+  buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],ordenNC:['Most popular','Sort: name','Newest'],grilla:'Grid view',enLista:'List view',porPag:'{n} per page',generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…':'Installing the new version: TasloStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
@@ -379,7 +390,7 @@ function filtrosGrupo(k,base,tiendasDe,generosDe,ordenes){
   const gen=topG.length?`<details class="dd der gdd" data-gen="${k}"${genAbierto===k?' open':''}><summary class="chip${f.gens.size?' on':''}">${f.gens.size?`${L.generos}: ${[...f.gens].slice(0,2).map(esc).join(', ')}${f.gens.size>2?' +'+(f.gens.size-2):''}`:L.generos} ▾</summary><div class="menu">`
     +`<label class="todos"><input type="checkbox" data-g="__todos" ${f.gens.size?'':'checked'}> ${L.todos}</label>`
     +topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${f.gens.has(x)?'checked':''}> ${esc(x)}<small>${gcnt[x]}</small></label>`).join('')+`</div></details>`:'';
-  return `<div class="gfil"><div class="chips">${chips}</div><div class="ordgen">${sel}${gen}</div></div>`;
+  return `<div class="gfil"><div class="chips">${chips}</div><div class="ordgen">${controlesVista(k)}${sel}${gen}</div></div>`;
 }
 // tocar un juego no comprado: si está en una sola tienda se abre ahí; si está en varias, elegís en cuál
 // mientras se abre una tienda la app queda en espera, así no se toca dos veces; la ventanita se saca al terminar
@@ -401,16 +412,23 @@ function verNC(j){
   $('#bg').classList.add('show');
 }
 // son miles: se dibujan de a tandas a medida que bajás (y las portadas se piden recién al verse, loading=lazy)
-const POR_PAG=24, PAG={no:0,nc:0}, PAGN={};
+const PAG={no:0,nc:0}, PAGN={};
+let VISTA={si:'grilla',no:'grilla',nc:'grilla'}, POR={no:24,nc:24};
+try{const v=JSON.parse(localStorage.getItem('vistas')||'{}');Object.assign(VISTA,v.vista||{});Object.assign(POR,v.por||{});}catch(e){}
+const guardarVista=()=>{try{localStorage.setItem('vistas',JSON.stringify({vista:VISTA,por:POR}));}catch(e){}};
+const caja=k=>VISTA[k]==='lista'?'lista':'grid';
+// botones grilla/lista y cantidad por página (24, 48 o 96: más que eso carga de más)
+const controlesVista=k=>`<span class="vista"><button data-vista="${k}" data-v="grilla" title="${L.grilla}" class="${VISTA[k]==='grilla'?'on':''}">▦</button><button data-vista="${k}" data-v="lista" title="${L.enLista}" class="${VISTA[k]==='lista'?'on':''}">☰</button></span>`
+  +(POR[k]?`<select data-por="${k}">${[24,48,96].map(n=>`<option value="${n}"${POR[k]===n?' selected':''}>${L.porPag.replace('{n}',n)}</option>`).join('')}</select>`:'');
 // una página de la lista: lo demás no se dibuja hasta que lo pidas
 function paginado(k,lista,tarjeta){
   if(PAGN[k]!==lista.length){PAGN[k]=lista.length;PAG[k]=0;}  // cambió el filtro o la búsqueda: vuelve a la primera
-  const total=Math.max(1,Math.ceil(lista.length/POR_PAG)), n=PAG[k]=Math.min(PAG[k],total-1);
-  return `<div class="grid">${n?`<div class="card sigpag" data-pg="${k}" data-d="-1"><b>‹</b>${L.antPag}</div>`:''}${lista.slice(n*POR_PAG,(n+1)*POR_PAG).map(tarjeta).join('')}${n<total-1?`<div class="card sigpag" data-pg="${k}" data-d="1"><b>›</b>${L.sigPag}</div>`:''}</div>`
+  const por=POR[k]||24, total=Math.max(1,Math.ceil(lista.length/por)), n=PAG[k]=Math.min(PAG[k],total-1);
+  return `<div class="${caja(k)}">${n?`<div class="card sigpag" data-pg="${k}" data-d="-1"><b>‹</b>${L.antPag}</div>`:''}${lista.slice(n*por,(n+1)*por).map(tarjeta).join('')}${n<total-1?`<div class="card sigpag" data-pg="${k}" data-d="1"><b>›</b>${L.sigPag}</div>`:''}</div>`
     +(total>1?`<div class="pager"><span>${L.pagina} ${n+1} ${L.de} ${total}</span></div>`:'');
 }
 const cardNC=j=>{const todas=Object.keys(j.st), st=FIL.nc.t.size?todas.filter(s=>FIL.nc.t.has(s)):todas;return `<div class="card off" data-c="${CAT.indexOf(j)}">${j.c?`<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(chica(j.c))}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}
-  <span class="tag conp">${st.map(s=>`<i class="tp" data-s="${esc(s)}">${logo(s,sc(s),20)}<b class="pr"></b></i>`).join('')}</span><div class="nm">${esc(j.t)}</div></div>`;};
+  <span class="tag conp">${st.map(s=>`<i class="tp" data-s="${esc(s)}">${logo(s,sc(s),20)}<b class="pr"></b></i>`).join('')}</span><div class="nm">${esc(j.t)}</div><span class="fx">${esc(j.y||'')}</span></div>`;};
 // precios de No comprados: se piden solo para la página que se ve y se olvidan al plegar el grupo
 let PRECIO={}, PRECIO_PEND=new Set();
 function fmtPrecio(p){
@@ -436,13 +454,13 @@ function render(){
   const ordLib=['nombre','valor','peso','anio'].map((v,i)=>[v,L.orden[i]]), ordNC=['popular','nombre','anio'].map((v,i)=>[v,L.ordenNC[i]]);
   const card=g=>`<div class="card${g.installed?'':' off'}" data-i="${J.indexOf(g)}">${img(g)}
     <span class="tag">${g.stores.map(s=>logo(s,sc(s),20)).join('')}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
-    <div class="nm">${esc(g.name)}</div></div>`;
+    <div class="nm">${esc(g.name)}</div><span class="fx">${[g.anio,g.installed&&g.sizeGB?g.sizeGB+' GB':(g.reqGB?'~'+g.reqGB+' GB':'')].filter(Boolean).map(esc).join(' · ')}</span></div>`;
   const inst=J.filter(g=>g.installed), no=J.filter(g=>!g.installed);
   const foco=document.activeElement&&document.activeElement.dataset.q, cursor=foco&&document.activeElement.selectionStart;  // al redibujar se sigue escribiendo
   const buscador=k=>`<input class="qgrupo" data-q="${k}" autocomplete="off" placeholder="${esc(L.buscar)}" value="${esc(BUSCA[k])}">`;
   const nada=lista=>lista.length?'':`<p class="catayuda">${L.sinRes}</p>`;
   const instV=filtra(inst,'si'), noV=filtra(no,'no'), deJuego=g=>g.stores, generoJuego=g=>g.genres;
-  let h=inst.length?`<details class="grupo" data-s="si"${abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${instV.length}</span><span class="flecha">▾</span></summary>${abiertos.has('si')?`${filtrosGrupo('si',inst,deJuego,generoJuego,ordLib)}${buscador('si')}${nada(instV)}<div class="grid">${instV.map(card).join('')}</div>`:''}</details>`:'';
+  let h=inst.length?`<details class="grupo" data-s="si"${abiertos.has('si')?' open':''}><summary><b>${L.instalados}</b> <span>${instV.length}</span><span class="flecha">▾</span></summary>${abiertos.has('si')?`${filtrosGrupo('si',inst,deJuego,generoJuego,ordLib)}${buscador('si')}${nada(instV)}<div class="${caja('si')}">${instV.map(card).join('')}</div>`:''}</details>`:'';
   if(no.length){const abierto=abiertos.has('no');
     h+=`<details class="grupo" data-s="no"${abierto?' open':''}><summary><b>${L.noInst}</b> <span>${noV.length}</span><span class="flecha">▾</span></summary>${abierto?filtrosGrupo('no',no,deJuego,generoJuego,ordLib)+buscador('no')+nada(noV)+paginado('no',noV,card):''}</details>`;}
   if(!abiertos.has('nc')&&catEstado==='listo'){CAT=[];catEstado='';PRECIO={};OFERTAS=null;ofEstado='';SOLO_DESC=false;}  // plegado: se suelta de la memoria y al desplegar se vuelve a leer
@@ -458,7 +476,7 @@ function render(){
   $('#grid').innerHTML=h; preciosPagina();
   if(foco){const q=document.querySelector(`[data-q="${foco}"]`);if(q){q.focus();q.setSelectionRange(cursor,cursor);}}
   $('#grid').querySelectorAll('details.grupo').forEach(d=>d.addEventListener('toggle',()=>{d.open?abiertos.add(d.dataset.s):abiertos.delete(d.dataset.s);
-    if(d.open?!d.querySelector('.grid,.cargando'):d.querySelector('.grid,.cargando'))render();}));  // cada grupo se dibuja al abrirlo y se suelta al plegarlo
+    if(d.open?!d.querySelector('.grid,.lista,.cargando'):d.querySelector('.grid,.lista,.cargando'))render();}));  // cada grupo se dibuja al abrirlo y se suelta al plegarlo
   $('#grid').querySelectorAll('details.gdd').forEach(d=>d.addEventListener('toggle',()=>{genAbierto=d.open?d.dataset.gen:(genAbierto===d.dataset.gen?'':genAbierto);}));
   $('#empty').style.display='none';
 }
@@ -642,10 +660,12 @@ $('#discos').addEventListener('toggle',discos);
 $('#nivel').addEventListener('click',verMedallas);  // la lista de juegos se dibuja al abrir el panel y se suelta al cerrarlo
 let esperaQ;$('#grid').addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)return;BUSCA[k]=e.target.value;clearTimeout(esperaQ);esperaQ=setTimeout(render,150);});
 // filtros dentro de cada grupo (los dibuja render)
-$('#grid').addEventListener('click',e=>{const c=e.target.closest('[data-gt]');if(!c)return;e.stopPropagation();const f=FIL[c.dataset.gt], t=c.dataset.t;
+$('#grid').addEventListener('click',e=>{const v=e.target.closest('[data-vista]');if(v){e.stopPropagation();VISTA[v.dataset.vista]=v.dataset.v;guardarVista();render();return;}
+  const c=e.target.closest('[data-gt]');if(!c)return;e.stopPropagation();const f=FIL[c.dataset.gt], t=c.dataset.t;
   f.t.has(t)?f.t.delete(t):f.t.add(t);
   render();},true);
 $('#grid').addEventListener('change',e=>{const o=e.target.dataset.orden;if(o){FIL[o].orden=e.target.value;render();return;}
+  const pp=e.target.dataset.por;if(pp){POR[pp]=+e.target.value;PAG[pp]=0;guardarVista();render();return;}
   const g=e.target.dataset.g, d=e.target.closest('.gdd');if(!g||!d)return;const f=FIL[d.dataset.gen];
   if(g==='__todos') f.gens.clear(); else e.target.checked?f.gens.add(g):f.gens.delete(g);
   genAbierto=d.dataset.gen; render();});

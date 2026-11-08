@@ -1,0 +1,38 @@
+# Arma TasloStacks.exe y el instalador en GitHub, a partir del código del repositorio.
+# Es lo que pide SignPath para firmar gratis: que lo que se firma salga de un armado verificable, no de una PC.
+# Hoy deja el instalador sin firmar como artefacto; cuando SignPath apruebe el proyecto se suman los pasos de firma.
+name: Armar instalador
+on:
+  workflow_dispatch:          # a mano desde la pestaña Actions
+  push:
+    tags: ["v*"]              # y solo al etiquetar una versión
+permissions:
+  contents: read
+jobs:
+  armar:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt pyinstaller
+      - name: Instalar Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Armar
+        shell: pwsh
+        run: ./build.ps1
+      - name: Comprobar que salió el instalador
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path taslostacks/__init__.py -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          $f = "installer/Output/TasloStacks-Setup-$v.exe"
+          if (-not (Test-Path $f)) { throw "No se armó $f" }
+          "instalador: $f ($([math]::Round((Get-Item $f).Length/1MB,1)) MB)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instalador-sin-firmar
+          path: installer/Output/TasloStacks-Setup-*.exe
+          if-no-files-found: error

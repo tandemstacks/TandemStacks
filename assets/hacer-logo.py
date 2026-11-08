@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Logo de TasloStacks: cuadrado naranja industrial con "TS" blanco armado con bloques apilados
+# Logo de TandemStacks: cuadrado naranja industrial con "TS" blanco armado con bloques apilados
 # (barras rectas con una sombra corta, estilo bloque/estantería).
 # Salida: logo.png (256) e icon.ico (16-256 px), junto a este script.
 import os

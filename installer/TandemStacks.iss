@@ -1,19 +1,19 @@
-; Instalador de TasloStacks (Inno Setup 6). build.ps1 lo compila pasando /DAppVersion=x.y.z
+; Instalador de TandemStacks (Inno Setup 6). build.ps1 lo compila pasando /DAppVersion=x.y.z
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
-#define AppName "TasloStacks"
+#define AppName "TandemStacks"
 
 [Setup]
 AppId={{7D4E2C3A-5B1F-4C8E-9A2D-0A1B2C3D4E5F}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=TasloStacks (software libre, MIT)
-AppPublisherURL=https://github.com/taslostacks/TasloStacks
+AppPublisher=TandemStacks (software libre, MIT)
+AppPublisherURL=https://github.com/tandemstacks/TandemStacks
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
-; mismo AppId que SantiStacks (nombre hasta la 1.1.2): se instala encima, pero en la carpeta nueva
+; mismo AppId que SantiStacks (hasta la 1.1.2) y TasloStacks (hasta la 1.3.6): se instala encima, pero en la carpeta nueva
 UsePreviousAppDir=no
 UsePreviousGroup=no
 DisableProgramGroupPage=yes
@@ -40,10 +40,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "..\dist\TasloStacks\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\TandemStacks\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [InstallDelete]
-; restos de SantiStacks (el nombre anterior)
+; restos de los nombres anteriores (SantiStacks y TasloStacks)
+Type: filesandordirs; Name: "{autopf}\TasloStacks"
+Type: filesandordirs; Name: "{autoprograms}\TasloStacks"
+Type: files; Name: "{autodesktop}\TasloStacks.lnk"
 Type: filesandordirs; Name: "{autopf}\SantiStacks"
 Type: filesandordirs; Name: "{autoprograms}\SantiStacks"
 Type: files; Name: "{autodesktop}\SantiStacks.lnk"
@@ -71,6 +74,8 @@ procedure CerrarApp();
 var Codigo: Integer;
 begin
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppName}.exe', '', SW_HIDE, ewWaitUntilTerminated, Codigo);
+  // la versión vieja todavía se llama TasloStacks.exe
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM TasloStacks.exe', '', SW_HIDE, ewWaitUntilTerminated, Codigo);
   Sleep(800);
 end;
 

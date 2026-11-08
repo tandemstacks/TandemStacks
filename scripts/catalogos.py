@@ -10,7 +10,7 @@ Formato de cada juego (claves cortas para que el archivo pese poco):
 import json, os, re, time, urllib.parse, urllib.request
 
 SALIDA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "catalogo")
-UA = {"User-Agent": "TasloStacks (+https://github.com/taslostacks/TasloStacks)"}
+UA = {"User-Agent": "TandemStacks (+https://github.com/tandemstacks/TandemStacks)"}
 # Regla del dueño (07/11/2026): los juegos +18 por contenido sexual no aparecen en el catálogo. x = marcado para sacar.
 GOG_ADULTOS = {"nsfw", "hentai"}  # "sexual-content" y "nudity" no sirven: incluyen Disco Elysium, Cyberpunk...
 STEAM_ETIQUETAS = ("Hentai", "NSFW", "Sexual Content", "Nudity")  # solo para saber a quiénes preguntarle a la tienda: traen falsos positivos
@@ -124,7 +124,7 @@ def itch(paginas=10):
 def _pagina(url):
     for intento in range(3):
         try:
-            return urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (TasloStacks)"}), timeout=30).read().decode("utf-8", "replace")
+            return urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (TandemStacks)"}), timeout=30).read().decode("utf-8", "replace")
         except Exception:
             time.sleep(4 * (intento + 1))
     return ""

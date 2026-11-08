@@ -4,7 +4,7 @@ import os, re, json, time, glob, difflib, threading, winreg, urllib.request, url
 from . import paths
 from .detect import reg, HKCU
 
-UA = {"User-Agent": "TasloStacks/1.0 (+https://github.com)"}
+UA = {"User-Agent": "TandemStacks/1.0 (+https://github.com)"}
 CACHE_STEAM = os.path.join(paths.CACHE, "steam")
 os.makedirs(CACHE_STEAM, exist_ok=True)
 

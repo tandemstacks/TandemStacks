@@ -1,4 +1,4 @@
-# Arma TasloStacks.exe y el instalador en GitHub, a partir del código del repositorio.
+# Arma TandemStacks.exe y el instalador en GitHub, a partir del código del repositorio.
 # Es lo que pide SignPath para firmar gratis: que lo que se firma salga de un armado verificable, no de una PC.
 # Hoy deja el instalador sin firmar como artefacto; cuando SignPath apruebe el proyecto se suman los pasos de firma.
 name: Armar instalador
@@ -27,12 +27,12 @@ jobs:
       - name: Comprobar que salió el instalador
         shell: pwsh
         run: |
-          $v = (Select-String -Path taslostacks/__init__.py -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
-          $f = "installer/Output/TasloStacks-Setup-$v.exe"
+          $v = (Select-String -Path tandemstacks/__init__.py -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          $f = "installer/Output/TandemStacks-Setup-$v.exe"
           if (-not (Test-Path $f)) { throw "No se armó $f" }
           "instalador: $f ($([math]::Round((Get-Item $f).Length/1MB,1)) MB)"
       - uses: actions/upload-artifact@v4
         with:
           name: instalador-sin-firmar
-          path: installer/Output/TasloStacks-Setup-*.exe
+          path: installer/Output/TandemStacks-Setup-*.exe
           if-no-files-found: error

@@ -63,7 +63,7 @@ def _gog_ofertas(cc):
 
 def _steam_ofertas(cc, paginas=40):
     """Appids de Steam en oferta: las 4000 más relevantes de su búsqueda pública (son decenas de miles; el catálogo
-    de TasloStacks son los más jugados, así que casi todos los que importan están entre esas)."""
+    de TandemStacks son los más jugados, así que casi todos los que importan están entre esas)."""
     url = "https://store.steampowered.com/search/results/?query&count=100&specials=1&infinite=1&cc=%s&start=%%d" % cc
     def una(n):
         try: return re.findall(r'data-ds-appid="(\d+)"', http_json(url % (n * 100), 20).get("results_html", ""))
@@ -76,7 +76,7 @@ def _itch_ofertas(cc, paginas=10):
     """Links de itch.io en oferta (su listado público on-sale, 36 por página)."""
     def una(n):
         try:
-            x = urllib.request.urlopen(urllib.request.Request("https://itch.io/games/on-sale.xml?page=%d" % n, headers={"User-Agent": "TasloStacks"}), timeout=20).read().decode("utf-8", "replace")
+            x = urllib.request.urlopen(urllib.request.Request("https://itch.io/games/on-sale.xml?page=%d" % n, headers={"User-Agent": "TandemStacks"}), timeout=20).read().decode("utf-8", "replace")
             return re.findall(r"<link>([^<]+)</link>", x)[1:]  # el primero es el del propio listado
         except Exception as e:
             paths.log("ofertas itch", n, e); return []

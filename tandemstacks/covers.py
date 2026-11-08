@@ -89,7 +89,7 @@ def asegurar(g):
     return bool(url)
 
 def limpiar_descargadas():
-    """Las versiones anteriores bajaban cada portada a %LOCALAPPDATA%\\TasloStacks\\covers: se borran."""
+    """Las versiones anteriores bajaban cada portada a %LOCALAPPDATA%\\TandemStacks\\covers: se borran."""
     import shutil
     vieja = os.path.join(paths.DATA, "covers")
     if os.path.isdir(vieja):

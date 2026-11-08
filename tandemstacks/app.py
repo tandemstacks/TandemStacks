@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Ventana de TasloStacks (pywebview) + escaneo de bibliotecas en segundo plano + API que usa la página."""
+"""Ventana de TandemStacks (pywebview) + escaneo de bibliotecas en segundo plano + API que usa la página."""
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
@@ -108,7 +108,7 @@ class Nucleo:
             for n in ORDEN_TIENDAS:
                 l = self.launchers[n]
                 if n == "Steam": info, st = steam_info, ("ok" if bib is not None else "parcial") if l["ok"] else "no"
-                elif n == "Ubisoft": info, st = ("%d juegos (Ubisoft guarda tu biblioteca cifrada: se ven los instalados y los que TasloStacks reconoce por su ícono)" % cuenta(n)), ("parcial" if l["ok"] else "no")
+                elif n == "Ubisoft": info, st = ("%d juegos (Ubisoft guarda tu biblioteca cifrada: se ven los instalados y los que TandemStacks reconoce por su ícono)" % cuenta(n)), ("parcial" if l["ok"] else "no")
                 elif n in solo_inst: info, st = ("%d instalados (%s)" % (cuenta(n), "%s guarda tu biblioteca cifrada: solo se ven los instalados" % n if n in ("Ubisoft", "Amazon") else "la tienda no deja leer la biblioteca completa")), ("parcial" if l["ok"] else "no")
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
@@ -212,9 +212,9 @@ class Nucleo:
     # ---------- versión nueva ----------
     @staticmethod
     def _link_setup(release):
-        """Link del instalador (TasloStacks-Setup-x.y.z.exe) dentro de una release de GitHub."""
+        """Link del instalador (TandemStacks-Setup-x.y.z.exe) dentro de una release de GitHub."""
         for a in release.get("assets") or []:
-            if re.match(r"(TasloStacks|SantiStacks)-Setup-.*\.exe$", a.get("name", ""), re.I):
+            if re.match(r"(TandemStacks|TasloStacks|SantiStacks)-Setup-.*\.exe$", a.get("name", ""), re.I):
                 return a.get("browser_download_url", "")
         return ""
 
@@ -233,7 +233,7 @@ class Nucleo:
                     b = r.read(256 * 1024)
                     if not b: break
                     f.write(b); self.estado["hecho"] += len(b)
-            self.estado.update(msg="Instalando la versión nueva: TasloStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
+            self.estado.update(msg="Instalando la versión nueva: TandemStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
             time.sleep(2)  # que la página llegue a mostrar el mensaje
             # si se instaló "para todos los usuarios" (Program Files), el instalador en silencio por defecto pone una copia
             # aparte solo para este usuario y los accesos siguen abriendo la vieja: hay que pedirle que pise la de todos
@@ -336,7 +336,7 @@ class Api:
         return True
 
     def desinstalar_app(self):
-        """Lanza el desinstalador de Windows de TasloStacks (solo si se instaló con el Setup)."""
+        """Lanza el desinstalador de Windows de TandemStacks (solo si se instaló con el Setup)."""
         if getattr(sys, "frozen", False):
             carpeta = os.path.dirname(sys.executable)
             for n in ("unins000.exe", "unins001.exe"):
@@ -353,7 +353,7 @@ class Api:
         r = inicio.quitar_todos(); paths.log("quitar inicio:", r); return r
 
     def desvincular(self, nombre, fuera=True):
-        """Saca (o vuelve a poner) una tienda de TasloStacks. No toca nada del launcher."""
+        """Saca (o vuelve a poner) una tienda de TandemStacks. No toca nada del launcher."""
         d = set(NUC.cfg.get("desvinculadas") or [])
         (d.add if fuera else d.discard)(nombre)
         NUC.cfg["desvinculadas"] = sorted(d)
@@ -384,7 +384,7 @@ class Api:
         except Exception: pass
         if d is None:
             try:
-                d = steam.http_json("https://taslostacks.github.io/TasloStacks/catalogo/%s.json" % tienda, 30)
+                d = steam.http_json("https://tandemstacks.github.io/TandemStacks/catalogo/%s.json" % tienda, 30)
                 json.dump(d, open(cache, "w", encoding="utf-8"), ensure_ascii=False)
             except Exception as e:
                 paths.log("catalogo", tienda, e)
@@ -471,7 +471,7 @@ class Api:
         return False
 
 def _en_program_files(ruta):
-    """True si TasloStacks está instalada para todos los usuarios (Program Files) y no solo para este."""
+    """True si TandemStacks está instalada para todos los usuarios (Program Files) y no solo para este."""
     bases = [os.environ.get(v, "") for v in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432")]
     r = os.path.abspath(ruta).lower()
     return any(b and r.startswith(os.path.abspath(b).lower() + os.sep) for b in bases)
@@ -520,7 +520,7 @@ def _poner_icono(ventana, icono):
 def main():
     icono = os.path.join(paths.ASSETS, "icon.ico")
     try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("TasloStacks")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("TandemStacks")
     except Exception:
         pass
     # primera pantalla enseguida (con lo que haya en caché); el escaneo real arranca al abrir
@@ -537,7 +537,7 @@ def main():
         try: open(marca, "w").write(huella)
         except OSError: pass
     ancho, alto, x, y = _tamano_inicial()
-    v = webview.create_window("TasloStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
+    v = webview.create_window("TandemStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
                               min_size=(820, 520), background_color="#f2f2ef")
     v.events.shown += lambda: _poner_icono(v, icono)
     v.events.minimized += lambda: _minimizada(v, True)

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Carpetas y configuración. Nada se guarda junto al programa: todo va a %LOCALAPPDATA%\\TasloStacks."""
+"""Carpetas y configuración. Nada se guarda junto al programa: todo va a %LOCALAPPDATA%\\TandemStacks."""
 import os, sys, json
 
-APP = "TasloStacks"
+APP = "TandemStacks"
 DATA = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), APP)
 CACHE = os.path.join(DATA, "cache")
 CONFIG = os.path.join(os.environ.get("APPDATA", DATA), APP, "config.json")
 NIVEL = os.path.join(os.path.dirname(CONFIG), "nivel.json")  # horas jugadas: junto a la config, sobrevive a desinstalar
 HTML = os.path.join(DATA, "biblioteca.html")
-LOG = os.path.join(DATA, "taslostacks.log")
+LOG = os.path.join(DATA, "tandemstacks.log")
 
 # assets: dentro del .exe (PyInstaller) o en el repo
 if getattr(sys, "frozen", False):
@@ -16,12 +16,25 @@ if getattr(sys, "frozen", False):
 else:
     ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets")
 
-# hasta la 1.1.2 la app se llamaba SantiStacks: se mudan sus carpetas (config, caché, visor) la primera vez
+# nombres anteriores: SantiStacks (hasta la 1.1.2) y TasloStacks (hasta la 1.3.6).
+# La primera vez se mudan sus carpetas (config, nivel, caché, visor) a la nueva, así nadie pierde nada.
+# Si ya hay una carpeta nueva sin la marca ".mudanza" (restos de alguna prueba), gana la vieja: tiene lo que se usó de verdad.
+import shutil
 for _base in {os.environ.get("LOCALAPPDATA", ""), os.environ.get("APPDATA", "")} - {""}:
-    _viejo, _nuevo = os.path.join(_base, "SantiStacks"), os.path.join(_base, APP)
-    if os.path.isdir(_viejo) and not os.path.exists(_nuevo):
-        try: os.rename(_viejo, _nuevo)
+    _nuevo = os.path.join(_base, APP)
+    _marca = os.path.join(_nuevo, ".mudanza")
+    for _nombre in ("TasloStacks", "SantiStacks"):
+        _viejo = os.path.join(_base, _nombre)
+        if not os.path.isdir(_viejo) or os.path.exists(_marca): continue
+        try:
+            if os.path.exists(_nuevo): shutil.rmtree(_nuevo)
+            os.rename(_viejo, _nuevo)
         except OSError: pass
+        break
+    try:
+        os.makedirs(_nuevo, exist_ok=True)
+        if not os.path.exists(_marca): open(_marca, "w").close()
+    except OSError: pass
 
 for d in (DATA, CACHE, os.path.dirname(CONFIG)):
     os.makedirs(d, exist_ok=True)
@@ -33,8 +46,8 @@ DEFAULT = {
     "cerrar_launchers": True, # al cerrar un juego, cerrar todos los launchers abiertos
     "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam
     "tema": "claro",          # "claro" u "oscuro"
-    "repo": "taslostacks/TasloStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
-    "desvinculadas": [],      # tiendas que el usuario sacó de TasloStacks (se pueden volver a vincular desde su tarjeta)
+    "repo": "tandemstacks/TandemStacks",  # usuario/repo de GitHub para avisar de versiones nuevas
+    "desvinculadas": [],      # tiendas que el usuario sacó de TandemStacks (se pueden volver a vincular desde su tarjeta)
     "primer_arranque": True,
 }
 

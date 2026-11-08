@@ -50,7 +50,7 @@ Nació el 01/11/2026 como versión "para repartir" de una app personal (Santiste
 - `.\build.ps1` → `dist\TasloStacks\TasloStacks.exe` y `installer\Output\TasloStacks-Setup-<versión>.exe` (~16 MB). PyInstaller loguea por stderr: el script no usa `$ErrorActionPreference = "Stop"` a propósito.
 - Versión: solo en `taslostacks/__init__.py` (`VERSION`); build.ps1 y el .iss la leen de ahí.
 - Publicar: `git tag vX.Y.Z && git push origin vX.Y.Z && gh release create vX.Y.Z installer\Output\TasloStacks-Setup-X.Y.Z.exe --title "TasloStacks X.Y.Z" --notes "..."`. La app compara `tag_name` (sin la v) con `VERSION`.
-- El instalador no está firmado: SmartScreen avisa la primera vez.
+- El instalador no está firmado: SmartScreen avisa la primera vez. **En trámite la firma gratis de SignPath Foundation** (08/11/2026): `.github/workflows/armar.yml` ya arma el instalador en GitHub (requisito de SignPath; a mano o al etiquetar `v*`, deja el instalador sin firmar como artefacto). Falta: 2FA en GitHub, mandar la solicitud (respuestas en `privado/signpath-solicitud.md`) y, si aprueban, publicar la sección "Code signing policy" y sumar los pasos de firma al workflow.
 
 ## Pilares (regla del dueño)
 

@@ -1,0 +1,38 @@
+# Rehace el catálogo de No comprados (docs/catalogo/) una vez por semana, con las 8 tiendas y sin juegos +18 por contenido sexual.
+name: Catálogo de No comprados
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # lunes 06:00 UTC (03:00 en Uruguay)
+  workflow_dispatch:       # también se puede correr a mano desde la pestaña Actions
+permissions:
+  contents: write
+jobs:
+  catalogos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # Steam deja pedir una página por minuto y la revisión de +18 espera si la tienda frena
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Guardar el catálogo anterior para comparar
+        run: cp docs/catalogo/todos.json /tmp/anterior.json
+      - name: Armar el catálogo
+        run: python -u scripts/catalogos.py
+      - name: Revisar que no se haya achicado de golpe
+        # si una tienda falló (bloqueo, caída), el catálogo nuevo saldría casi vacío: en ese caso se deja el anterior
+        run: |
+          python - <<'PY'
+          import json, sys
+          antes = len(json.load(open("/tmp/anterior.json", encoding="utf-8"))["juegos"])
+          ahora = len(json.load(open("docs/catalogo/todos.json", encoding="utf-8"))["juegos"])
+          print("juegos antes:", antes, "ahora:", ahora)
+          if ahora < antes * 0.8:
+              sys.exit("El catálogo nuevo tiene muchos menos juegos que el anterior: no se publica.")
+          PY
+      - name: Publicar si cambió
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/catalogo
+          git diff --cached --quiet || (git commit -m "Catálogo de No comprados al día" && git push)

@@ -132,7 +132,29 @@ def ea():
     return out
 
 # ---------------- Xbox / Microsoft Store (Game Pass) ----------------
+_xbox_memo = [None, []]  # (firma, juegos): Xbox se relee solo si cambió algo suyo (PowerShell es lo más lento del escaneo)
+
+def _xbox_firma():
+    import winreg
+    def escrita(h, r):
+        try:
+            with winreg.OpenKey(h, r) as k: return winreg.QueryInfoKey(k)[:3]
+        except OSError: return None
+    lic = glob.glob(os.path.join(os.environ.get("LOCALAPPDATA", ""), "Packages", "Microsoft.WindowsStore_8wekyb3d8bbwe", "LocalCache", "Msa*_PersistentEntitlementsCache.json"))
+    return (escrita(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root"),
+            escrita(winreg.HKEY_CURRENT_USER, r"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"),
+            tuple(sorted((f, os.path.getmtime(f)) for f in lic)))
+
 def xbox():
+    """Lo mismo que _xbox(), pero si nada de Xbox cambió desde la última vez devuelve lo que ya tenía (sin PowerShell)."""
+    firma = _xbox_firma()
+    if firma == _xbox_memo[0]:
+        return [dict(g) for g in _xbox_memo[1]]
+    juegos = _xbox()
+    _xbox_memo[:] = [firma, [dict(g) for g in juegos]]
+    return juegos
+
+def _xbox():
     """Juegos registrados por GamingServices (los que instala la app Xbox) + Minecraft y similares (paquetes con 'Game' en su manifiesto)."""
     raiz = reg_hijas(HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root")
     paquetes = set()

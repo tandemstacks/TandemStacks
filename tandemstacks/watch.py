@@ -3,9 +3,9 @@
 - al abrir un juego se cierran los launchers que ese juego no usa, para que tenga más memoria;
 - al terminar se cierran todos los launchers abiertos y se borra la basura segura (volcados de errores, logs viejos, caché web grande).
 Si queda otro juego andando no se toca nada, para no cortarlo. Lo que se libera se anota en ahorro.json (el medidor)."""
-import os, time, json, glob, shutil, subprocess, winreg
+import os, time, json, glob, shutil, threading, subprocess, winreg
 import psutil
-from . import paths
+from . import paths, pulso
 
 INTERVALO = 5   # segundos entre cada mirada mientras hay un juego andando
 REPOSO = 15     # sin juegos se mira menos seguido: recorrer los procesos gasta
@@ -44,20 +44,25 @@ def _anotar(**suma):
 # ---------- procesos ----------
 _rutas = {}  # (pid, cuándo arrancó): ruta del programa. Pedir la ruta obliga a abrir el proceso: se pide una sola vez por proceso
 
+_candado = threading.Lock()
+
 def _procs():
-    vivos = set()
-    for pr in psutil.process_iter(["name", "create_time"]):
-        try:
-            clave = (pr.pid, pr.info.get("create_time"))
-            vivos.add(clave)
-            if clave not in _rutas:
-                try: _rutas[clave] = (pr.exe() or "").lower()
-                except Exception: _rutas[clave] = ""
-            yield pr, (pr.info["name"] or "").lower(), _rutas[clave]
-        except Exception:
-            pass
-    for clave in [c for c in _rutas if c not in vivos]:  # procesos que ya cerraron
-        _rutas.pop(clave, None)
+    """[(proceso, nombre, ruta)] de todo lo que corre. Se arma entero bajo candado: lo usan dos hilos a la vez."""
+    out, vivos = [], set()
+    with _candado:
+        for pr in psutil.process_iter(["name", "create_time"]):
+            try:
+                clave = (pr.pid, pr.info.get("create_time"))
+                vivos.add(clave)
+                if clave not in _rutas:
+                    try: _rutas[clave] = (pr.exe() or "").lower()
+                    except Exception: _rutas[clave] = ""
+                out.append((pr, (pr.info["name"] or "").lower(), _rutas[clave]))
+            except Exception:
+                pass
+        for clave in [c for c in _rutas if c not in vivos]:  # procesos que ya cerraron
+            _rutas.pop(clave, None)
+    return out
 
 def _es_de(nombre, ruta, d):
     return nombre in d["procs"] and GENERICOS.get(nombre, "") in ruta
@@ -79,7 +84,7 @@ def en_curso(juegos):
             aid = str(winreg.QueryValueEx(k, "RunningAppID")[0])
         if aid not in ("0", ""):
             g = next((g for g in juegos if g.get("store") == "Steam" and str(g.get("appid")) == aid), None)
-            out[(g or {}).get("dir") or "steam:" + aid] = {"tienda": "Steam", "desde": None, "exes": set()}
+            out[(g or {}).get("dir") or "steam:" + aid] = {"tienda": "Steam", "desde": None, "exes": set(), "g": g}
     except OSError:
         pass
     prefijos = {g["dir"].lower().replace("/", "\\").rstrip("\\") + "\\": g for g in juegos if g.get("dir")}
@@ -91,7 +96,7 @@ def en_curso(juegos):
             continue
         p = next(p for p in tupla if e.startswith(p))
         g = prefijos[p]
-        j = out.setdefault(g["dir"], {"tienda": g.get("store", ""), "desde": None, "exes": set()})
+        j = out.setdefault(g["dir"], {"tienda": g.get("store", ""), "desde": None, "exes": set(), "g": g})
         j["exes"].add(n)
         t = pr.info.get("create_time") or time.time()
         j["desde"] = min(j["desde"] or t, t)
@@ -192,13 +197,15 @@ def limpiar(exes, launchers):
     return mb
 
 # ---------- hilo ----------
-def vigilar(juegos, launchers, cfg, sumar, al_jugar=None):
+def vigilar(juegos, launchers, cfg, sumar, al_jugar=None, al_medir=None):
     """Hilo de toda la sesión. juegos, launchers y cfg son funciones: la biblioteca y la configuración cambian mientras corre.
     sumar(segundos) recibe el tiempo con algún juego abierto, para el contador de horas.
-    al_jugar() se llama una vez cuando arranca un juego (TandemStacks se minimiza y se duerme)."""
+    al_jugar() se llama una vez cuando arranca un juego (TandemStacks se minimiza y se duerme).
+    al_medir(juego, resumen) recibe lo que midió Pulso al terminar cada partida."""
     desde = ultimo = None
     vistos = {}       # carpeta: datos de cada juego que anduvo en esta tanda
     revisados = set() # juegos a los que ya se les cerraron los launchers que no usan
+    sesion_ram = 0    # memoria liberada al abrir juegos en esta tanda
     while True:
         time.sleep(INTERVALO if desde else REPOSO)
         try:
@@ -212,11 +219,12 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None):
                 if ultimo: sumar(min(ahora - ultimo, 60))  # el tope evita contar horas si la PC se suspendió
                 ultimo = ahora
                 for c, j in ahora_j.items():
+                    if j.get("g") and j["g"]["id"] not in pulso._activos and cfg().get("pulso", True):
+                        pulso.empezar(j["g"], al_medir)  # Pulso mide la partida en su propio hilo (también si lo reabrís)
                     v = vistos.setdefault(c, {"exes": set(), "desde": j["desde"]})
                     v["exes"] |= j["exes"]
                 c = cfg()
                 if c.get("cerrar_otros", True) and ahora - desde >= ESPERA and set(ahora_j) - revisados:
-                    revisados |= set(ahora_j)
                     usa = {j["tienda"] for j in ahora_j.values()}
                     for carpeta in ahora_j: usa |= necesita(carpeta)
                     inicio = min((j["desde"] for j in ahora_j.values() if j["desde"]), default=desde)
@@ -224,26 +232,31 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None):
                     for l in abiertos(ls) - usa:
                         try:
                             mb = cerrar(l, ls, antes_de=inicio)
-                            if mb: _anotar(launchers=1, ram_mb=mb, ram_max_mb=mb)
+                            if mb: _anotar(launchers=1, ram_mb=mb, ram_max_mb=mb); sesion_ram += mb
                         except Exception as e: paths.log("cerrar otro", l, e)
+                    revisados |= set(ahora_j)
             elif desde:
                 time.sleep(INTERVALO)  # algunos juegos se reabren solos al arrancar
                 if en_curso(juegos()):
                     continue
                 duro, desde, ultimo = time.time() - desde, None, None
+                ram_abrir, sesion_ram = sesion_ram, 0  # lo que se liberó al abrir, para el aviso
                 exes = set().union(*(v["exes"] for v in vistos.values())) if vistos else set()
                 vistos, revisados = {}, set()
                 if duro < MINIMO:
                     continue
                 c, ls = cfg(), launchers()
+                liberado = {"ram_mb": ram_abrir, "disco_mb": 0}
                 if c.get("cerrar_launchers", True):
                     for l in abiertos(ls):
                         try:
                             mb = cerrar(l, ls)
-                            if mb: _anotar(launchers=1, ram_mb=mb, ram_max_mb=mb)
+                            if mb: _anotar(launchers=1, ram_mb=mb, ram_max_mb=mb); liberado["ram_mb"] += mb
                         except Exception as e: paths.log("cerrar", l, e)
                 if c.get("limpiar", True):
-                    try: limpiar(exes, ls)
+                    try: liberado["disco_mb"] = limpiar(exes, ls)
                     except Exception as e: paths.log("limpiar", e)
+                if al_medir and (liberado["ram_mb"] or liberado["disco_mb"]):
+                    al_medir(None, liberado)
         except Exception as e:
             paths.log("vigilar juegos", e)

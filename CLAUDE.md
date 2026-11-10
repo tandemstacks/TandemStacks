@@ -86,6 +86,17 @@ Checklist en cada cambio relevante:
 - `steamcommunity.com/profiles/<id>/games?xml=1` ya no sirve para leer la biblioteca: no insistir.
 - Epic GraphQL (`store.epicgames.com/graphql`) está detrás de Cloudflare: no sirve desde Python; usar el endpoint de contenido por slug.
 
+## Pulso y relojes en vivo (10/11/2026)
+
+- **Pulso** (`tandemstacks/pulso.py`, interruptor `pulso`): reemplaza al vigilante personal del dueño (`things IA/Chequeo PC/rendimiento/vigia-rendimiento.pyw`, ya apagado). `watch.vigilar` lo arranca por cada juego en curso (`pulso.empezar`, una medición por juego en `_activos`). Busca el proceso principal (en la carpeta del juego, >300 MB, sin launchers/anticheat), corre `assets/PresentMon.exe` (2.6.0, MIT, licencia en `assets/PresentMon-LICENCIA.txt`, sesión `TandemStacks_<pid>`), muestrea cada 5 s nvidia-smi, procesador, RAM, disco, ping (cada ~30 s) y LibreHardwareMonitor si está. Al cerrar: FPS, 1 % low, tirones, semáforo y causas en lenguaje simple contra la mediana de las últimas 10 partidas → `%APPDATA%\TandemStacks\pulso\<id>.jsonl` (últimas 20). PresentMon sin admin necesita el grupo "Performance Log Users"; si no, `sinFps`.
+- **Los registros quedan solo en la PC** (se aclara en la ficha y en Configuración): no se mandan a ningún lado; si se borra la carpeta de datos se pierden.
+- La ficha de un juego instalado pide `Api.pulso(ids)` al abrirse (última partida vs la anterior, ▲▼ %). Al volver de jugar aparece un aviso (`NUC.aviso`, con candado) con el semáforo, FPS y lo liberado.
+- **Relojes en vivo** arriba de Discos: procesador, RAM y red (`_en_vivo`, llega con `estado()` cada 4 s, solo con la ventana a la vista).
+- **Inicio con Windows** (`inicio_windows`, activo por defecto): clave `Run` del usuario con `--inicio` → arranca minimizada y dormida. Solo en el programa instalado.
+- Medallas rediseñadas (cinta + medallón; plata suma estrella, oro laureles, platino ambos, leyenda corona); sin medalla todavía se ve la próxima en gris.
+- Xbox se relee solo si cambió algo suyo (`stores._xbox_firma`): PowerShell era lo más lento del escaneo.
+- Pendiente: barra de descargas de Epic (hay que ver con una descarga real dónde anota el avance).
+
 ## Bibliotecas sin clave ni login (10/11/2026)
 
 - **Steam sin clave:** `steam.biblioteca_local()` = una carpeta por item en `appcache/librarycache` → `GetItems` (público) dice cuáles son juegos (`type` 0); caché en `cache/steam_tipos.json`. Puede faltar alguno; con clave Web API sigue siendo exacta. Si no sale nada, el filtro de Steam en No instalados avisa "falta la clave" (`sinClave` en la tienda).

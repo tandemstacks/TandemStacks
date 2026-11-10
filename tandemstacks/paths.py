@@ -45,6 +45,8 @@ DEFAULT = {
     "launchers": {},          # {"Steam": {"exe": "..."}} para corregir una ruta a mano
     "cerrar_launchers": True, # al cerrar un juego, cerrar todos los launchers abiertos
     "cerrar_otros": True,     # al abrir un juego, cerrar los launchers que ese juego no usa
+    "inicio_windows": True,   # abrir TandemStacks con Windows, minimizada
+    "pulso": True,            # medir cada partida (FPS, tirones, placa, procesador, RAM, ping) y guardarla por juego
     "limpiar": True,          # al cerrar un juego, borrar la basura segura (volcados de errores, logs, caché web grande)
     "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam
     "tema": "claro",          # "claro" u "oscuro"

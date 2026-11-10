@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, VERSION
 from . import precios as precios_tiendas
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io"]
@@ -199,6 +199,23 @@ class Nucleo:
         return "\n".join(partes)
 
     _desins = (None, "")
+    aviso = None  # lo que se muestra al volver a TandemStacks después de jugar
+
+    def al_medir(self, g, s):
+        """Pulso terminó una partida (g = juego y s = resumen) o watch liberó cosas al cerrarla (g = None y s = lo liberado)."""
+        with _aviso_candado:  # lo llaman Pulso y watch desde hilos distintos
+            viejo = self.aviso or {}
+            reciente = time.time() - viejo.get("t", 0) < 300  # lo de la misma partida llega con pocos minutos de diferencia
+            a = dict(viejo) if reciente else {}
+            if g:
+                prev = [p for p in pulso.historial(g["id"])[:-1] if p.get("fps")]
+                for k in ("juego", "id", "estado", "causas", "fps", "fpsAntes", "minutos"): a.pop(k, None)
+                a.update(juego=g.get("name"), id=g["id"], estado=s.get("estado"), causas=s.get("causas", [])[:3], fps=s.get("fps"),
+                         fpsAntes=prev[-1]["fps"] if prev else None, minutos=s.get("minutos"))
+            else:
+                a.update(ram_mb=round(a.get("ram_mb", 0) + s.get("ram_mb", 0)), disco_mb=round(a.get("disco_mb", 0) + s.get("disco_mb", 0), 1))
+            a["t"] = time.time()
+            self.aviso = a
 
     def sumar_jugado(self, seg):
         """Contador de horas para el nivel. Se escribe como mucho una vez por minuto."""
@@ -298,7 +315,15 @@ class Api:
         """Lo pide la página cada pocos segundos, solo con la ventana a la vista (minimizada queda suspendida)."""
         try: bajando = steam.descargas()
         except Exception: bajando = []
-        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando)
+        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo())
+
+    def aviso_visto(self):
+        NUC.aviso = None
+        return True
+
+    def pulso(self, ids):
+        """Las partidas medidas de cada juego de la tarjeta, pedidas al abrir la ficha. {id: [partidas, la última al final]}"""
+        return {i: pulso.historial(i)[-10:] for i in ids or []}
 
     def ficha(self, ids):
         """Datos de la tienda de cada juego de la tarjeta, pedidos al abrir la ficha (con caché). {id: {...}}"""
@@ -318,12 +343,13 @@ class Api:
         return c
 
     def guardar_config(self, c):
-        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "idioma"):
+        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "pulso", "inicio_windows", "idioma"):
             if k in c: NUC.cfg[k] = c[k]
         if "launchers" in c:  # {"Steam": "ruta"} -> solo las que el usuario escribió
             NUC.cfg["launchers"] = {n: {"exe": p} for n, p in c["launchers"].items() if p}
         NUC.cfg["primer_arranque"] = False
         paths.guardar({k: v for k, v in NUC.cfg.items() if not k.startswith("_")})
+        _con_windows(NUC.cfg.get("inicio_windows", True))
         threading.Thread(target=NUC.escanear, daemon=True).start()
         return True
 
@@ -494,6 +520,34 @@ _DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
            (detect.HKLM, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
            (detect.HKCU, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
 
+_aviso_candado = threading.Lock()
+_red = [0, 0, 0.0]  # bytes bajados, subidos y cuándo, para calcular la velocidad entre dos consultas
+def _en_vivo():
+    """Procesador, RAM y red en este momento (lo pide la página cada 4 s, solo con la ventana a la vista). Leerlo no gasta casi nada."""
+    import psutil
+    try:
+        m, n, t = psutil.virtual_memory(), psutil.net_io_counters(), time.time()
+        dt = t - _red[2] if _red[2] else 0
+        baja, sube = ((n.bytes_recv - _red[0]) / dt, (n.bytes_sent - _red[1]) / dt) if dt > 0 else (0, 0)
+        _red[:] = [n.bytes_recv, n.bytes_sent, t]
+        return {"cpu": round(psutil.cpu_percent(interval=None)), "ram": round(m.percent), "ramGB": round(m.used / 1073741824, 1),
+                "ramTotal": round(m.total / 1073741824), "baja": max(0, round(baja)), "sube": max(0, round(sube))}
+    except Exception:
+        return None
+
+def _con_windows(si):
+    """Abrir TandemStacks al iniciar Windows (minimizada), con la clave Run del usuario. Solo el programa instalado."""
+    if not getattr(sys, "frozen", False): return
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE) as k:
+            if si: winreg.SetValueEx(k, "TandemStacks", 0, winreg.REG_SZ, '"%s" --inicio' % sys.executable)
+            else:
+                try: winreg.DeleteValue(k, "TandemStacks")
+                except OSError: pass
+    except OSError as e:
+        paths.log("inicio con windows", e)
+
 def _podar_cache():
     """Las fichas guardadas valen 30 días: las más viejas se borran al abrir, así la carpeta no crece sin límite."""
     limite = time.time() - 30 * 86400
@@ -587,9 +641,11 @@ def main():
         try: open(marca, "w").write(huella)
         except OSError: pass
     ancho, alto, x, y = _tamano_inicial()
+    con_windows = "--inicio" in sys.argv  # la abrió Windows al iniciar: arranca minimizada y dormida
     v = webview.create_window("TandemStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
-                              min_size=(820, 520), background_color="#f2f2ef")
+                              min_size=(820, 520), background_color="#f2f2ef", minimized=con_windows)
     v.events.shown += lambda: _poner_icono(v, icono)
+    if con_windows: v.events.shown += lambda: _minimizada(v, True)
     v.events.minimized += lambda: _minimizada(v, True)
     v.events.restored += lambda: _minimizada(v, False)
     v.events.maximized += lambda: _minimizada(v, False)  # una ventana maximizada vuelve por acá al sacarla de la barra
@@ -608,9 +664,11 @@ def main():
             import traceback; paths.log("escaneo inicial", traceback.format_exc())  # sin esto un error deja la página vieja sin rastro
         threading.Thread(target=NUC.vigilar, daemon=True).start()
         threading.Thread(target=_podar_cache, daemon=True).start()
+        _con_windows(NUC.cfg.get("inicio_windows", True))
         threading.Thread(target=watch.vigilar, daemon=True, args=(lambda: [g for g in NUC.juegos if g.get("installed")], lambda: NUC.launchers,
                                                                  lambda: NUC.cfg, NUC.sumar_jugado,
-                                                                 lambda: None if NUC.minimizada else v.minimize())).start()  # jugando, la ventana se duerme sola
+                                                                 lambda: None if NUC.minimizada else v.minimize(),  # jugando, la ventana se duerme sola
+                                                                 NUC.al_medir)).start()
     covers.limpiar_descargadas()
     # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones
     # el visor (WebView2) sin lo que no usamos: caché de imágenes con tope de 64 MB (antes crecía sin límite, 175 MB medidos),

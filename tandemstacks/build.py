@@ -39,7 +39,7 @@ def escribir(juegos, tiendas, cfg, estado):
         logo = ""
     # solo lo que la página usa al arrancar (nada de cuentas ni rutas: el resto lo pide por la API)
     conf = {"repo": cfg.get("repo", ""), "primer_arranque": cfg.get("primer_arranque", True),
-            "tema": cfg.get("tema", "claro"), "idioma": cfg.get("idioma", "spanish")}
+            "tema": cfg.get("tema", "claro"), "idioma": cfg.get("idioma", "spanish"), "pulso": cfg.get("pulso", True)}
     js = "window.JUEGOS=%s;window.DISCOS=%s;window.TIENDAS=%s;window.CONF=%s;window.ESTADO=%s;window.LOGO=%s;" % tuple(
         json.dumps(x, ensure_ascii=False) for x in ([publico(g, cfg.get("idioma", "spanish")) for g in juegos], discos(juegos), tiendas, conf, estado, logo))
     html = tpl.replace("/*DATA*/", js)

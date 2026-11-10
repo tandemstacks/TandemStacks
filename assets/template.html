@@ -69,6 +69,9 @@ select{font:inherit;padding:9px 10px;border-radius:3px;border:none;background:va
 .upd{display:none;background:var(--acc2);color:#fff;padding:8px 22px;font-size:13px;align-items:center;gap:12px}.upd.show{display:flex}
 .upd a{color:#ffb070;cursor:pointer;font-weight:700}
 main{padding:16px 22px 60px}
+.vivo{background:var(--panel);border-radius:4px;box-shadow:var(--sh);margin-bottom:10px;padding:10px 16px;display:flex;gap:22px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--mu)}
+.vivo:empty{display:none}.vivo>div{flex:1;min-width:150px}.vivo .lbl{display:flex;justify-content:space-between;margin-bottom:4px}.vivo b{color:var(--tx)}
+.vivo .bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}.vivo .bar i{display:block;height:100%;background:var(--acc);transition:width .6s}
 .discos{background:var(--panel);border-radius:4px;box-shadow:var(--sh);margin-bottom:18px}
 .discos summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
 .discos summary::-webkit-details-marker{display:none}
@@ -130,6 +133,11 @@ main{padding:16px 22px 60px}
 .btn.del:hover{filter:none;color:#fff;background:var(--bad)}
 .x{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--mu);font-size:26px;cursor:pointer}
 .nota{font-size:12px;color:var(--mu);margin-top:10px;min-height:1em}
+.pulso{background:var(--bg);border-radius:4px;padding:10px 12px;margin:0 0 14px}.pulso .stats{margin:6px 0}
+.ptit{display:flex;align-items:center;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}.sem{width:11px;height:11px;border-radius:50%;flex:none}
+.causas{margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.5}
+#avisoJuego{position:fixed;right:18px;bottom:18px;z-index:40;background:var(--panel);box-shadow:var(--sh);border-radius:5px;border-left:4px solid var(--acc);padding:12px 36px 12px 14px;max-width:360px;font-size:13px;line-height:1.5}
+#avisoJuego .x{position:absolute;right:6px;top:4px;background:none;border:0;font-size:20px;cursor:pointer;color:var(--mu)}
 .modal.tcard{max-width:820px}.tcard #tacts{flex-wrap:nowrap}.tcard #tacts .btn{padding:8px 11px;font-size:12px;white-space:nowrap}
 .tcard .big{width:150px;height:150px;flex:none;border-radius:4px;display:grid;place-items:center;box-shadow:var(--sh)}
 .tcard ol{margin:8px 0 0;padding-left:20px;font-size:14px;line-height:1.55}.tcard ol li{margin-bottom:5px}
@@ -193,6 +201,7 @@ main{padding:16px 22px 60px}
 </header>
 <div class="upd" id="upd"><span id="updtxt"></span><a id="updlink"></a><a onclick="$('#upd').classList.remove('show')" style="margin-left:auto;color:#fff">✕</a></div>
 <main>
+  <div class="vivo" id="vivo"></div>
   <details class="discos" id="discos"></details>
   <div id="grid"></div>
   <div class="empty" id="empty" style="display:none"></div>
@@ -233,7 +242,7 @@ const TXT={
   cBienvenida:'¡Bienvenido a TandemStacks!',cTitulo:'Configuración',cIntro0:'Junta todos tus juegos en una sola pantalla:',cIntro1:'Detecté esto en tu PC; revisalo y guardá. ',
   cIntro2:'Todo se detecta solo. Solo tocá algo si una ruta está mal.',guardar:'Guardar',cSteamAv:'<b>Steam: hoy solo ves tus juegos instalados.</b> Para ver también los que tenés comprados pero no instalados, conectá tu cuenta de Steam. Es gratis y lleva 1 minuto: pegás una clave que te da Steam.',cSteamBtn:'Conectar mi cuenta de Steam',cInicioTxt:'Muchos launchers (Steam, Epic, EA…) se abren solos al prender la PC y quedan gastando memoria aunque no juegues. Este botón hace que <b>dejen de abrirse solos</b>. No los desinstala ni borra nada: cuando elegís un juego en TandemStacks, el launcher se abre en ese momento. Se puede deshacer desde Administrador de tareas → Inicio. El anti-trampas de Riot (Vanguard) no se toca.',cCuenta:'Cuenta de Steam',cSid:'SteamID64 (17 dígitos)',cDetectada:'detectada:',cSinUser:'no encontré un usuario de Steam en esta PC',
   cClave:'Clave Web API de Steam (opcional)',cClaveTxt:'Sin clave se ven solo los juegos de Steam <b>instalados</b>. Con clave, toda tu biblioteca. Se consigue gratis en un minuto:',cClaveTxt2:'(en "Nombre de dominio" poné cualquier cosa, por ejemplo <i>tandemstacks</i>). Tu perfil tiene que tener los <b>detalles de juegos</b> públicos.',
-  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',descSteam:'Esta descripción no es original de Epic',cCerrar:'Cerrar todos los launchers cuando termino de jugar',claveCorta:'falta la clave',clave:'Steam muestra los juegos no instalados solo con tu clave Web API. Tocá para cargarla.',cOtros:'Al abrir un juego, cerrar los launchers que ese juego no usa',cLimpiar:'Al terminar de jugar, borrar archivos que sobran (informes de errores, registros viejos, caché web grande). Nunca toca partidas ni configuraciones.',cAhorro:'Lo que ahorró TandemStacks',cAhL:'launchers cerrados',cAhR:'de memoria liberada',cAhD:'de disco liberado',cAhNada:'Todavía nada: se mide a partir de tu próxima partida.',
+  cLaunchers:'Launchers',cRuta:'no encontrado · pegá la ruta del .exe si lo tenés instalado',cXbox:'app de la Microsoft Store (no usa .exe)',cDet:'✓ detectado',cDesv:'🔗 desvinculada',cNoEsta:'✗ no está',descSteam:'Esta descripción no es original de Epic',cCerrar:'Cerrar todos los launchers cuando termino de jugar',red:'Red',pCpuM:'Procesador',pulsoT:'Pulso de la última partida',pulsoVs:'▲▼ comparado con la partida anterior ({f})',pLow:'1 % más lento',pTir:'tirones por minuto',pPlaca:'placa',pVram:'memoria de video',pCpu:'procesador',pulsoSinFps:'Sin FPS: Windows no dejó medirlos. Para verlos, sumá tu usuario al grupo "Performance Log Users" y reiniciá la sesión.',pulsoBien:'✓ Todo bien: sin problemas en esta partida.',pulsoLocal:'Estos registros quedan solo en tu PC. No se mandan a TandemStacks ni a nadie. Si borrás la carpeta de datos, se pierden.',cPulso:'Pulso: medir cada partida (FPS, tirones, placa, procesador, RAM, ping) para comparar cambios de gráficos',cInicioW:'Abrir TandemStacks con Windows (minimizada, para medir partidas y cerrar launchers)',avTerminaste:'Terminaste de jugar',avLib:'Liberaste {r} de memoria y {d} de disco.',avFps:'{n} FPS (antes {a})',avVer:'Ver Pulso',proxMedalla:'Próxima medalla: nivel {n}',claveCorta:'falta la clave',clave:'Steam muestra los juegos no instalados solo con tu clave Web API. Tocá para cargarla.',cOtros:'Al abrir un juego, cerrar los launchers que ese juego no usa',cLimpiar:'Al terminar de jugar, borrar archivos que sobran (informes de errores, registros viejos, caché web grande). Nunca toca partidas ni configuraciones.',cAhorro:'Lo que ahorró TandemStacks',cAhL:'launchers cerrados',cAhR:'de memoria liberada',cAhD:'de disco liberado',cAhNada:'Todavía nada: se mide a partir de tu próxima partida.',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TandemStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
   noComprados:'Not owned',catAyuda:'Store games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',sinOfertas:'No deals with these filters. Only GOG, Steam and itch.io publish which games are on sale.',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TandemStacks open. Click to see your medals.',abriendo:'Opening',contacto:'Contact:',gratis:'Free',descuento:'On sale',buscandoOf:'Looking for deals on {t}…',noPublica:'{t} does not publish which games are on sale. GOG, Steam and itch.io do.',noPublican:'{t} do not publish which games are on sale. GOG, Steam and itch.io do.',noOficial:'TandemStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
@@ -253,7 +262,7 @@ const TXT={
   cBienvenida:'Welcome to TandemStacks!',cTitulo:'Settings',cIntro0:'All your games in one screen:',cIntro1:'This is what I found on your PC; review and save.',
   cIntro2:'Everything is detected automatically. Only change something if a path is wrong.',guardar:'Save',cSteamAv:'<b>Steam: right now you only see your installed games.</b> To also see games you own but have not installed, connect your Steam account. It is free and takes 1 minute: you paste a key that Steam gives you.',cSteamBtn:'Connect my Steam account',cInicioTxt:'Many launchers (Steam, Epic, EA…) open by themselves when the PC starts and use memory even when you are not playing. This button makes them <b>stop opening on their own</b>. It does not uninstall or delete anything: when you pick a game in TandemStacks, the launcher opens at that moment. You can undo it from Task Manager → Startup. The Riot anti-cheat (Vanguard) is never touched.',cCuenta:'Steam account',cSid:'SteamID64 (17 digits)',cDetectada:'detected:',cSinUser:'no Steam user found on this PC',
   cClave:'Steam Web API key (optional)',cClaveTxt:'Without a key only <b>installed</b> Steam games show. With a key, your whole library. Free, takes a minute:',cClaveTxt2:'(type anything as "Domain name", e.g. <i>tandemstacks</i>). Your profile must have <b>game details</b> set to public.',
-  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',descSteam:'This description is not original from Epic',cCerrar:'Close all launchers when I finish playing',claveCorta:'key missing',clave:'Steam only shows your uninstalled games with your Web API key. Click to add it.',cOtros:'When a game starts, close the launchers it does not use',cLimpiar:'When I finish playing, delete leftover files (crash reports, old logs, big web cache). Saves and settings are never touched.',cAhorro:'What TandemStacks saved',cAhL:'launchers closed',cAhR:'of memory freed',cAhD:'of disk freed',cAhNada:'Nothing yet: it starts measuring on your next game.',
+  cLaunchers:'Launchers',cRuta:'not found · paste the .exe path if you have it installed',cXbox:'Microsoft Store app (no .exe)',cDet:'✓ detected',cDesv:'🔗 unlinked',cNoEsta:'✗ missing',descSteam:'This description is not original from Epic',cCerrar:'Close all launchers when I finish playing',red:'Network',pCpuM:'CPU',pulsoT:'Last game pulse',pulsoVs:'▲▼ compared to the previous game ({f})',pLow:'1 % low',pTir:'stutters per minute',pPlaca:'GPU',pVram:'video memory',pCpu:'CPU',pulsoSinFps:'No FPS: Windows did not allow measuring them. Add your user to the "Performance Log Users" group and sign in again.',pulsoBien:'✓ All good: no problems in this game.',pulsoLocal:'These logs stay only on your PC. They are not sent to TandemStacks or anyone. If you delete the data folder, they are lost.',cPulso:'Pulse: measure every game (FPS, stutters, GPU, CPU, RAM, ping) to compare graphics changes',cInicioW:'Open TandemStacks with Windows (minimized, to measure games and close launchers)',avTerminaste:'You finished playing',avLib:'You freed {r} of memory and {d} of disk.',avFps:'{n} FPS (before {a})',avVer:'See Pulse',proxMedalla:'Next medal: level {n}',claveCorta:'key missing',clave:'Steam only shows your uninstalled games with your Web API key. Click to add it.',cOtros:'When a game starts, close the launchers it does not use',cLimpiar:'When I finish playing, delete leftover files (crash reports, old logs, big web cache). Saves and settings are never touched.',cAhorro:'What TandemStacks saved',cAhL:'launchers closed',cAhR:'of memory freed',cAhD:'of disk freed',cAhNada:'Nothing yet: it starts measuring on your next game.',
   cGuardar:'Save and scan',cInicio:'Windows startup',cInicioBtn:'Remove launchers from startup',cInicioAct:'start with Windows',cInicioOk:'No launcher starts with Windows',cInicioAdmin:'These are set for all users and need administrator rights (remove them from Task Manager → Startup):',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
 };
 const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
@@ -313,6 +322,31 @@ function torta(d){
       nombres+=`<line x1="${pto(med,R+1).split(' ')[0]}" y1="${pto(med,R+1).split(' ')[1]}" x2="${lx}" y2="${ly}"></line><text x="${+lx+(der?3:-3)}" y="${+ly+4}" text-anchor="${der?'start':'end'}">${esc(n)}</text>`;}
     a=b;});
   return `<svg class="dtorta" viewBox="0 0 360 210" role="img" aria-label="${esc(d.letra)}">${porciones}${nombres}</svg>`;
+}
+// procesador, RAM y red en vivo (llega con estado() cada 4 s; minimizada no se pide)
+const velo=b=>b>=1048576?(b/1048576).toFixed(1)+' MB/s':b>=1024?Math.round(b/1024)+' KB/s':b+' B/s';
+function enVivo(p){
+  if(!p){$('#vivo').innerHTML='';return;}
+  const col=v=>v>=90?'var(--bad)':v>=75?'var(--warn)':'var(--acc)';
+  const m=(et,v,txt)=>`<div><div class="lbl"><span>${et}</span><b>${txt}</b></div><div class="bar"><i style="width:${v}%;background:${col(v)}"></i></div></div>`;
+  $('#vivo').innerHTML=m(L.pCpuM,p.cpu,p.cpu+' %')+m('RAM',p.ram,`${p.ram} % · ${p.ramGB} / ${p.ramTotal} GB`)
+    +`<div><div class="lbl"><span>${L.red}</span><b>↓ ${velo(p.baja)} · ↑ ${velo(p.sube)}</b></div><div class="bar"><i style="width:${Math.min(100,p.baja/131072)}%"></i></div></div>`;
+}
+// al volver después de jugar: cómo anduvo la partida y lo que se liberó
+let avisoT=0;
+function avisoJuego(a){
+  if(!a||a.t===avisoT) return; avisoT=a.t;
+  let d=$('#avisoJuego'); if(!d){d=document.createElement('div');d.id='avisoJuego';document.body.appendChild(d);}
+  const col={verde:'var(--ok)',amarillo:'var(--warn)',rojo:'var(--bad)'}[a.estado];
+  const mb=x=>x>=1024?(x/1024).toFixed(1)+' GB':Math.round(x)+' MB';
+  d.innerHTML=`<button class="x" aria-label="Cerrar">×</button><b>${L.avTerminaste}${a.juego?`: ${esc(a.juego)}`:''}</b>`
+    +(a.estado?`<div style="display:flex;gap:7px;align-items:center;margin-top:4px"><span class="sem" style="background:${col}"></span>${a.fps?L.avFps.replace('{n}',a.fps).replace('{a}',a.fpsAntes||'—'):''}</div>`:'')
+    +((a.causas||[]).length?`<ul class="causas">${a.causas.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:'')
+    +(a.ram_mb||a.disco_mb?`<div style="margin-top:4px">${L.avLib.replace('{r}',mb(a.ram_mb||0)).replace('{d}',mb(a.disco_mb||0))}</div>`:'')
+    +(a.id?`<button class="btn" style="margin-top:8px" data-ver="${esc(a.id)}">${L.avVer} ›</button>`:'');
+  d.querySelector('.x').onclick=()=>{d.remove();api('aviso_visto');};
+  const v=d.querySelector('[data-ver]');
+  if(v) v.onclick=()=>{const g=J.find(x=>x.items&&x.items.some(i=>i.id===a.id)); d.remove(); api('aviso_visto'); if(g) abrir(g);};
 }
 function discos(){
   if(!D.length){$('#discos').style.display='none';return;}
@@ -501,13 +535,26 @@ const numH=x=>x.toLocaleString(IDIOMA==='english'?'en':'es',{maximumFractionDigi
 // una medalla cada 5 niveles; el color dice el rango (bronce hasta el 25, plata hasta el 50, oro hasta el 75, platino hasta el 95, leyenda el 100)
 const MED_COL=['#c07a3c','#9aa3ad','#e0a91b','#3fb6cc','#ff6a00'];
 const rango=n=>n>=100?4:n>75?3:n>50?2:n>25?1:0;
-const medalla=(n,t)=>`<svg class="medalla" width="${t}" height="${t}" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 90 27v46L50 96 10 73V27z" fill="${MED_COL[rango(n)]}"/><path d="M50 14 81 32v36L50 86 19 68V32z" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="3"/><text x="50" y="61" text-anchor="middle">${n}</text></svg>`;
+// medalla con cinta; cada rango suma un detalle: plata una estrella, oro laureles, platino laureles y estrella, leyenda laureles y corona
+const MED_CLARO=['#f0b77e','#eef2f6','#ffe58a','#b5f1f8','#ffb978'];
+let medId=0;
+const estrella=(x,y,r)=>`<polygon points="${Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,q=i%2?r*.45:r;return (x+q*Math.cos(a)).toFixed(1)+','+(y+q*Math.sin(a)).toFixed(1);}).join(' ')}" fill="#fff"/>`;
+const laurel=()=>[0,1,2,3,4].map(i=>{const a=(150+i*17)*Math.PI/180,x=50+29*Math.cos(a),y=66+29*Math.sin(a),g=(150+i*17)+90;
+  return `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="3.2" ry="6.5" transform="rotate(${g} ${x.toFixed(1)} ${y.toFixed(1)})" fill="rgba(255,255,255,.6)"/><ellipse cx="${(100-x).toFixed(1)}" cy="${y.toFixed(1)}" rx="3.2" ry="6.5" transform="rotate(${-g} ${(100-x).toFixed(1)} ${y.toFixed(1)})" fill="rgba(255,255,255,.6)"/>`;}).join('');
+const medalla=(n,t)=>{const r=rango(n),id='md'+(medId++);
+  const arriba=r===4?`<path d="M38 52 41 40 46 47 50 37 54 47 59 40 62 52z" fill="#fff"/>`:r===1||r===3?estrella(50,47,7):'';
+  return `<svg class="medalla" width="${t}" height="${t}" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${MED_CLARO[r]}"/><stop offset="1" stop-color="${MED_COL[r]}"/></linearGradient></defs>`
+   +`<path d="M28 0h17l12 36H40z" fill="#2a2a2e"/><path d="M55 0h17L60 36H43z" fill="#ff6a00"/>`
+   +`<circle cx="50" cy="66" r="33" fill="url(#${id})"/><circle cx="50" cy="66" r="26" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5"/>`
+   +(r>=2?laurel():'')+arriba
+   +`<text x="50" y="${arriba?80:76}" text-anchor="middle" style="font-size:${n>=100?20:arriba?22:26}px">${n}</text></svg>`;};
 function nivel(){
   if(EST.jugado==null) return;
   const h=EST.jugado/3600, n=nivelDe(h), ult=Math.floor(n/5)*5;
   const desde=horasNivel(n), hasta=n<NIV_MAX?horasNivel(n+1):desde, pct=n<NIV_MAX?(h-desde)/(hasta-desde)*100:100;
   $('#nivel').title=L.nivelAyuda;
-  const hn=`${ult?medalla(ult,22):''}<b>${L.nivel} ${n}</b><div class="nbar"><i style="width:${pct}%"></i></div><span>${n<NIV_MAX?`${numH(h)} / ${numH(hasta)} h`:L.nivelMax}</span>`;
+  const prox=Math.min(ult+5,NIV_MAX);  // sin medalla todavía: se ve la próxima en gris, como meta
+  const hn=`${ult?medalla(ult,22):n<NIV_MAX?`<span style="opacity:.3;filter:grayscale(1);display:inline-flex" title="${esc(L.proxMedalla.replace('{n}',prox))}">${medalla(prox,22)}</span>`:''}<b>${L.nivel} ${n}</b><div class="nbar"><i style="width:${pct}%"></i></div><span>${n<NIV_MAX?`${numH(h)} / ${numH(hasta)} h`:L.nivelMax}</span>`;
   if($('#nivel')._h!==hn){$('#nivel').innerHTML=hn;$('#nivel')._h=hn;}  // solo si cambió algo
 }
 // las medallas se dibujan solo al abrir la ventana y se sacan de la página al cerrarla
@@ -638,11 +685,37 @@ function abrir(g){
       ${g.desc?`<div class="desc">${esc(g.desc)}</div>`:g.descSteam?`<div class="desc">${esc(g.descSteam)}<div style="font-size:12px;color:var(--mu);margin-top:4px">${L.descSteam}</div></div>`:''}
       ${g.desconocido?`<div class="aviso"><span>?</span><div>${L.sinId.replace('{t}',esc(g.store))} <b>${esc(g.desconocido.slice(0,12))}</b></div></div>
         <div class="acts" style="margin-bottom:8px"><button class="btn pri" onclick="avisarJuego('${esc(g.store)}','${esc(g.desconocido)}')">✉ ${L.avisar}</button></div>`:''}
+      <div id="pulso"></div>
       <div class="acts" id="acts">${botones(g)}</div>
       <div class="nota" id="nota">${L.notaFicha}</div>
     </div>`;
   $('#bg').classList.add('show');
   completar(g);
+  verPulso(g);
+}
+// Pulso: la última partida medida de este juego, comparada con la anterior. Se pide al abrir la ficha y se va al cerrarla.
+function verPulso(g){
+  if(!g.installed||CONF.pulso===false) return;
+  api('pulso',g.items.map(x=>x.id)).then(r=>{
+    if(actual!==g||!$('#bg').classList.contains('show')||!$('#pulso')) return;
+    const ps=Object.values(r||{}).flat().sort((a,b)=>a.fecha<b.fecha?-1:1); if(!ps.length) return;
+    const u=ps[ps.length-1], a=ps.length>1?ps[ps.length-2]:null;
+    const col={verde:'var(--ok)',amarillo:'var(--warn)',rojo:'var(--bad)'}[u.estado]||'var(--mu)';
+    const dif=(k,mas)=>{if(!a||!a[k]||u[k]==null)return'';const p=Math.round((u[k]/a[k]-1)*100);if(!p)return' <small style="color:var(--mu)">=</small>';
+      return ` <small style="color:${(mas?p>0:p<0)?'var(--ok)':'var(--bad)'}">${p>0?'▲':'▼'}${Math.abs(p)}%</small>`;};
+    const caja=(v,et,k,mas)=>v==null?'':`<div class="st"><b>${v}${dif(k,mas)}</b>${et}</div>`;
+    const cajas=[caja(u.fps,'FPS','fps',true),caja(u.fps1low,L.pLow,'fps1low',true),caja(u.tironesMin,L.pTir,'tironesMin',false),
+      caja(u.gpuUso!=null?u.gpuUso+' %':null,L.pPlaca+(u.gpuTempMax?` · ${u.gpuTempMax} °C`:''),'gpuUso',false),
+      caja(u.vramMaxGB!=null?u.vramMaxGB+' GB':null,L.pVram+(u.vramMaxPct?` (${u.vramMaxPct} %)`:''),'vramMaxGB',false),
+      caja(u.cpuUso!=null?u.cpuUso+' %':null,L.pCpu+(u.cpuTempMax?` · ${u.cpuTempMax} °C`:''),'cpuUso',false),
+      caja(u.ramMax!=null?u.ramMax+' %':null,'RAM','ramMax',false),caja(u.pingInternet!=null?u.pingInternet+' ms':null,'Ping','pingInternet',false)].join('');
+    $('#pulso').innerHTML=`<div class="pulso"><div class="ptit"><span class="sem" style="background:${col}"></span><b>${L.pulsoT}</b> · ${esc(u.fecha)} · ${u.minutos} min</div>`
+      +(a?`<div class="nota" style="margin:0 0 6px">${L.pulsoVs.replace('{f}',esc(a.fecha))}</div>`:'')
+      +`<div class="stats">${cajas}</div>`
+      +(u.sinFps?`<p class="nota">${L.pulsoSinFps}</p>`:'')
+      +((u.causas||[]).length?`<ul class="causas">${u.causas.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:`<p class="nota" style="color:var(--ok)">${L.pulsoBien}</p>`)
+      +`<p class="nota">🔒 ${L.pulsoLocal}</p></div>`;
+  }).catch(()=>{});
 }
 window.abrir=abrir;
 // juego que la app no reconoce: abre un aviso en GitHub ya completado (la persona escribe el nombre y lo envía ella)
@@ -770,6 +843,9 @@ function configuracion(primera){
       <label class="chk"><input type="checkbox" id="c_cerrar" ${c.cerrar_launchers!==false?'checked':''}> ${L.cCerrar}</label>
       <label class="chk"><input type="checkbox" id="c_otros" ${c.cerrar_otros!==false?'checked':''}> ${L.cOtros}</label>
       <label class="chk"><input type="checkbox" id="c_limpiar" ${c.limpiar!==false?'checked':''}> ${L.cLimpiar}</label>
+      <label class="chk"><input type="checkbox" id="c_pulso" ${c.pulso!==false?'checked':''}> ${L.cPulso}</label>
+      <p style="margin:0 0 6px 24px;font-size:12px;color:var(--mu)">🔒 ${L.pulsoLocal}</p>
+      <label class="chk"><input type="checkbox" id="c_iniciow" ${c.inicio_windows!==false?'checked':''}> ${L.cInicioW}</label>
       <label>${L.cAhorro}</label><div id="c_ahorro" style="font-size:13px;line-height:1.5;color:var(--mu)"></div>
       <label>${L.cInicio}</label>
       <p style="margin:2px 0 8px;font-size:13px;line-height:1.45">${L.cInicioTxt}</p>
@@ -780,7 +856,7 @@ function configuracion(primera){
       <button class="desinst" onclick="desinstalarApp()">${ico('trash')} ${L.mDesinst}</button>`;
     $('#c_guardar').onclick=()=>{
       const launchers={}; document.querySelectorAll('#cfg input[data-l]').forEach(i=>{if(i.value.trim())launchers[i.dataset.l]=i.value.trim();});
-      api('guardar_config',{cerrar_launchers:$('#c_cerrar').checked,cerrar_otros:$('#c_otros').checked,limpiar:$('#c_limpiar').checked,launchers}).then(()=>{cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
+      api('guardar_config',{cerrar_launchers:$('#c_cerrar').checked,cerrar_otros:$('#c_otros').checked,limpiar:$('#c_limpiar').checked,pulso:$('#c_pulso').checked,inicio_windows:$('#c_iniciow').checked,launchers}).then(()=>{CONF.pulso=$('#c_pulso')?$('#c_pulso').checked:CONF.pulso;cerrar();EST={fase:'escaneando',msg:'Escaneando…'};progreso();});
     };
     api('ahorro').then(a=>{const tam=mb=>mb>=1024?(mb/1024).toFixed(1)+' GB':Math.round(mb)+' MB';
       $('#c_ahorro').innerHTML=a&&(a.launchers||a.disco_mb)?`<b style="color:var(--acc)">${a.launchers||0}</b> ${L.cAhL} · <b style="color:var(--acc)">${tam(a.ram_mb||0)}</b> ${L.cAhR} · <b style="color:var(--acc)">${tam(a.disco_mb||0)}</b> ${L.cAhD}`:L.cAhNada;});
@@ -800,7 +876,7 @@ let versionVista=EST.version||0;
 function textoEstado(){return (L.msgs[EST.msg]||EST.msg||L.trabajando).replace('%s',EST.de||'')+(!EST.total?'':EST.fase==='actualizando'?` ${Math.round(EST.hecho/EST.total*100)}%`:` ${EST.hecho}/${EST.total}`);}
 function sincronizar(){
   api('estado').then(e=>{
-    const cambio=e.version!==versionVista; EST=e; progreso(); nivel(); descargas();
+    const cambio=e.version!==versionVista; EST=e; progreso(); nivel(); descargas(); enVivo(e.pc); avisoJuego(e.aviso);
     if(cambio){versionVista=e.version; api('datos').then(d=>{RAW=d.juegos;D=d.discos;T=d.tiendas;EST=Object.assign({},EST,d.estado);todo();});}
   }).catch(()=>{});
 }

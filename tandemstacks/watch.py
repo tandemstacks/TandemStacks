@@ -75,6 +75,28 @@ def abiertos(launchers):
                 vivos.add(l)
     return vivos
 
+_escrito = {}  # launcher: (bytes escritos, cuándo), para calcular la velocidad entre dos consultas
+MIN_DESCARGA = 1048576  # 1 MB/s: menos que eso es el launcher guardando lo suyo, no una descarga
+
+def descargando(launchers):
+    """Velocidad a la que cada launcher escribe en el disco ({tienda: bytes/s}), solo si parece una descarga.
+    Sirve para todas las tiendas que bajan con su propio programa (Xbox no: baja Windows)."""
+    ahora, total = time.time(), {}
+    for pr, n, e in _procs():
+        for l, d in launchers.items():
+            if _es_de(n, e, d):
+                try: total[l] = total.get(l, 0) + pr.io_counters().write_bytes
+                except Exception: pass
+    out = {}
+    for l, b in total.items():
+        antes = _escrito.get(l)
+        if antes and ahora > antes[1]:
+            v = (b - antes[0]) / (ahora - antes[1])
+            if v >= MIN_DESCARGA: out[l] = round(v)
+        _escrito[l] = (b, ahora)
+    for l in [l for l in _escrito if l not in total]: _escrito.pop(l)  # launchers que se cerraron
+    return out
+
 def en_curso(juegos):
     """Juegos andando: {carpeta: {"tienda", "desde", "exes"}}. juegos = [{"dir", "store", "appid"}] instalados.
     Steam avisa en el registro qué juego corre; los demás se reconocen por un proceso dentro de su carpeta."""

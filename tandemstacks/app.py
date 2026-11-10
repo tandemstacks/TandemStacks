@@ -315,6 +315,11 @@ class Api:
         """Lo pide la página cada pocos segundos, solo con la ventana a la vista (minimizada queda suspendida)."""
         try: bajando = steam.descargas()
         except Exception: bajando = []
+        try:  # las demás tiendas: no dicen qué ni cuánto falta, pero sí a qué velocidad escriben en el disco
+            for t, v in watch.descargando(NUC.launchers).items():
+                if t == "Steam" and bajando: continue  # Steam ya muestra nombre y porcentaje
+                bajando.append({"tienda": t, "vel": v})
+        except Exception as e: paths.log("descargas", e)
         return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo())
 
     def aviso_visto(self):
@@ -521,7 +526,8 @@ _DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
            (detect.HKCU, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
 
 _aviso_candado = threading.Lock()
-_red = [0, 0, 0.0]  # bytes bajados, subidos y cuándo, para calcular la velocidad entre dos consultas
+_red = [0, 0, 0.0]
+_cpu = [0.0, 0.0]  # tiempo ocupado y total del procesador en la consulta anterior  # bytes bajados, subidos y cuándo, para calcular la velocidad entre dos consultas
 def _en_vivo():
     """Procesador, RAM y red en este momento (lo pide la página cada 4 s, solo con la ventana a la vista). Leerlo no gasta casi nada."""
     import psutil
@@ -530,7 +536,13 @@ def _en_vivo():
         dt = t - _red[2] if _red[2] else 0
         baja, sube = ((n.bytes_recv - _red[0]) / dt, (n.bytes_sent - _red[1]) / dt) if dt > 0 else (0, 0)
         _red[:] = [n.bytes_recv, n.bytes_sent, t]
-        return {"cpu": round(psutil.cpu_percent(interval=None)), "ram": round(m.percent), "ramGB": round(m.used / 1073741824, 1),
+        # procesador: se calcula contra la consulta anterior. psutil.cpu_percent() guarda eso por hilo y cada consulta
+        # de la página llega en un hilo nuevo, así que siempre daba 0
+        c = psutil.cpu_times()
+        ocupado, total = c.user + c.system + getattr(c, "interrupt", 0) + getattr(c, "dpc", 0), sum(c)
+        cpu = 100 * (ocupado - _cpu[0]) / (total - _cpu[1]) if _cpu[1] and total > _cpu[1] else 0
+        _cpu[:] = [ocupado, total]
+        return {"cpu": max(0, min(100, round(cpu))), "ram": round(m.percent), "ramGB": round(m.used / 1073741824, 1),
                 "ramTotal": round(m.total / 1073741824), "baja": max(0, round(baja)), "sube": max(0, round(sube))}
     except Exception:
         return None

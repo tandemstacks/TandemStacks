@@ -95,7 +95,8 @@ Checklist en cada cambio relevante:
 - **Inicio con Windows** (`inicio_windows`, activo por defecto): clave `Run` del usuario con `--inicio` → arranca minimizada y dormida. Solo en el programa instalado.
 - Medallas rediseñadas (cinta + medallón; plata suma estrella, oro laureles, platino ambos, leyenda corona); sin medalla todavía se ve la próxima en gris.
 - Xbox se relee solo si cambió algo suyo (`stores._xbox_firma`): PowerShell era lo más lento del escaneo.
-- Pendiente: barra de descargas de Epic (hay que ver con una descarga real dónde anota el avance).
+- **Descargas de todas las tiendas** (`watch.descargando`): velocidad a la que cada launcher escribe en el disco (≥ 1 MB/s = descarga), con barra animada; Steam sigue con nombre y %. Xbox no (baja Windows). Pendiente: nombre y % de Epic y otras, mirando con una descarga real dónde lo anotan.
+- El procesador de los relojes se calcula con `cpu_times` contra la consulta anterior (`_cpu`): `psutil.cpu_percent()` guarda su estado por hilo y cada consulta de la página llega en un hilo nuevo (daba siempre 0).
 
 ## Bibliotecas sin clave ni login (10/11/2026)
 

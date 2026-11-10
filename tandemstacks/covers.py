@@ -6,7 +6,7 @@
    3) Steam por appid o steam_hint (también para Rockstar, EA y Battle.net con equivalente en Steam)
    4) Xbox / Microsoft Store: se busca una vez por PackageFamilyName en displaycatalog y se guarda el link
 Si un link falla, la página prueba la imagen horizontal de Steam y si no, muestra el nombre sobre color."""
-import os, json, pathlib, threading, urllib.parse
+import time, os, json, pathlib, threading, urllib.parse
 from . import paths
 from .steam import http_json
 
@@ -54,6 +54,8 @@ def steam_exactas(appids):
             j = http_json("https://api.steampowered.com/IStoreBrowseService/GetItems/v1?input_json=" + urllib.parse.quote(json.dumps(req)), 30)
         except Exception as e:
             paths.log("steam portadas", e); continue
+        for a in lote:  # sin portada propia en la tienda: se anota el link de siempre, así no se vuelve a preguntar
+            _links.setdefault("steam:%s" % a, STEAM % a)
         for it in (j.get("response") or {}).get("store_items", []):
             a = it.get("assets") or {}
             fmt, arch = a.get("asset_url_format", ""), a.get("library_capsule") or a.get("header")
@@ -75,9 +77,15 @@ def _xbox(familia):
                 return ("https:" + uri if uri.startswith("//") else uri) + "?w=600"
     return ""
 
+def sin_portada(g):
+    """True si hace menos de una semana se buscó su portada y no había."""
+    return time.time() - _links.get("sin:" + g["id"], 0) < 7 * 86400
+
 def asegurar(g):
     """Completa g["cover"] (puede usar la red para Xbox). Guarda solo el link."""
     url = rapida(g)
+    if not url and sin_portada(g):
+        g["cover"] = ""; return False
     if not url and g.get("store") == "Xbox" and g.get("family"):
         try:
             url = _xbox(g["family"])
@@ -85,6 +93,8 @@ def asegurar(g):
             paths.log("portada xbox", g.get("name"), e)
         if url:
             _links[g["id"]] = url; _guardar()
+        else:
+            _links["sin:" + g["id"]] = time.time(); _guardar()  # no tiene: se vuelve a probar en una semana
     g["cover"] = url
     return bool(url)
 

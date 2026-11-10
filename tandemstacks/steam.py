@@ -60,6 +60,19 @@ def instalados():
                         "dir": os.path.join(lib, "steamapps", "common", val("installdir"))}
     return out
 
+_manifs = {}  # appmanifest: (fecha, datos), para releerlo solo cuando Steam lo cambia
+def _manif(f):
+    try: m = os.path.getmtime(f)
+    except OSError: return {}
+    c = _manifs.get(f)
+    if c and c[0] == m: return c[1]
+    try: t = open(f, encoding="utf-8", errors="ignore").read()
+    except Exception: return {}
+    val = lambda k: (re.search(r'"%s"\s*"([^"]*)"' % k, t) or [None, ""])[1]
+    d = {"name": val("name"), "flags": int(val("StateFlags") or 0), "total": int(val("BytesToDownload") or 0), "hecho": int(val("BytesDownloaded") or 0)}
+    _manifs[f] = (m, d)
+    return d
+
 def descargas():
     """Lo que Steam está bajando ahora: [{"name", "pct"}] por los appmanifest. Si Steam está cerrado no hay nada que mostrar."""
     try:
@@ -71,25 +84,17 @@ def descargas():
     out = []
     for lib in _bibliotecas():
         for f in glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf")):
-            try:
-                t = open(f, encoding="utf-8", errors="ignore").read()
-            except Exception:
-                continue
-            val = lambda k: (re.search(r'"%s"\s*"([^"]*)"' % k, t) or [None, ""])[1]
-            total, hecho = int(val("BytesToDownload") or 0), int(val("BytesDownloaded") or 0)
-            if total and hecho < total and int(val("StateFlags") or 0) & 2:  # 2 = le falta bajar algo
-                out.append({"name": val("name"), "pct": int(hecho * 100 / total)})
+            d = _manif(f)
+            if d and d["total"] and d["hecho"] < d["total"] and d["flags"] & 2:  # 2 = le falta bajar algo
+                out.append({"name": d["name"], "pct": int(d["hecho"] * 100 / d["total"])})
     return out
 
 def huella_instalados():
     partes = []
     for lib in _bibliotecas():
         for f in sorted(glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf"))):
-            try:
-                t = open(f, encoding="utf-8", errors="ignore").read()
-                partes.append(f + "|" + "|".join(re.findall(r'"(?:StateFlags|SizeOnDisk)"\s*"(\d+)"', t)))
-            except Exception:
-                pass
+            # solo si está instalado o no (StateFlags 4): el tamaño y el avance cambian durante una actualización y no hace falta reescanear
+            partes.append("%s|%d" % (f, bool(_manif(f).get("flags", 0) & 4)))
     return "\n".join(partes)
 
 def _vdf(t):
@@ -138,6 +143,37 @@ def biblioteca(api_key, steamid):
     except Exception as e:
         paths.log("steam biblioteca:", e)
         return None
+
+def biblioteca_local():
+    """Sin clave: Steam guarda en appcache/librarycache una carpeta por cada cosa de tu biblioteca (juegos, DLC, bandas sonoras).
+    Se pregunta a la tienda (IStoreBrowseService/GetItems, público, de a 100) cuáles son juegos; las respuestas quedan en caché
+    y solo se piden las nuevas. Puede faltar algún juego que Steam todavía no mostró en tu biblioteca."""
+    try:
+        ids = [d for d in os.listdir(os.path.join(steam_path(), "appcache", "librarycache")) if d.isdigit()]
+    except OSError:
+        return None
+    if not ids:
+        return None
+    archivo = os.path.join(paths.CACHE, "steam_tipos.json")
+    try: tipos = json.load(open(archivo, encoding="utf-8"))
+    except Exception: tipos = {}
+    faltan = [a for a in ids if a not in tipos]
+    for i in range(0, len(faltan), 100):
+        req = {"ids": [{"appid": int(a)} for a in faltan[i:i + 100]], "context": {"language": "spanish", "country_code": "US"}, "data_request": {}}
+        try:
+            j = http_json("https://api.steampowered.com/IStoreBrowseService/GetItems/v1?input_json=" + urllib.parse.quote(json.dumps(req)), 20)
+        except Exception as e:
+            paths.log("steam biblioteca local:", e)
+            break
+        vino = {str(it.get("appid") or it.get("id")): it for it in j.get("response", {}).get("store_items", [])}
+        for a in faltan[i:i + 100]:
+            it = vino.get(a) or {}
+            tipos[a] = [it.get("type"), it.get("name", "")]  # 0 = juego; lo demás (DLC, música, sin datos) no
+    try:
+        with open(archivo + ".tmp", "w", encoding="utf-8") as f: json.dump(tipos, f)
+        os.replace(archivo + ".tmp", archivo)
+    except OSError: pass
+    return [(a, tipos[a][1], 0, 0) for a in ids if a in tipos and tipos[a][0] == 0 and tipos[a][1]]
 
 # ---------- fichas ----------
 def _cache(appid, idioma="spanish"):

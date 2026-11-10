@@ -171,14 +171,14 @@ def xbox_producto(familia):
     return pid
 
 def xbox(g, idioma):
-    if not g.get("family"):
+    if not g.get("family") and not g.get("xbox_pid"):
         return {}
     nombre = "%s/%s.json" % (idioma, g["id"])
     d = _leer(nombre, 30 * DIA)
     if d is None:
         d = {}
         try:
-            pid = xbox_producto(g["family"])
+            pid = g.get("xbox_pid") or xbox_producto(g["family"])
             if pid:
                 j = http_json("https://displaycatalog.mp.microsoft.com/v7.0/products?" + urllib.parse.urlencode(
                     {"bigIds": pid, "market": "US", "languages": "en-us" if idioma == "english" else "es-es,en-us"}), 15)
@@ -204,7 +204,13 @@ def de(g, cfg):
     """Lo que se agrega a la ficha de g al abrirla."""
     idioma = cfg.get("idioma", "spanish")
     if g.get("store") == "Steam":
-        return steam_logros(g.get("appid"), cfg.get("steam_api_key"), cfg.get("steam_id"))
+        d = steam_logros(g.get("appid"), cfg.get("steam_api_key"), cfg.get("steam_id")) or {}
+        if g.get("appid") and not g.get("desc"):  # la ficha de la tienda se baja recién ahora, al abrirla (queda en caché 30 días)
+            from . import steam
+            f = steam.ficha(g["appid"], idioma) or {}
+            for k in ("desc", "genres", "anio", "dev", "reqGB", "revPct", "revN"):
+                if f.get(k) not in (None, "", []): d[k] = f[k]
+        return d
     if g.get("store") == "Epic":
         return epic(g, idioma)
     if g.get("store") == "Xbox":

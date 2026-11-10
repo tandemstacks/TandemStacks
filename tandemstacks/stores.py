@@ -27,11 +27,17 @@ def tam_gb(carpeta):
         return 0
     with _tam_lock:
         _tams[carpeta] = [gb, time.time()]
+    return gb
+
+def guardar_tamanos(juegos):
+    """Se guarda una vez por escaneo (no por cada carpeta) y se olvidan los juegos que ya no están instalados."""
+    usadas = {g.get("dir") for g in juegos if g.get("installed") and g.get("dir")}
+    with _tam_lock:
+        for c in [c for c in _tams if c not in usadas]: _tams.pop(c)
         try:
-            json.dump(_tams, open(_TAM_FILE, "w", encoding="utf-8"))
+            with open(_TAM_FILE, "w", encoding="utf-8") as f: json.dump(_tams, f)
         except Exception:
             pass
-    return gb
 
 def _mismo(a, b):
     """Mismo juego por nombre normalizado: igual, o uno es el otro más un agregado que NO sea un número de secuela
@@ -160,6 +166,62 @@ $out | ConvertTo-Json -Compress'''
         out.append({"id": "xbox_" + re.sub(r"[^A-Za-z0-9]", "", p.get("Family", nombre))[:40], "name": nombre, "store": "Xbox", "installed": True,
                     "dir": loc, "drive": drive(loc), "sizeGB": tam_gb(loc), "launch": "shell:AppsFolder\\%s!%s" % (p.get("Family"), p.get("AppId")),
                     "family": p.get("Family", "")})
+    familias = {g["family"].lower() for g in out if g.get("family")}
+    try:
+        out += [g for g in xbox_cuenta() if g.get("family", "").lower() not in familias]
+    except Exception as e:
+        paths.log("xbox cuenta:", e)
+    return out
+
+def xbox_cuenta():
+    """Juegos comprados en la Microsoft Store, instalados o no. La Store guarda en texto la lista de licencias de la cuenta
+    (LocalCache/Msa*_PersistentEntitlementsCache.json): solo ids, sin nombres. Nombre, portada y paquete salen de
+    displaycatalog (público), con caché; solo se piden los nuevos. Quedan afuera pruebas, apps y licencias vencidas.
+    Game Pass no aparece ahí: solo lo comprado."""
+    base = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Packages", "Microsoft.WindowsStore_8wekyb3d8bbwe", "LocalCache")
+    pids = []
+    for f in glob.glob(os.path.join(base, "Msa*_PersistentEntitlementsCache.json")):
+        try:
+            for e in json.load(open(f, encoding="utf-8-sig")).get("Entitlements", []):
+                if e.get("ProductKind") == "Game" and not e.get("IsTrial") and e.get("Status") == "Active" and e.get("ProductId") not in pids:
+                    pids.append(e["ProductId"])
+        except Exception as ex:
+            paths.log("xbox licencias:", ex)
+    if not pids:
+        return []
+    archivo = os.path.join(paths.CACHE, "xbox_productos.json")
+    try: datos = json.load(open(archivo, encoding="utf-8"))
+    except Exception: datos = {}
+    faltan = [p for p in pids if p not in datos]
+    from .steam import http_json
+    for i in range(0, len(faltan), 20):
+        try:
+            j = http_json("https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=%s&market=US&languages=es-es,en-us" % ",".join(faltan[i:i + 20]), 20)
+        except Exception as ex:
+            paths.log("xbox catálogo:", ex)
+            break
+        for pr in j.get("Products", []):
+            lp = (pr.get("LocalizedProperties") or [{}])[0]
+            imgs = {im.get("ImagePurpose"): im.get("Uri", "") for im in lp.get("Images", [])}
+            portada = imgs.get("Poster") or imgs.get("BoxArt") or ""
+            fam = re.search(r'"PackageFamilyName"\s*:\s*"([^"]+)"', json.dumps(pr))
+            datos[pr.get("ProductId")] = {"t": lp.get("ProductTitle", ""), "c": ("https:" + portada) if portada.startswith("//") else portada,
+                                          "f": fam.group(1) if fam else ""}
+        for p in faltan[i:i + 20]:
+            datos.setdefault(p, {"t": "", "c": "", "f": ""})
+    try:
+        with open(archivo + ".tmp", "w", encoding="utf-8") as f: json.dump(datos, f, ensure_ascii=False)
+        os.replace(archivo + ".tmp", archivo)
+    except OSError: pass
+    out = []
+    for p in pids:
+        d = datos.get(p) or {}
+        n = d.get("t", "").lower()
+        if not n or any(x in n for x in ("minecraft launcher", "minecraft education", "not supported", "preview", "xbox", "game bar")): continue
+        g = {"id": "xbox_" + re.sub(r"[^A-Za-z0-9]", "", d["f"] or p)[:40], "name": d["t"], "store": "Xbox", "installed": False, "dir": "",
+             "launch": "ms-windows-store://pdp/?productid=" + p, "family": d["f"], "xbox_pid": p}
+        if d.get("c"): g["cover_url"] = d["c"]
+        out.append(g)
     return out
 
 # ---------------- Riot ----------------
@@ -437,6 +499,7 @@ def gog(exe):
                                "launch": "goggalaxy://openGameView/" + rk}
         finally:
             c.close()
+    desins = None
     for pid, v in reg_hijas(HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games").items():
         carpeta = str(v.get("path") or "")
         if not carpeta or not os.path.isdir(carpeta) or str(v.get("dependsOn") or "").strip():
@@ -446,7 +509,8 @@ def gog(exe):
         g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta),
                  launch=[exe, "/command=runGame", "/gameId=" + pid, "/path=" + carpeta] if exe and os.path.exists(exe)
                  else (juego_exe if os.path.exists(juego_exe) else None))
-        uni = next((str(e.get("UninstallString", "")) for e in uninstall_entries() if str(e.get("_key", "")) == pid + "_is1"), "")
+        if desins is None: desins = {str(e.get("_key", "")): str(e.get("UninstallString", "")) for e in uninstall_entries()}  # se lee una sola vez
+        uni = desins.get(pid + "_is1", "")
         if uni: g["uninstall"] = uni
         juegos[pid] = g
     return list(juegos.values())
@@ -514,11 +578,18 @@ def huella_bases():
     for ruta, sql in ((GOG_DB, "select releaseKey from LibraryReleases"),
                       (os.path.join(AMAZON_SQL, "GameInstallInfo.sqlite"), "select Id from DbSet where Installed=1"),
                       (ITCH_DB, "select 'k' || game_id from download_keys union all select 'c' || id from caves")):
+        firma = tuple((os.path.getsize(r), os.path.getmtime(r)) if os.path.exists(r) else None for r in (ruta, ruta + "-wal"))
+        if ruta in _huellas and _huellas[ruta][0] == firma:  # la base no se tocó: no hace falta copiarla de nuevo
+            partes.append(_huellas[ruta][1]); continue
+        texto = ""
         try:
             c = _sqlite(ruta)
             if c:
-                partes.append("|".join(sorted(str(r[0]) for r in c.execute(sql))))
+                texto = "|".join(sorted(str(r[0]) for r in c.execute(sql)))
                 c.close()
         except Exception:
             pass
+        _huellas[ruta] = (firma, texto)
+        partes.append(texto)
     return "\n".join(partes)
+_huellas = {}  # base: (tamaño y fecha, lo que tenía), para no copiarla entera cada 12 s

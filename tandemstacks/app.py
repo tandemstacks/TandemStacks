@@ -41,6 +41,10 @@ class Nucleo:
             # Steam
             inst = steam.instalados()
             bib = steam.biblioteca(self.cfg.get("steam_api_key"), self.cfg.get("steam_id")) if self.launchers["Steam"]["ok"] or inst else None
+            local = False
+            if bib is None and (self.launchers["Steam"]["ok"] or inst):
+                bib = steam.biblioteca_local()  # sin clave: lo que Steam guardó de tu biblioteca en la PC
+                local = bib is not None
             vistos = set()
             jugado = steam.tiempos(self.cfg.get("steam_id"))  # horas y última vez, de los archivos de Steam (sin red)
             for aid, nombre, mins, ult in (bib or []):
@@ -58,7 +62,7 @@ class Nucleo:
                 mins, ult = jugado.get(g["appid"], (0, 0))
                 if mins: g["horas"] = round(mins / 60, 1)
                 if ult: g["ultima"] = ult
-            steam_info = ("%d juegos" % len(bib)) if bib is not None else ("%d instalados · sin clave API no se ve la biblioteca completa" % len(inst) if not self.cfg.get("steam_api_key") else "%d instalados · la clave o el perfil no dejaron leer la biblioteca" % len(inst))
+            steam_info = ("%d juegos · sin clave API puede faltar alguno" % len(bib)) if local else ("%d juegos" % len(bib)) if bib is not None else ("%d instalados · sin clave API no se ve la biblioteca completa" % len(inst) if not self.cfg.get("steam_api_key") else "%d instalados · la clave o el perfil no dejaron leer la biblioteca" % len(inst))
             # otras tiendas
             paso("Epic")
             try: juegos += stores.epic()
@@ -113,9 +117,11 @@ class Nucleo:
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
-                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera})
+                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera,
+                                     "sinClave": n == "Steam" and not self.cfg.get("steam_api_key")})  # sin clave Steam no deja ver los no instalados
             self.estado.update(fase="listo", msg="", de="")
             self._publicar()
+            stores.guardar_tamanos(self.juegos)
         if con_fichas:
             threading.Thread(target=self._fichas, daemon=True).start()
 
@@ -127,7 +133,9 @@ class Nucleo:
     def _fichas(self):
         """Fase 2: completar fichas y portadas que falten, de a 4 hilos, publicando cada 8 s."""
         self._stop_fichas = threading.Event(); stop = self._stop_fichas
-        pend = [g for g in self.juegos if not g.get("cover") or (g.get("appid") and not g.get("desc"))]
+        # solo lo que hace falta para la pantalla: portadas que faltan y fichas de los instalados.
+        # La ficha de los demás se baja al abrirla (Api.ficha) y no se guarda acá: al cerrarla se suelta.
+        pend = [g for g in self.juegos if (not g.get("cover") and not covers.sin_portada(g)) or (g.get("installed") and g.get("appid") and not g.get("desc"))]
         self.estado.update(fase="fichas", hecho=0, total=len(pend), msg="Buscando portadas en Steam…", de="")
         try:  # portadas exactas de Steam: pocos pedidos para toda la biblioteca
             covers.steam_exactas([g.get("appid") or g.get("steam_hint") for g in self.juegos])
@@ -143,7 +151,7 @@ class Nucleo:
             try:
                 if not g.get("cover") and not g.get("appid") and not g.get("steam_hint") and g["store"] not in ("Riot",):
                     g["steam_hint"] = steam.buscar_appid(g["name"])  # solo para la portada
-                if g.get("appid") and not g.get("desc"):
+                if g.get("installed") and g.get("appid") and not g.get("desc"):
                     self._aplicar_ficha(g, steam.ficha(g["appid"], self.cfg.get("idioma", "spanish")))
                 if g.get("steam_hint") and "steam:%s" % g["steam_hint"] not in covers._links:
                     covers.steam_exactas([g["steam_hint"]])
@@ -152,7 +160,7 @@ class Nucleo:
             except Exception as e:
                 paths.log("ficha", g.get("name"), e)
             self.estado["hecho"] += 1
-            if time.time() - ultimo[0] > 8:
+            if time.time() - ultimo[0] > 30:  # la página se redibuja entera con cada aviso: cada 30 s alcanza
                 ultimo[0] = time.time(); self._publicar()
         with ThreadPoolExecutor(max_workers=4) as ex:
             list(ex.map(uno, pend))
@@ -161,8 +169,10 @@ class Nucleo:
             self.estado.update(fase="listo", msg="", de="")
             self._publicar()
 
-    def _publicar(self):
+    def _publicar(self, forzar=False):
         self.estado["version"] += 1
+        if self.estado.get("fase") == "fichas" and not forzar:
+            return  # la página abierta pide datos(); el archivo se escribe una vez, al terminar
         try:
             build.escribir(self.juegos, self.tiendas, self.cfg, self.estado)
         except Exception as e:
@@ -174,15 +184,21 @@ class Nucleo:
         partes += sorted(glob.glob(os.path.join(stores.EPIC_DATA, "Manifests", "*.item")))
         try: partes.append("epic|%s" % os.path.getmtime(os.path.join(stores.EPIC_DATA, "Catalog", "catcache.bin")))  # juegos nuevos en la cuenta
         except OSError: pass
-        partes.append("xbox|" + "|".join(sorted(detect.reg_hijas(detect.HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root"))))
+        partes.append("xbox|" + _subclaves(detect.HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root"))
         try: partes.append("riot|" + "|".join(sorted(os.listdir(r"C:\Riot Games"))))
         except OSError: pass
         for ruta in (r"SOFTWARE\WOW6432Node\Blizzard Entertainment", r"SOFTWARE\WOW6432Node\Rockstar Games"):
-            partes.append(ruta + "|" + "|".join(sorted(detect.reg_hijas(detect.HKLM, ruta))))
+            partes.append(ruta + "|" + _subclaves(detect.HKLM, ruta))
         partes.append(stores.huella_bases())
-        partes.append("gog|" + "|".join(sorted(detect.reg_hijas(detect.HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games"))))
-        partes.append("|".join(sorted(str(e.get("DisplayName")) for e in detect.uninstall_entries() if "electronic arts" in str(e.get("Publisher", "")).lower() or str(e.get("_key", "")).startswith("Uplay Install"))))
+        partes.append("gog|" + _subclaves(detect.HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games"))
+        # EA y Ubisoft: "Programas instalados" se relee entero solo si Windows anotó un cambio en esas claves
+        firma = tuple(_escrita(h, r) for h, r in _DESINS)
+        if firma != self._desins[0]:
+            self._desins = (firma, "|".join(sorted(str(e.get("DisplayName")) for e in detect.uninstall_entries() if "electronic arts" in str(e.get("Publisher", "")).lower() or str(e.get("_key", "")).startswith("Uplay Install"))))
+        partes.append(self._desins[1])
         return "\n".join(partes)
+
+    _desins = (None, "")
 
     def sumar_jugado(self, seg):
         """Contador de horas para el nivel. Se escribe como mucho una vez por minuto."""
@@ -302,7 +318,7 @@ class Api:
         return c
 
     def guardar_config(self, c):
-        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "idioma"):
+        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "idioma"):
             if k in c: NUC.cfg[k] = c[k]
         if "launchers" in c:  # {"Steam": "ruta"} -> solo las que el usuario escribió
             NUC.cfg["launchers"] = {n: {"exe": p} for n, p in c["launchers"].items() if p}
@@ -310,6 +326,10 @@ class Api:
         paths.guardar({k: v for k, v in NUC.cfg.items() if not k.startswith("_")})
         threading.Thread(target=NUC.escanear, daemon=True).start()
         return True
+
+    def ahorro(self):
+        """El medidor: launchers cerrados, memoria y disco liberados desde que se usa TandemStacks."""
+        return watch.ahorro()
 
     def reescanear(self):
         threading.Thread(target=NUC.escanear, daemon=True).start()
@@ -320,7 +340,7 @@ class Api:
 
     def preferencia(self, clave, valor):
         """Guarda una preferencia suelta. Cambiar el idioma rehace las fichas de Steam (vienen traducidas de la tienda)."""
-        if clave not in ("tema", "idioma", "cerrar_launchers", "primer_arranque"):
+        if clave not in ("tema", "idioma", "cerrar_launchers", "cerrar_otros", "limpiar", "primer_arranque"):
             return False
         cambio_idioma = clave == "idioma" and valor != NUC.cfg.get("idioma")
         NUC.cfg[clave] = valor
@@ -329,10 +349,10 @@ class Api:
             for g in NUC.juegos:  # las fichas del otro idioma quedan en su caché; acá se sacan los textos viejos
                 for k in ("desc", "genres", "anio", "dev", "reqGB", "revPct", "revN"):
                     g.pop(k, None)
-            NUC._publicar()  # la página recarga enseguida: que ya encuentre el idioma nuevo (si no, el interruptor salta)
+            NUC._publicar(True)  # la página recarga enseguida: que ya encuentre el idioma nuevo (si no, el interruptor salta)
             threading.Thread(target=NUC.escanear, daemon=True).start()
         else:
-            NUC._publicar()
+            NUC._publicar(True)
         return True
 
     def desinstalar_app(self):
@@ -470,6 +490,36 @@ class Api:
             return g["store"]  # la página espera a que abra su launcher
         return False
 
+_DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+           (detect.HKLM, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+           (detect.HKCU, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
+
+def _podar_cache():
+    """Las fichas guardadas valen 30 días: las más viejas se borran al abrir, así la carpeta no crece sin límite."""
+    limite = time.time() - 30 * 86400
+    for carpeta in (os.path.join(paths.CACHE, "fichas"), os.path.join(paths.CACHE, "steam")):
+        for raiz, _, archivos in os.walk(carpeta):
+            for a in archivos:
+                f = os.path.join(raiz, a)
+                try:
+                    if os.path.getmtime(f) < limite: os.remove(f)
+                except OSError: pass
+
+def _escrita(hive, ruta):
+    """Cuándo Windows cambió por última vez esa clave (agregar o sacar una subclave la actualiza)."""
+    import winreg
+    try:
+        with winreg.OpenKey(hive, ruta) as k: return winreg.QueryInfoKey(k)[2]
+    except OSError: return None
+
+def _subclaves(hive, ruta):
+    """Solo los nombres de las subclaves, sin leer sus valores (para la huella de cada 12 s)."""
+    import winreg
+    try:
+        with winreg.OpenKey(hive, ruta) as k:
+            return "|".join(sorted(winreg.EnumKey(k, i) for i in range(winreg.QueryInfoKey(k)[0])))
+    except OSError: return ""
+
 def _en_program_files(ruta):
     """True si TandemStacks está instalada para todos los usuarios (Program Files) y no solo para este."""
     bases = [os.environ.get(v, "") for v in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432")]
@@ -557,8 +607,10 @@ def main():
         except Exception:
             import traceback; paths.log("escaneo inicial", traceback.format_exc())  # sin esto un error deja la página vieja sin rastro
         threading.Thread(target=NUC.vigilar, daemon=True).start()
-        threading.Thread(target=watch.vigilar, daemon=True, args=(lambda: [g.get("dir") for g in NUC.juegos if g.get("installed")], lambda: NUC.launchers,
-                                                                 lambda: bool(NUC.cfg.get("cerrar_launchers", True)), NUC.sumar_jugado)).start()
+        threading.Thread(target=_podar_cache, daemon=True).start()
+        threading.Thread(target=watch.vigilar, daemon=True, args=(lambda: [g for g in NUC.juegos if g.get("installed")], lambda: NUC.launchers,
+                                                                 lambda: NUC.cfg, NUC.sumar_jugado,
+                                                                 lambda: None if NUC.minimizada else v.minimize())).start()  # jugando, la ventana se duerme sola
     covers.limpiar_descargadas()
     # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones
     # el visor (WebView2) sin lo que no usamos: caché de imágenes con tope de 64 MB (antes crecía sin límite, 175 MB medidos),

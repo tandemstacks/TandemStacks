@@ -95,6 +95,8 @@ def asegurar(g):
             _links[g["id"]] = url; _guardar()
         else:
             _links["sin:" + g["id"]] = time.time(); _guardar()  # no tiene: se vuelve a probar en una semana
+    if url and g.get("steam_hint") and not g.get("appid") and _links.get(g["id"]) != url:
+        _links[g["id"]] = url; _guardar()  # portada encontrada por nombre en Steam: la próxima vez aparece de entrada
     g["cover"] = url
     return bool(url)
 

@@ -61,15 +61,18 @@ def _gog_ofertas(cc):
     pags = [primera] + list(ThreadPoolExecutor(4).map(lambda n: http_json(base % n, 20), range(2, int(primera.get("pages", 1)) + 1)))
     return [str(p["id"]) for d in pags for p in d.get("products", [])]
 
-def _steam_ofertas(cc, paginas=40):
-    """Appids de Steam en oferta: las 4000 más relevantes de su búsqueda pública (son decenas de miles; el catálogo
+def _steam_ofertas(cc, paginas=30):
+    """Appids de Steam en oferta: las 3000 más relevantes de su búsqueda pública (son decenas de miles; el catálogo
     de TandemStacks son los más jugados, así que casi todos los que importan están entre esas)."""
     url = "https://store.steampowered.com/search/results/?query&count=100&specials=1&infinite=1&cc=%s&start=%%d" % cc
     def una(n):
-        try: return re.findall(r'data-ds-appid="(\d+)"', http_json(url % (n * 100), 20).get("results_html", ""))
-        except Exception as e:
-            paths.log("ofertas steam", n, e); return []
-    with ThreadPoolExecutor(4) as ex:
+        for intento in range(3):  # Steam corta (429) si se le pide muy seguido: se espera un poco y se reintenta
+            try: return re.findall(r'data-ds-appid="(\d+)"', http_json(url % (n * 100), 20).get("results_html", ""))
+            except Exception as e:
+                if "429" in str(e) and intento < 2:
+                    time.sleep(3 * (intento + 1)); continue
+                paths.log("ofertas steam", n, e); return []
+    with ThreadPoolExecutor(2) as ex:  # de a 2: con 4 a la vez Steam cortaba las últimas páginas
         return [a for lote in ex.map(una, range(paginas)) for a in lote]
 
 def _itch_ofertas(cc, paginas=10):
@@ -89,10 +92,12 @@ def ofertas():
     if time.time() - _ofertas.get(cc, (0, None))[0] < VIDA:
         return _ofertas[cc][1]
     out = {}
-    for t, f in (("GOG", _gog_ofertas), ("Steam", _steam_ofertas), ("itch.io", _itch_ofertas)):
+    def pedir(t, f):
         try: out[t] = f(cc)
         except Exception as e:
             paths.log("ofertas", t, e); out[t] = []
+    with ThreadPoolExecutor(3) as ex:  # las tres tiendas a la vez (antes una detrás de otra)
+        list(ex.map(lambda x: pedir(*x), (("GOG", _gog_ofertas), ("Steam", _steam_ofertas), ("itch.io", _itch_ofertas))))
     _ofertas[cc] = (time.time(), out)
     return out
 

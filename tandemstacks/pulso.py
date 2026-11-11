@@ -10,7 +10,7 @@ Queda en %APPDATA%\\TandemStacks\\pulso\\<id del juego>.jsonl (las últimas 20 p
 Solo mide: no cambia nada del sistema ni de los juegos. Todo oculto y con prioridad baja.
 PresentMon necesita que el usuario esté en el grupo de Windows "Performance Log Users" (o la app como administrador):
 si no, no hay FPS pero se mide todo lo demás."""
-import os, re, csv, json, glob, time, datetime, statistics, subprocess, threading, urllib.request
+import os, re, csv, json, glob, time, ctypes, datetime, statistics, subprocess, threading, urllib.request
 import psutil
 from . import paths
 
@@ -19,7 +19,7 @@ TMP = os.path.join(paths.CACHE, "pulso")
 PM = os.path.join(paths.ASSETS, "PresentMon.exe")
 SIN_VENTANA = 0x08000000
 MIN_SEG = 60          # partidas más cortas no se guardan
-GUARDAR = 20          # partidas que se guardan por juego
+GUARDAR = 200         # partidas que se guardan por juego (~1 KB cada una: meses de historial)
 MUESTRA = 5           # segundos entre muestras
 NO_JUEGO = ("crash", "launcher", "helper", "easyanticheat", "battleye", "beservice", "unins", "setup",
             "redist", "vc_redist", "dxsetup", "steamservice", "overlay", "report", "update", "prereq")
@@ -53,7 +53,15 @@ def _correr(args, timeout=10):
     except Exception:
         return ""
 
+_nv_ultimo = [0, {}]  # última lectura de nvidia-smi: los relojes y Pulso la comparten si tiene menos de 3 s
+
 def nvsmi():
+    if time.time() - _nv_ultimo[0] < 3: return dict(_nv_ultimo[1])
+    v = _nvsmi()
+    _nv_ultimo[:] = [time.time(), v]
+    return dict(v)
+
+def _nvsmi():
     campos = "utilization.gpu,temperature.gpu,power.draw,memory.used,memory.total,clocks_event_reasons.active"
     o = _correr(["nvidia-smi", "--query-gpu=" + campos, "--format=csv,noheader,nounits"])
     if not o or "Field" in o:  # drivers viejos: nombre anterior del campo
@@ -138,10 +146,40 @@ def muestrear(pid, est):
     nucleos = psutil.cpu_percent(interval=None, percpu=True)
     if nucleos:
         m["cpu"], m["cpu_nucleo_max"] = round(sum(nucleos) / len(nucleos), 1), max(nucleos)
-    m["ram"] = psutil.virtual_memory().percent
-    try: m["juego_ram_gb"] = psutil.Process(pid).memory_info().rss / 1073741824
+    vm = psutil.virtual_memory()
+    m["ram"], m["ram_libre_gb"] = vm.percent, round(vm.available / 1073741824, 2)
+    try: m["swap"] = psutil.swap_memory().percent  # archivo de paginación: si sube, la RAM no alcanza y Windows usa el disco
     except Exception: pass
+    try:
+        pr = est.get("proc") or psutil.Process(pid)
+        if "proc" not in est:
+            est["proc"] = pr; pr.cpu_percent(None)  # la primera lectura solo arranca la cuenta
+        else:
+            m["juego_cpu"] = round(pr.cpu_percent(None) / (psutil.cpu_count() or 1), 1)
+        m["juego_ram_gb"] = pr.memory_info().rss / 1073741824
+    except Exception: pass
+    try:  # red de toda la PC (bajada y subida en MB/s desde la muestra anterior)
+        n, ahora = psutil.net_io_counters(), time.time()
+        if est.get("red"):
+            dt = max(1, ahora - est["red"][2])
+            m["red_baja"], m["red_sube"] = round((n.bytes_recv - est["red"][0]) / 1048576 / dt, 2), round((n.bytes_sent - est["red"][1]) / 1048576 / dt, 2)
+        est["red"] = (n.bytes_recv, n.bytes_sent, ahora)
+    except Exception: pass
+    m["t"] = time.time()
     return m
+
+def hz_monitor():
+    """Hz del monitor principal (para saber si V-Sync frena o si sobran FPS)."""
+    try:
+        class DM(ctypes.Structure):
+            _fields_ = [("a", ctypes.c_wchar * 32), ("b", ctypes.c_ushort * 4), ("c", ctypes.c_ulong), ("d", ctypes.c_byte * 16),
+                        ("e", ctypes.c_short * 5), ("f", ctypes.c_wchar * 32), ("g", ctypes.c_ushort), ("bits", ctypes.c_ulong),
+                        ("ancho", ctypes.c_ulong), ("alto", ctypes.c_ulong), ("flags", ctypes.c_ulong), ("hz", ctypes.c_ulong), ("resto", ctypes.c_byte * 32)]
+        d = DM(); d.b[2] = ctypes.sizeof(DM)  # dmSize (b = dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra)
+        if ctypes.windll.user32.EnumDisplaySettingsW(None, -1, ctypes.byref(d)): return int(d.hz) or None
+    except Exception:
+        pass
+    return None
 
 def tiempos_cpu():
     t = {}
@@ -218,6 +256,36 @@ def evaluar(s, previas):
         causas.append("El servidor del juego perdió %s %% de paquetes (problema del servidor, no tuyo)" % s["perdidaServidor"])
     if s.get("tironesMin", 0) > 5 and s.get("discoMBsMax", 0) >= 100:
         causas.append("El juego leyó hasta %d MB/s del disco: los tirones pueden ser de carga" % s["discoMBsMax"])
+    tc = s.get("tironesCon") or {}
+    if s.get("tironesMin", 0) > 5:
+        porque = {"disco": "el disco cargando (texturas o sombreadores): si el juego está en un disco rígido, pasarlo a un SSD",
+                  "procesador": "el procesador al tope: bajar distancia de visión, multitudes o física",
+                  "vram": "la memoria de video llena: bajar las texturas un punto",
+                  "ram": "la RAM casi llena: cerrar programas de fondo",
+                  "descarga": "algo bajando de internet: pausar descargas mientras jugás",
+                  "freno": "la placa frenándose por calor o energía"}
+        for k, txt in sorted(porque.items(), key=lambda x: -tc.get(x[0], 0)):
+            if tc.get(k, 0) >= 30:
+                causas.append("El %d %% de los tirones pasó con %s" % (tc[k], txt))
+        if s.get("tironesInicioPct", 0) >= 60:
+            causas.append("Casi todos los tirones fueron al empezar (%d %%): el juego armaba sombreadores, después se normaliza" % s["tironesInicioPct"])
+    # ¿quién frena? según cuánto del cuadro estuvo trabajando la placa
+    po = s.get("placaOcupada")
+    if po is not None and s.get("fps"):
+        if po >= 90 and (s.get("gpuUso") or 0) >= 90:
+            causas.append("Frena la placa de video (ocupada el %d %% de cada cuadro): bajar calidad o resolución, o activar DLSS/FSR" % po)
+    # configuración de pantalla
+    hz, fps = s.get("hz"), s.get("fps")
+    if s.get("vsync") and hz and fps and fps < hz * 0.9 and s.get("tironesMin", 0) > 3:
+        causas.append("V-Sync activado sin llegar a los %d Hz del monitor: los cuadros se esperan y se traban. Apagarlo en el juego (con G-SYNC queda suave igual)" % hz)
+    if "composed" in (s.get("modoPantalla") or "").lower():
+        causas.append("El juego se dibuja como ventana compuesta por Windows: suma demora. Probar Pantalla completa en el juego")
+    if hz and fps and fps > hz * 1.5 and not s.get("vsync"):
+        causas.append("Hacés %d FPS con un monitor de %d Hz: limitar a %d FPS baja calor y consumo sin que se note" % (fps, hz, hz))
+    if (s.get("redBaja") or 0) >= 1 and s.get("tironesMin", 0) > 3:
+        causas.append("Durante la partida se bajaban %s MB/s de internet en promedio: pausar descargas mientras jugás" % s["redBaja"])
+    if (s.get("swapMax") or 0) >= 80 or (s.get("ramLibreMinGB") or 99) < 1:
+        causas.append("La memoria no alcanzó (quedó %s GB libre): Windows usó el disco como RAM" % s.get("ramLibreMinGB"))
     pesados = [f for f in s.get("fondo", []) if f["cpu"] >= 3]
     if pesados and causas:
         causas.append("De fondo gastaban procesador: " + ", ".join("%s (%s %%)" % (f["programa"], f["cpu"]) for f in pesados))
@@ -227,7 +295,7 @@ def evaluar(s, previas):
 
 def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, drv, pm_ok, pid=None):
     dur = fin - inicio
-    tiempos = []
+    tiempos, momentos, ocupada, modos, sync = [], [], [], {}, {}
     try:
         with open(csv_fps, newline="", encoding="utf-8", errors="ignore") as f:
             for r in csv.DictReader(f):
@@ -236,7 +304,13 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
                     if pid and r.get("processid") != str(pid) and (r.get("application") or "").lower() != os.path.basename(exe).lower():
                         continue  # se graba todo lo que se dibuja: se cuenta solo el juego
                     v = float(r.get("msbetweenpresents") or r.get("frametime") or "")
-                    if 0 < v < 1000: tiempos.append(v)
+                    if not 0 < v < 30000: continue  # los congelamientos de varios segundos también cuentan (son los peores tirones)
+                    tiempos.append(v)
+                    if v > 50: momentos.append(float(r.get("timeinseconds") or 0))  # cuándo fue cada tirón
+                    g_act = r.get("msgpuactive")
+                    if g_act: ocupada.append(min(1.0, float(g_act) / v))  # parte del cuadro con la placa trabajando
+                    m_ = r.get("presentmode") or ""; modos[m_] = modos.get(m_, 0) + 1
+                    si = r.get("syncinterval") or ""; sync[si] = sync.get(si, 0) + 1
                 except ValueError:
                     pass
     except OSError:
@@ -249,6 +323,12 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
         s["fps1low"] = round(1000 / statistics.mean(t[int(len(t) * 0.99):]), 1)
         s["tirones"] = sum(1 for x in t if x > 50)
         s["tironesMin"] = round(s["tirones"] / (dur / 60), 1)
+        if ocupada: s["placaOcupada"] = round(100 * statistics.median(ocupada))  # ~100 = frena la placa; bajo = frena el procesador o el juego
+        if modos: s["modoPantalla"] = max(modos, key=modos.get)
+        if sync: s["vsync"] = max(sync, key=sync.get) not in ("", "0")
+        if momentos:  # tirones de la primera minuto y medio (sombreadores que se arman al entrar)
+            s["tironesInicioPct"] = round(100 * sum(1 for x in momentos if x < 90) / len(momentos))
+            s["tironesCon"] = _tirones_con(momentos, muestras, inicio)
     elif not pm_ok:
         s["sinFps"] = True  # PresentMon no tuvo permiso (falta el grupo "Performance Log Users")
     col = lambda k: [m[k] for m in muestras if m.get(k) is not None]
@@ -273,7 +353,33 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
     for k, nom in (("perdida_srv", "perdidaServidor"), ("perdida_inet", "perdidaInternet")):
         v = col(k)
         if v: s[nom] = round(statistics.mean(v), 1)
+    for k, nom in (("juego_cpu", "juegoCpu"), ("red_baja", "redBaja"), ("red_sube", "redSube"), ("swap", "swap")):
+        v = col(k)
+        if v: s[nom], s[nom + "Max"] = round(statistics.mean(v), 1), round(max(v), 1)
+    rl = col("ram_libre_gb")
+    if rl: s["ramLibreMinGB"] = round(min(rl), 1)
+    hz = hz_monitor()
+    if hz: s["hz"] = hz
     return evaluar(s, historial(g["id"]))
+
+def _tirones_con(momentos, muestras, inicio):
+    """Para cada tirón, qué pasaba en la muestra más cercana (cada 5 s). Devuelve % de tirones con cada cosa."""
+    if not muestras: return {}
+    disco_normal = statistics.median([m.get("disco_mbs") or 0 for m in muestras]) or 1
+    cuenta, n = {}, 0
+    for t in momentos:
+        m = min(muestras, key=lambda x: abs(x.get("t", 0) - (inicio + t)))
+        if abs(m.get("t", 0) - (inicio + t)) > 8: continue
+        n += 1
+        marcas = []
+        if (m.get("disco_mbs") or 0) >= max(60, disco_normal * 3): marcas.append("disco")
+        if (m.get("cpu_nucleo_max") or 0) >= 95: marcas.append("procesador")
+        if m.get("vram") and m.get("vram_total") and m["vram"] / m["vram_total"] >= 0.95: marcas.append("vram")
+        if (m.get("ram_libre_gb") or 99) < 1: marcas.append("ram")
+        if (m.get("red_baja") or 0) >= 2: marcas.append("descarga")
+        if (m.get("frenos") or 0) & (CALOR | ENERGIA): marcas.append("freno")
+        for x in marcas: cuenta[x] = cuenta.get(x, 0) + 1
+    return {k: round(100 * v / n) for k, v in cuenta.items()} if n else {}
 
 # ---------- una partida ----------
 def _proceso_principal(carpeta):
@@ -348,7 +454,10 @@ def medir(g, al_terminar=None):
                 pm.kill()
             pm_ok = os.path.exists(csv_fps)
             if not pm_ok:
-                try: _log("presentmon sin datos:", open(pm_txt, errors="ignore").read().replace("\n", " ")[:300])
+                try:  # PresentMon escribe en UTF-16; lo útil está al final (eventos perdidos, errores)
+                    crudo = open(pm_txt, "rb").read()
+                    txt = crudo.decode("utf-16", "ignore") if crudo[:2] in (b"\xff\xfe", b"\xfe\xff") else crudo.decode("utf-8", "ignore")
+                    _log("presentmon sin datos:", " ".join(txt.split())[-300:])
                 except OSError: pass
         if fin - inicio >= MIN_SEG:
             s = resumir(csv_fps, muestras, g, exe, inicio, fin, fondo(cpu0, tiempos_cpu(), pid, fin - inicio),

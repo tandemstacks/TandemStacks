@@ -195,8 +195,9 @@ class Nucleo:
         partes.append(stores.huella_bases())
         partes.append("gog|" + _subclaves(detect.HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games"))
         for c, _ in stores.gplay_carpetas():  # Google Play: un juego nuevo deja un acceso directo (la carpeta cambia de fecha)
-            try: partes.append("gplay|%s" % os.path.getmtime(c))
-            except OSError: pass
+            for d in (c, os.path.join(c, "Google Play Games")):  # los accesos van a su subcarpeta: su fecha no cambia la de arriba
+                try: partes.append("gplay|%s" % os.path.getmtime(d))
+                except OSError: pass
         # EA y Ubisoft: "Programas instalados" se relee entero solo si Windows anotó un cambio en esas claves
         firma = tuple(_escrita(h, r) for h, r in _DESINS)
         if firma != self._desins[0]:
@@ -329,9 +330,11 @@ class Api:
 
     def estado(self):
         """Lo pide la página cada pocos segundos, solo con la ventana a la vista (minimizada queda suspendida)."""
+        try: abiertas = [t for t in ORDEN_TIENDAS if t in watch.abiertos({n: d for n, d in NUC.launchers.items() if d["ok"]})]
+        except Exception: abiertas = []
         try: bajando = steam.descargas()
         except Exception: bajando = []
-        try: bajando += stores.epic_descargas()
+        try: bajando += stores.epic_descargas("Epic" in abiertas)  # se reusa la lista de procesos de watch
         except Exception as e: paths.log("descargas epic", e)
         try:  # las demás tiendas: no dicen qué ni cuánto falta, pero sí a qué velocidad escriben en el disco
             for t, v in watch.descargando(NUC.launchers).items():
@@ -339,8 +342,6 @@ class Api:
                     continue  # Steam y Epic ya muestran nombre y porcentaje
                 bajando.append({"tienda": t, "vel": v})
         except Exception as e: paths.log("descargas", e)
-        try: abiertas = [t for t in ORDEN_TIENDAS if t in watch.abiertos({n: d for n, d in NUC.launchers.items() if d["ok"]})]
-        except Exception: abiertas = []
         return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo(), abiertas=abiertas)
 
     def top(self, tipo):
@@ -374,25 +375,14 @@ class Api:
 
     def pulso(self, ids):
         """Las partidas medidas de cada juego de la tarjeta, pedidas al abrir la ficha. {id: [partidas, la última al final]}"""
-        return {i: pulso.historial(i) for i in ids or []}  # todas las guardadas (hasta 20): la ficha usa las dos últimas, el historial todas
+        return {i: pulso.historial(i)[-2:] for i in ids or []}  # la ficha usa solo las dos últimas
 
-    def nvidia(self, gid):
-        """Para la ficha: si hay NVIDIA, qué cambió TandemStacks en ese juego y qué propone según la última partida."""
-        if not nvidia.hay_nvidia(): return {"hay": False}
-        ps = pulso.historial(gid)
-        return {"hay": True, "aplicado": nvidia.aplicado(gid), "propuesta": nvidia.propuesta(ps[-1] if ps else None) if ps else []}
+    def partidas(self, ids):
+        """Todas las partidas guardadas (hasta 200 por juego), solo al abrir el historial."""
+        return {i: pulso.historial(i) for i in ids or []}
 
-    def nvidia_aplicar(self, gid):
-        """Aplica la propuesta (solo con el juego cerrado: el driver la toma al abrirlo)."""
-        if watch.en_curso(NUC.juegos): return {"error": "juego"}
-        ps = pulso.historial(gid)
-        if not ps or not ps[-1].get("exe"): return {"error": "sin_partidas"}
-        cambios = nvidia.propuesta(ps[-1])
-        if not cambios: return {"error": "nada"}
-        try:
-            return {"ok": nvidia.aplicar(gid, ps[-1]["exe"], ps[-1].get("juego") or gid, cambios)}
-        except Exception as e:
-            paths.log("nvidia aplicar", e); return {"error": str(e)}
+    def partidas_cuenta(self, ids):
+        return sum(len(pulso.historial(i)) for i in ids or [])
 
     def escalera(self, gid):
         """Para la ficha: el paso de ajuste en prueba (con su resultado) o el próximo, y lo que TandemStacks tocó en NVIDIA."""
@@ -781,7 +771,13 @@ def _ya_abierta():
     @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
     def ver(h, _):
         b = ctypes.create_unicode_buffer(256); u32.GetWindowTextW(h, b, 256)
-        if b.value.startswith("TandemStacks") and u32.IsWindowVisible(h): hallada.append(h); return False
+        if b.value.startswith("TandemStacks") and u32.IsWindowVisible(h):
+            pid = ctypes.c_ulong(); u32.GetWindowThreadProcessId(h, ctypes.byref(pid))
+            try:  # que sea la ventana del otro TandemStacks.exe (no el Explorador en una carpeta con ese nombre)
+                import psutil
+                if pid.value != os.getpid() and psutil.Process(pid.value).name().lower() == "tandemstacks.exe":
+                    hallada.append(h); return False
+            except Exception: pass
         return True
     u32.EnumWindows(ver, None)
     if hallada and "--inicio" not in sys.argv:

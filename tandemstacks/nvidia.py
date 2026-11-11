@@ -4,7 +4,7 @@
 Se usa la librería del propio driver (nvapi64.dll, perfiles "DRS"); no hace falta administrador.
 Pedido del dueño (10/11/2026): que TandemStacks ajuste NVIDIA sola según lo que midió Pulso. Reglas:
 - Solo lo aplica la persona con un botón, y siempre se guarda lo que había antes (botón Deshacer).
-- Por juego: límite de FPS y "máximo rendimiento". Global (toda la PC): caché de sombreadores sin límite.
+- Lo usa la escalera de ajustes (escalera.py): sacar el tope de FPS, caché de sombreadores sin límite.
 - Nada de esto usa IA: son reglas fijas sobre los números de Pulso.
 """
 import os, json, ctypes, datetime
@@ -112,11 +112,15 @@ class _Sesion:
         if r not in NO_ENCONTRADO: self._ok(r, "volver un ajuste a como estaba")
         self.guardar = True
 
+_hay = []
 def hay_nvidia():
-    try:
-        with _Sesion(): return True
-    except Exception:
-        return False
+    """Se averigua una vez por sesión de TandemStacks (abrir el driver carga toda su base de perfiles)."""
+    if not _hay:
+        try:
+            with _Sesion(): _hay.append(True)
+        except Exception:
+            _hay.append(False)
+    return _hay[0]
 
 # ---------- respaldo ----------
 def _respaldos():
@@ -132,56 +136,6 @@ def _guardar_respaldos(d):
 def aplicado(gid):
     """Lo que TandemStacks cambió para ese juego (o None)."""
     return _respaldos().get(gid)
-
-# ---------- propuesta (reglas fijas sobre la última partida de Pulso) ----------
-def _hay_bateria():
-    try:
-        import psutil
-        return psutil.sensors_battery() is not None
-    except Exception:
-        return False
-
-def propuesta(ultima):
-    """Qué cambiar según la última partida. Lista de {id, valor, global, que, por}. Vacía si anduvo bien."""
-    if not ultima or ultima.get("estado") == "verde" and not ultima.get("tironesMin"):
-        return []
-    out = []
-    fps, low, tir = ultima.get("fps"), ultima.get("fps1low"), ultima.get("tironesMin") or 0
-    if fps and (tir >= 5 or (low and low < fps / 2)):
-        tope = max(30, int(fps * 0.85 // 5 * 5))  # un poco abajo del promedio: los cuadros salen parejos y los tirones se notan menos
-        out.append({"id": FPS_LIMITE, "valor": tope, "global": False, "que": "Límite de %d FPS" % tope,
-                    "por": "Promediás %s FPS pero el 1 %% más lento cae a %s: con un tope un poco más bajo, los cuadros salen parejos." % (fps, low)})
-    if (ultima.get("gpuUso") or 100) < 85 and not _hay_bateria():
-        out.append({"id": ENERGIA, "valor": 1, "global": False, "que": "Máximo rendimiento de la placa",
-                    "por": "La placa trabajó al %s %%: así no baja la velocidad entre cuadros." % ultima.get("gpuUso")})
-    if tir >= 5 or (ultima.get("discoMBsMax") or 0) > 150:
-        out.append({"id": CACHE_SOMBREADORES, "valor": 0xFFFFFFFF, "global": True, "que": "Caché de sombreadores sin límite (toda la PC)",
-                    "por": "Los tirones con mucha lectura de disco suelen ser sombreadores que se arman mientras jugás; con la caché grande se arman una vez sola."})
-    return out
-
-# ---------- aplicar / deshacer ----------
-def aplicar(gid, exe, nombre, cambios):
-    """Aplica los cambios y guarda lo que había antes. Devuelve el texto de lo aplicado."""
-    resp = _respaldos()
-    if gid in resp: deshacer(gid)  # si ya había cambios, se parte de cero
-    resp = _respaldos()
-    reg = {"exe": exe, "nombre": nombre, "fecha": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "perfilNuevo": None, "antes": [], "que": []}
-    with _Sesion() as s:
-        hp = s.perfil_de(exe)
-        if hp is None:
-            reg["perfilNuevo"] = "TandemStacks - %s" % nombre
-            hp = s.perfil_por_nombre(reg["perfilNuevo"]) or s.crear_perfil(reg["perfilNuevo"], exe)
-        base = None
-        for c in cambios:
-            donde = (base := base or s.base()) if c["global"] else hp
-            valor, del_usuario = s.leer(donde, c["id"])
-            reg["antes"].append({"id": c["id"], "global": c["global"], "valor": valor if del_usuario else None})
-            s.poner(donde, c["id"], c["valor"])
-            reg["que"].append(c["que"])
-    resp[gid] = reg
-    _guardar_respaldos(resp)
-    paths.log("nvidia aplicado:", nombre, "; ".join(reg["que"]))
-    return reg
 
 def deshacer(gid):
     """Vuelve todo a como estaba antes del cambio de TandemStacks."""

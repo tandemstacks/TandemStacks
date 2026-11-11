@@ -694,15 +694,16 @@ _epic_tam = {}  # carpeta: (bytes, cuándo se midió), para no recorrerla en cad
 _epic_crece = {}       # carpeta: última vez que creció
 _epic_cancelada = set()  # carpetas que quedaron quietas con Epic abierto (cancelada o en cola)
 
-def epic_descargas():
+def epic_descargas(abierto=None):
     """Lo que Epic está instalando: el launcher deja un .item en Manifests\\Pending con el nombre y el tamaño final.
     El avance sale de cuánto ocupa ya su carpeta (se mide como mucho cada 8 s)."""
     out = []
     pendientes = glob.glob(os.path.join(EPIC_DATA, "Manifests", "Pending", "*.item"))
     if not pendientes:
         return out
-    import psutil  # si Epic se cerró (o lo cerraron de golpe) la descarga queda en pausa donde iba
-    abierto = any((p.info.get("name") or "").lower() == "epicgameslauncher.exe" for p in psutil.process_iter(["name"]))
+    if abierto is None:  # si Epic se cerró (o lo cerraron de golpe) la descarga queda en pausa donde iba
+        import psutil
+        abierto = any((p.info.get("name") or "").lower() == "epicgameslauncher.exe" for p in psutil.process_iter(["name"]))
     for f in pendientes:
         try:
             with open(f, encoding="utf-8") as h: m = json.load(h)

@@ -11,7 +11,9 @@ INTERVALO = 5   # segundos entre cada mirada mientras hay un juego andando
 REPOSO = 15     # sin juegos se mira menos seguido: recorrer los procesos gasta
 MINIMO = 30     # lo que dura menos que esto no era un juego (parches, instaladores, un error al abrir)
 ESPERA = 60     # recién al minuto de abrir un juego se cierran los otros launchers: antes el juego puede estar validando su licencia
-GENERICOS = {"launcher.exe": "rockstar", "agent.exe": "battle.net", "butler.exe": "itch"}  # nombres que usan otros programas: se mira también la ruta
+GENERICOS = {"launcher.exe": "rockstar", "agent.exe": "battle.net", "butler.exe": "itch",
+             "bootstrapper.exe": "play games", "client.exe": "play games", "service.exe": "play games",
+             "crosvm.exe": "play games", "playpackagemanager.exe": "play games"}  # nombres que usan otros programas: se mira también la ruta
 AYUDANTES = ("crash", "reporter", "unins")  # procesos que pueden quedar en la carpeta del juego después de cerrarlo
 AHORRO = os.path.join(os.path.dirname(paths.CONFIG), "ahorro.json")
 
@@ -67,9 +69,12 @@ def _procs():
 def _es_de(nombre, ruta, d):
     return nombre in d["procs"] and GENERICOS.get(nombre, "") in ruta
 
+SERVICIOS = {"eabackgroundservice.exe", "steamservice.exe"}  # servicios de Windows: sin administrador no se cierran, no cuentan como tienda abierta
+
 def abiertos(launchers):
     vivos = set()
     for _, n, e in _procs():
+        if n in SERVICIOS: continue
         for l, d in launchers.items():
             if _es_de(n, e, d):
                 vivos.add(l)
@@ -228,6 +233,7 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None, al_medir=None):
     vistos = {}       # carpeta: datos de cada juego que anduvo en esta tanda
     revisados = set() # juegos a los que ya se les cerraron los launchers que no usan
     sesion_ram = 0    # memoria liberada al abrir juegos en esta tanda
+    paths.log("vigilancia de juegos andando")
     while True:
         time.sleep(INTERVALO if desde else REPOSO)
         try:
@@ -237,6 +243,7 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None, al_medir=None):
                 if not desde and al_jugar:
                     try: al_jugar()
                     except Exception as e: paths.log("al jugar", e)
+                if not desde: paths.log("juego en curso:", ", ".join(sorted({(j.get("g") or {}).get("name") or c for c, j in ahora_j.items()})))
                 desde = desde or ahora
                 if ultimo: sumar(min(ahora - ultimo, 60))  # el tope evita contar horas si la PC se suspendió
                 ultimo = ahora
@@ -258,10 +265,11 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None, al_medir=None):
                         except Exception as e: paths.log("cerrar otro", l, e)
                     revisados |= set(ahora_j)
             elif desde:
-                time.sleep(INTERVALO)  # algunos juegos se reabren solos al arrancar
+                time.sleep(3)  # algunos juegos se reabren solos al arrancar (corto: al cerrar el juego, la tienda se cierra antes)
                 if en_curso(juegos()):
                     continue
                 duro, desde, ultimo = time.time() - desde, None, None
+                paths.log("juego terminado: %d s" % duro)
                 ram_abrir, sesion_ram = sesion_ram, 0  # lo que se liberó al abrir, para el aviso
                 exes = set().union(*(v["exes"] for v in vistos.values())) if vistos else set()
                 vistos, revisados = {}, set()

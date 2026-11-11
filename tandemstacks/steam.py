@@ -86,7 +86,8 @@ def descargas():
         for f in glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf")):
             d = _manif(f)
             if d and d["total"] and d["hecho"] < d["total"] and d["flags"] & 2:  # 2 = le falta bajar algo
-                out.append({"name": d["name"], "pct": int(d["hecho"] * 100 / d["total"])})
+                aid = re.search(r"appmanifest_(\d+)", f)
+                out.append({"name": d["name"], "pct": int(d["hecho"] * 100 / d["total"]), "id": aid.group(1) if aid else ""})
     return out
 
 def huella_instalados():

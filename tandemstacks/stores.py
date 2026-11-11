@@ -556,6 +556,101 @@ def amazon():
         c.close()
     return out
 
+# ---------------- Google Play Juegos ----------------
+GPLAY_IMG = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Google\Play Games\image_cache")
+GPLAY_LINK = re.compile(r"googleplaygames://launch/\?id=([A-Za-z0-9._]+)")
+
+def _escritorio():
+    try:
+        import ctypes
+        b = ctypes.create_unicode_buffer(260)
+        ctypes.windll.shell32.SHGetFolderPathW(None, 0x10, None, 0, b)  # CSIDL_DESKTOPDIRECTORY (sigue a OneDrive si lo mueve)
+        return b.value
+    except Exception:
+        return os.path.join(os.path.expanduser("~"), "Desktop")
+
+def _escritorio_comun():
+    return os.path.join(os.environ.get("PUBLIC", r"C:\Users\Public"), "Desktop")
+
+def gplay_carpetas():
+    """(carpeta, con subcarpetas): el menú Inicio entero; el escritorio solo arriba (puede tener proyectos enteros adentro)."""
+    return [(os.path.join(os.environ.get("APPDATA", ""), r"Microsoft\Windows\Start Menu\Programs"), True),
+            (os.path.join(os.environ.get("PROGRAMDATA", ""), r"Microsoft\Windows\Start Menu\Programs"), True), (_escritorio(), False)]
+
+def google_play():
+    """Solo instalados: Google Play Juegos guarda la biblioteca de la cuenta cifrada (store.db, AppLibrary).
+    Cada juego que instala deja un acceso directo en el menú Inicio o el escritorio con googleplaygames://launch/?id=<paquete>."""
+    out, vistos = [], set()
+    for c, sub in gplay_carpetas():
+        patron = os.path.join(c, "**") if sub else c
+        for f in glob.glob(os.path.join(patron, "*.lnk"), recursive=sub) + glob.glob(os.path.join(patron, "*.url"), recursive=sub):
+            try:
+                if os.path.getsize(f) > 65536: continue
+                with open(f, "rb") as h: b = h.read()
+            except OSError:
+                continue
+            m = GPLAY_LINK.search(b.decode("utf-16-le", "ignore")) or GPLAY_LINK.search(b.decode("latin-1"))
+            if not m or m.group(1) in vistos:
+                continue
+            vistos.add(m.group(1))
+            g = {"id": "gplay_" + re.sub(r"[^A-Za-z0-9]", "", m.group(1))[:40], "name": os.path.splitext(os.path.basename(f))[0],
+                 "store": "Google Play", "installed": True, "dir": "", "launch": "googleplaygames://launch/?id=%s&lid=1&pid=1" % m.group(1)}
+            # portada: Google Play guarda en la PC el fondo y el logo de cada juego (no se baja nada)
+            img = os.path.join(GPLAY_IMG, m.group(1))
+            if os.path.exists(img + ".background.png"):
+                g["cover_url"] = pathlib.Path(img + ".background.png").as_uri()
+                if os.path.exists(img + ".logo.png"): g["logo"] = pathlib.Path(img + ".logo.png").as_uri()
+            elif os.path.exists(img + ".appicon.png"):
+                g["cover_url"] = pathlib.Path(img + ".appicon.png").as_uri()
+            out.append(g)
+    return out
+
+# ---------------- accesos directos que dejan las tiendas ----------------
+# links de las tiendas para abrir un juego, y lo que llevan los accesos de Riot y Battle.net
+LINKS_JUEGO = ("steam://rungameid/", "steam://run/", "com.epicgames.launcher://apps/", "goggalaxy://", "uplay://launch/",
+               "amazon-games://play/", "googleplaygames://launch/", "itch://caves/", "--launch-product=", "--exec=", "battlenet://")
+_esc_visto = {}  # carpeta: fecha, para no mirar el escritorio si no cambió
+
+def _papelera(f):
+    """Manda un archivo a la papelera (se puede recuperar)."""
+    import ctypes
+    from ctypes import wintypes
+    class OP(ctypes.Structure):
+        _fields_ = [("hwnd", wintypes.HWND), ("wFunc", wintypes.UINT), ("pFrom", wintypes.LPCWSTR), ("pTo", wintypes.LPCWSTR),
+                    ("fFlags", ctypes.c_ushort), ("fAnyOperationsAborted", wintypes.BOOL), ("hNameMappings", ctypes.c_void_p),
+                    ("lpszProgressTitle", wintypes.LPCWSTR)]
+    op = OP(None, 3, f + "\0", None, 0x0040 | 0x0010 | 0x0400 | 0x0004, False, None, None)  # borrar: deshacer, sin preguntar, sin errores, silencioso
+    return ctypes.windll.shell32.SHFileOperationW(ctypes.byref(op)) == 0 and not os.path.exists(f)
+
+def sacar_accesos(juegos, desde):
+    """Accesos directos de juegos que las tiendas dejaron en el escritorio después de `desde` → a la papelera.
+    Es de un juego si abre un link de tienda o apunta adentro de la carpeta de un juego instalado.
+    Solo el escritorio: el menú Inicio no se toca (Google Play lo necesita para que TandemStacks vea sus juegos)."""
+    sacados = []
+    carpetas = [c for c in (_escritorio(), _escritorio_comun()) if os.path.isdir(c)]
+    cambio = False
+    for c in carpetas:
+        m = os.path.getmtime(c)
+        if _esc_visto.get(c) != m:
+            _esc_visto[c] = m; cambio = True
+    if not cambio:
+        return sacados
+    dirs = [g["dir"].lower().replace("/", "\\").rstrip("\\") + "\\" for g in juegos if g.get("installed") and g.get("dir")]
+    for c in carpetas:
+        for f in glob.glob(os.path.join(c, "*.lnk")) + glob.glob(os.path.join(c, "*.url")):
+            try:
+                if os.path.getctime(f) < desde or os.path.getsize(f) > 65536: continue
+                with open(f, "rb") as h: b = h.read()
+            except OSError:
+                continue
+            t = (b.decode("utf-16-le", "ignore") + "\n" + b.decode("latin-1")).lower()
+            if any(x in t for x in LINKS_JUEGO) or any(d in t for d in dirs):
+                if _papelera(f):
+                    sacados.append(os.path.basename(f))
+                else:
+                    paths.log("acceso sin permiso para sacar:", f)  # el escritorio común pide administrador
+    return sacados
+
 # ---------------- itch.io ----------------
 ITCH_DB = os.path.join(os.environ.get("APPDATA", ""), r"itch\db\butler.db")
 
@@ -593,6 +688,52 @@ def itch():
     finally:
         c.close()
     return list(juegos.values())
+
+_epic_tam = {}  # carpeta: (bytes, cuándo se midió), para no recorrerla en cada consulta de la página
+
+_epic_crece = {}       # carpeta: última vez que creció
+_epic_cancelada = set()  # carpetas que quedaron quietas con Epic abierto (cancelada o en cola)
+
+def epic_descargas():
+    """Lo que Epic está instalando: el launcher deja un .item en Manifests\\Pending con el nombre y el tamaño final.
+    El avance sale de cuánto ocupa ya su carpeta (se mide como mucho cada 8 s)."""
+    out = []
+    pendientes = glob.glob(os.path.join(EPIC_DATA, "Manifests", "Pending", "*.item"))
+    if not pendientes:
+        return out
+    import psutil  # si Epic se cerró (o lo cerraron de golpe) la descarga queda en pausa donde iba
+    abierto = any((p.info.get("name") or "").lower() == "epicgameslauncher.exe" for p in psutil.process_iter(["name"]))
+    for f in pendientes:
+        try:
+            with open(f, encoding="utf-8") as h: m = json.load(h)
+        except Exception:
+            continue
+        loc, total = m.get("InstallLocation", ""), m.get("InstallSize") or 0
+        if not loc or not total or not m.get("bIsIncompleteInstall", True):
+            continue
+        c = _epic_tam.get(loc)
+        if not c or time.time() - c[1] > 8:
+            hecho = 0
+            for r, _, fs in os.walk(loc):
+                for a in fs:
+                    try: hecho += os.path.getsize(os.path.join(r, a))
+                    except OSError: pass
+            antes = _epic_tam.get(loc)
+            c = _epic_tam[loc] = (hecho, time.time())
+            if (antes and hecho > antes[0]) or (not antes and abierto):  # la primera vez solo da 90 s de gracia si Epic está abierto
+                _epic_crece[loc] = time.time()
+        # Epic deja el .item aunque canceles la descarga: con Epic abierto y la carpeta quieta 90 s, ya no se muestra.
+        # Con Epic cerrado se muestra en pausa solo si en esta sesión se la vio crecer y no quedó quieta con Epic abierto
+        quieta = time.time() - _epic_crece.get(loc, 0) > 90
+        if abierto and quieta:
+            _epic_cancelada.add(loc); continue
+        if abierto:
+            _epic_cancelada.discard(loc)
+        elif loc in _epic_cancelada or loc not in _epic_crece:
+            continue
+        out.append({"name": m.get("DisplayName", ""), "pct": max(0, min(99, int(c[0] * 100 / total))), "pausa": not abierto,
+                    "id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", m.get("AppName", "") or m.get("DisplayName", ""))[:40]})
+    return out
 
 def huella_bases():
     """Qué juegos hay en las bases de GOG, Amazon e itch (no su fecha: los launchers las tocan seguido aunque nada cambie)."""

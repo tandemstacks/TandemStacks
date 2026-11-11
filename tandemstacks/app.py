@@ -3,10 +3,10 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, VERSION
 from . import precios as precios_tiendas
 
-ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io"]
+ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io", "Google Play"]
 
 class Nucleo:
     def __init__(self):
@@ -94,6 +94,9 @@ class Nucleo:
             paso("itch.io")
             try: juegos += stores.itch()
             except Exception as e: paths.log("itch", e)
+            paso("Google Play")
+            try: juegos += stores.google_play()
+            except Exception as e: paths.log("google play", e)
             self.estado.update(msg="Armando la biblioteca…", de="")
             # fichas ya cacheadas + portadas ya bajadas (instantáneo). La ficha de Steam es solo para juegos de Steam:
             # los de otras tiendas muestran lo de su tienda (steam_hint queda solo para la portada)
@@ -107,13 +110,13 @@ class Nucleo:
             self.juegos = juegos
             # resumen de tiendas
             cuenta = lambda s: sum(1 for g in juegos if g["store"] == s)
-            solo_inst = {"EA", "Xbox", "Ubisoft", "Amazon"}
+            solo_inst = {"EA", "Xbox", "Ubisoft", "Amazon", "Google Play"}
             self.tiendas = []
             for n in ORDEN_TIENDAS:
                 l = self.launchers[n]
                 if n == "Steam": info, st = steam_info, ("ok" if bib is not None else "parcial") if l["ok"] else "no"
                 elif n == "Ubisoft": info, st = ("%d juegos (Ubisoft guarda tu biblioteca cifrada: se ven los instalados y los que TandemStacks reconoce por su ícono)" % cuenta(n)), ("parcial" if l["ok"] else "no")
-                elif n in solo_inst: info, st = ("%d instalados (%s)" % (cuenta(n), "%s guarda tu biblioteca cifrada: solo se ven los instalados" % n if n in ("Ubisoft", "Amazon") else "la tienda no deja leer la biblioteca completa")), ("parcial" if l["ok"] else "no")
+                elif n in solo_inst: info, st = ("%d instalados (%s)" % (cuenta(n), "%s guarda tu biblioteca cifrada: solo se ven los instalados" % n if n in ("Ubisoft", "Amazon", "Google Play") else "la tienda no deja leer la biblioteca completa")), ("parcial" if l["ok"] else "no")
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
@@ -191,6 +194,9 @@ class Nucleo:
             partes.append(ruta + "|" + _subclaves(detect.HKLM, ruta))
         partes.append(stores.huella_bases())
         partes.append("gog|" + _subclaves(detect.HKLM, r"SOFTWARE\WOW6432Node\GOG.com\Games"))
+        for c, _ in stores.gplay_carpetas():  # Google Play: un juego nuevo deja un acceso directo (la carpeta cambia de fecha)
+            try: partes.append("gplay|%s" % os.path.getmtime(c))
+            except OSError: pass
         # EA y Ubisoft: "Programas instalados" se relee entero solo si Windows anotó un cambio en esas claves
         firma = tuple(_escrita(h, r) for h, r in _DESINS)
         if firma != self._desins[0]:
@@ -234,6 +240,16 @@ class Nucleo:
         antes = self.huella()
         while True:
             time.sleep(60 if self.minimizada else 12)
+            if self.cfg.get("sin_accesos", True):
+                try:
+                    if not self.cfg.get("_accesos_desde"):  # solo los accesos nuevos: los que ya estaban son del usuario
+                        self.cfg["accesos_desde"] = self.cfg.get("accesos_desde") or time.time()
+                        self.cfg["_accesos_desde"] = True
+                        paths.guardar({k: v for k, v in self.cfg.items() if not k.startswith("_")})
+                    fuera = stores.sacar_accesos(self.juegos, self.cfg["accesos_desde"])
+                    if fuera: paths.log("accesos del escritorio a la papelera:", ", ".join(fuera))
+                except Exception as e:
+                    paths.log("accesos", e)
             try:
                 ahora = self.huella()
                 if ahora != antes:
@@ -315,12 +331,42 @@ class Api:
         """Lo pide la página cada pocos segundos, solo con la ventana a la vista (minimizada queda suspendida)."""
         try: bajando = steam.descargas()
         except Exception: bajando = []
+        try: bajando += stores.epic_descargas()
+        except Exception as e: paths.log("descargas epic", e)
         try:  # las demás tiendas: no dicen qué ni cuánto falta, pero sí a qué velocidad escriben en el disco
             for t, v in watch.descargando(NUC.launchers).items():
-                if t == "Steam" and bajando: continue  # Steam ya muestra nombre y porcentaje
+                if t in ("Steam", "Epic") and any(d.get("id", "").startswith("epic_") == (t == "Epic") for d in bajando):
+                    continue  # Steam y Epic ya muestran nombre y porcentaje
                 bajando.append({"tienda": t, "vel": v})
         except Exception as e: paths.log("descargas", e)
-        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo())
+        try: abiertas = [t for t in ORDEN_TIENDAS if t in watch.abiertos({n: d for n, d in NUC.launchers.items() if d["ok"]})]
+        except Exception: abiertas = []
+        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo(), abiertas=abiertas)
+
+    def top(self, tipo):
+        """Para la ventana grande de los relojes: qué programas usan más procesador o RAM."""
+        if tipo not in ("cpu", "ram"): return []
+        if tipo == "cpu" and not _procs_top:
+            _top("cpu"); time.sleep(0.6)  # la primera vez hacen falta dos mediciones
+        return _top(tipo)
+
+    def soltar_top(self):
+        _procs_top.clear(); return True  # al cerrar la ventana se sueltan los procesos guardados
+
+    def cerrar_tiendas(self):
+        """Botón "Cerrar tiendas": cierra todos los launchers abiertos (a la vez: Steam tarda unos segundos en apagarse).
+        Con un juego andando no toca nada: puede necesitar su tienda."""
+        if watch.en_curso(NUC.juegos):
+            return {"juego": True}
+        lanz = {n: d for n, d in NUC.launchers.items() if d["ok"]}
+        abiertas = list(watch.abiertos(lanz))
+        res = {}
+        hilos = [threading.Thread(target=lambda t=t: res.__setitem__(t, watch.cerrar(t, lanz)), daemon=True) for t in abiertas]
+        for h in hilos: h.start()
+        for h in hilos: h.join(30)
+        mb = sum(res.values())
+        if abiertas: watch._anotar(launchers=len(abiertas), ram_mb=mb)
+        return {"cerradas": len(abiertas), "mb": round(mb)}
 
     def aviso_visto(self):
         NUC.aviso = None
@@ -328,7 +374,53 @@ class Api:
 
     def pulso(self, ids):
         """Las partidas medidas de cada juego de la tarjeta, pedidas al abrir la ficha. {id: [partidas, la última al final]}"""
-        return {i: pulso.historial(i)[-10:] for i in ids or []}
+        return {i: pulso.historial(i) for i in ids or []}  # todas las guardadas (hasta 20): la ficha usa las dos últimas, el historial todas
+
+    def nvidia(self, gid):
+        """Para la ficha: si hay NVIDIA, qué cambió TandemStacks en ese juego y qué propone según la última partida."""
+        if not nvidia.hay_nvidia(): return {"hay": False}
+        ps = pulso.historial(gid)
+        return {"hay": True, "aplicado": nvidia.aplicado(gid), "propuesta": nvidia.propuesta(ps[-1] if ps else None) if ps else []}
+
+    def nvidia_aplicar(self, gid):
+        """Aplica la propuesta (solo con el juego cerrado: el driver la toma al abrirlo)."""
+        if watch.en_curso(NUC.juegos): return {"error": "juego"}
+        ps = pulso.historial(gid)
+        if not ps or not ps[-1].get("exe"): return {"error": "sin_partidas"}
+        cambios = nvidia.propuesta(ps[-1])
+        if not cambios: return {"error": "nada"}
+        try:
+            return {"ok": nvidia.aplicar(gid, ps[-1]["exe"], ps[-1].get("juego") or gid, cambios)}
+        except Exception as e:
+            paths.log("nvidia aplicar", e); return {"error": str(e)}
+
+    def escalera(self, gid):
+        """Para la ficha: el paso de ajuste en prueba (con su resultado) o el próximo, y lo que TandemStacks tocó en NVIDIA."""
+        try:
+            return {"e": escalera.estado(gid), "nv": nvidia.aplicado(gid), "app": escalera.hay_app_nvidia()}
+        except Exception as e:
+            paths.log("escalera", e); return {}
+
+    def escalera_empezar(self, gid):
+        if watch.en_curso(NUC.juegos): return {"error": "juego"}
+        try: return {"ok": escalera.empezar(gid)}
+        except Exception as e:
+            paths.log("escalera empezar", e); return {"error": str(e)}
+
+    def escalera_resolver(self, gid, dejar):
+        if watch.en_curso(NUC.juegos): return {"error": "juego"}
+        try: return {"ok": escalera.resolver(gid, bool(dejar))}
+        except Exception as e:
+            paths.log("escalera resolver", e); return {"error": str(e)}
+
+    def abrir_app_nvidia(self):
+        if escalera.hay_app_nvidia(): os.startfile(escalera.NVAPP); return True
+        return False
+
+    def nvidia_deshacer(self, gid):
+        try: return {"ok": nvidia.deshacer(gid)}
+        except Exception as e:
+            paths.log("nvidia deshacer", e); return {"error": str(e)}
 
     def ficha(self, ids):
         """Datos de la tienda de cada juego de la tarjeta, pedidos al abrir la ficha (con caché). {id: {...}}"""
@@ -348,7 +440,7 @@ class Api:
         return c
 
     def guardar_config(self, c):
-        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "pulso", "inicio_windows", "idioma"):
+        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "sin_accesos", "pulso", "inicio_windows", "idioma"):
             if k in c: NUC.cfg[k] = c[k]
         if "launchers" in c:  # {"Steam": "ruta"} -> solo las que el usuario escribió
             NUC.cfg["launchers"] = {n: {"exe": p} for n, p in c["launchers"].items() if p}
@@ -528,6 +620,33 @@ _DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
 _aviso_candado = threading.Lock()
 _red = [0, 0, 0.0]
 _cpu = [0.0, 0.0]  # tiempo ocupado y total del procesador en la consulta anterior  # bytes bajados, subidos y cuándo, para calcular la velocidad entre dos consultas
+_disco = [0, 0, 0, 0]
+_gpu = [None]  # None: sin probar · True: hay NVIDIA · False: no hay (no se vuelve a llamar a nvidia-smi)
+_procs_top = {}  # pid: proceso, para medir el procesador de cada programa contra la consulta anterior
+
+def _top(tipo):
+    """Los 6 programas que más usan procesador o RAM ahora (sumando las ventanas/procesos de un mismo programa).
+    Se pide solo con la ventana grande de una gráfica abierta."""
+    import psutil
+    suma, vivos = {}, set()
+    for p in psutil.process_iter(["name", "memory_info"]):
+        try:
+            n = p.info["name"] or "?"
+            if n.lower() in ("system idle process", "idle"): continue
+            vivos.add(p.pid)
+            if tipo == "ram":
+                v = (p.info["memory_info"].rss if p.info["memory_info"] else 0) / 1048576
+            else:
+                q = _procs_top.get(p.pid)
+                if not q or q.create_time() != p.create_time():
+                    q = _procs_top[p.pid] = p; q.cpu_percent(None); continue
+                v = q.cpu_percent(None) / psutil.cpu_count()
+            suma[n] = suma.get(n, 0) + v
+        except Exception:
+            pass
+    for pid in [x for x in _procs_top if x not in vivos]: _procs_top.pop(pid, None)
+    return [[re.sub(r"\.exe$", "", n, flags=re.I), round(v, 1)] for n, v in sorted(suma.items(), key=lambda x: -x[1])[:6] if v > 0]
+
 def _en_vivo():
     """Procesador, RAM y red en este momento (lo pide la página cada 4 s, solo con la ventana a la vista). Leerlo no gasta casi nada."""
     import psutil
@@ -542,8 +661,26 @@ def _en_vivo():
         ocupado, total = c.user + c.system + getattr(c, "interrupt", 0) + getattr(c, "dpc", 0), sum(c)
         cpu = 100 * (ocupado - _cpu[0]) / (total - _cpu[1]) if _cpu[1] and total > _cpu[1] else 0
         _cpu[:] = [ocupado, total]
-        return {"cpu": max(0, min(100, round(cpu))), "ram": round(m.percent), "ramGB": round(m.used / 1073741824, 1),
-                "ramTotal": round(m.total / 1073741824), "baja": max(0, round(baja)), "sube": max(0, round(sube))}
+        # disco: bytes leídos y escritos por segundo, y cuánto del tiempo estuvo ocupado (read_time + write_time, en ms)
+        d = psutil.disk_io_counters()
+        dl = (d.read_bytes - _disco[0]) / dt if dt > 0 and _disco[2] else 0
+        de = (d.write_bytes - _disco[1]) / dt if dt > 0 and _disco[2] else 0
+        ocup = min(100, (d.read_time + d.write_time - _disco[3]) / (dt * 10)) if dt > 0 and _disco[2] else 0
+        _disco[:] = [d.read_bytes, d.write_bytes, t, d.read_time + d.write_time]
+        out = {"cpu": max(0, min(100, round(cpu))), "ram": round(m.percent), "ramGB": round(m.used / 1073741824, 1),
+               "ramTotal": round(m.total / 1073741824), "baja": max(0, round(baja)), "sube": max(0, round(sube)),
+               "dlee": max(0, round(dl)), "descr": max(0, round(de)), "dOcup": max(0, round(ocup))}
+        # placa de video: solo NVIDIA (nvidia-smi viene con el driver). Si no está, no se vuelve a probar
+        if _gpu[0] is not False:
+            v = pulso.nvsmi()
+            if v:
+                _gpu[0] = True
+                out.update(gpu=round(v["gpu_uso"]), vram=round(v["vram"] / 1024, 1), vramTotal=round(v["vram_total"] / 1024),
+                           vramPct=round(100 * v["vram"] / v["vram_total"]) if v["vram_total"] else 0,
+                           gpuTemp=round(v["gpu_temp"]), gpuW=round(v["gpu_w"]))
+            elif _gpu[0] is None:
+                _gpu[0] = False
+        return out
     except Exception:
         return None
 
@@ -633,7 +770,31 @@ def _poner_icono(ventana, icono):
     except Exception:
         pass
 
+def _ya_abierta():
+    """Una sola TandemStacks por usuario: si ya hay una, se trae su ventana al frente y esta se cierra.
+    Dos copias vigilarían juegos, cerrarían launchers y escribirían el nivel cada una por su lado."""
+    k32, u32 = ctypes.windll.kernel32, ctypes.windll.user32
+    Main._mutex = k32.CreateMutexW(None, False, r"Local\TandemStacks_una_sola")
+    if k32.GetLastError() != 183:  # ERROR_ALREADY_EXISTS
+        return False
+    hallada = []
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    def ver(h, _):
+        b = ctypes.create_unicode_buffer(256); u32.GetWindowTextW(h, b, 256)
+        if b.value.startswith("TandemStacks") and u32.IsWindowVisible(h): hallada.append(h); return False
+        return True
+    u32.EnumWindows(ver, None)
+    if hallada and "--inicio" not in sys.argv:
+        u32.ShowWindow(hallada[0], 9)  # SW_RESTORE
+        u32.SetForegroundWindow(hallada[0])
+    return True
+
+class Main:
+    _mutex = None
+
 def main():
+    if _ya_abierta():
+        return
     icono = os.path.join(paths.ASSETS, "icon.ico")
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("TandemStacks")
@@ -679,7 +840,7 @@ def main():
         _con_windows(NUC.cfg.get("inicio_windows", True))
         threading.Thread(target=watch.vigilar, daemon=True, args=(lambda: [g for g in NUC.juegos if g.get("installed")], lambda: NUC.launchers,
                                                                  lambda: NUC.cfg, NUC.sumar_jugado,
-                                                                 lambda: None if NUC.minimizada else v.minimize(),  # jugando, la ventana se duerme sola
+                                                                 None,  # al abrir un juego la ventana queda como está (pedido del dueño 10/11/2026); si la minimizás, se duerme igual
                                                                  NUC.al_medir)).start()
     covers.limpiar_descargadas()
     # private_mode=False: el visor guarda en disco su caché (portadas ya vistas) entre sesiones

@@ -63,7 +63,7 @@ LAUNCHERS = {
         "exe": lambda: _primero(os.path.join(PF, r"Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe"),
                                 os.path.join(PF86, r"Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe"),
                                 os.path.join(PF86, r"Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe")),
-        "abrir": lambda exe: "com.epicgames.launcher://apps",
+        "abrir": lambda exe: exe,  # el link com.epicgames.launcher:// a veces no arranca el launcher si está cerrado
         "bajar": "https://store.epicgames.com/download",
         "procs": ["epicgameslauncher.exe", "epicwebhelper.exe"],
     },
@@ -80,9 +80,9 @@ LAUNCHERS = {
     "Xbox": {
         "color": "#107c10",
         "exe": lambda: "",  # app de la Store, no tiene exe clásico: se marca presente si existe GamingServices
-        "abrir": lambda exe: "ms-xbl-3d8b930f://",
+        "abrir": lambda exe: r"shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App",  # el link ms-xbl no siempre está registrado
         "bajar": "https://www.xbox.com/apps/xbox-app-for-pc",
-        "procs": [],
+        "procs": ["xboxpcapp.exe", "xboxpcappft.exe"],
     },
     "Riot": {
         "color": "#d13639",
@@ -134,6 +134,14 @@ LAUNCHERS = {
         "abrir": lambda exe: "itch://library",
         "bajar": "https://itch.io/app",
         "procs": ["itch.exe", "butler.exe"],
+    },
+    "Google Play": {
+        "color": "#01875f",
+        "exe": lambda: os.path.join(PF, r"Google\Play Games\Bootstrapper.exe"),
+        "abrir": lambda exe: exe,
+        "bajar": "https://play.google.com/googleplaygames",
+        # crosvm.exe es el emulador donde corren los juegos de Android: pesa, y es lo que más conviene cerrar
+        "procs": ["bootstrapper.exe", "client.exe", "service.exe", "crosvm.exe", "playpackagemanager.exe"],
     },
 }
 

@@ -47,6 +47,7 @@ DEFAULT = {
     "cerrar_otros": True,     # al abrir un juego, cerrar los launchers que ese juego no usa
     "inicio_windows": True,   # abrir TandemStacks con Windows, minimizada
     "pulso": True,            # medir cada partida (FPS, tirones, placa, procesador, RAM, ping) y guardarla por juego
+    "sin_accesos": True,      # mandar a la papelera los accesos del escritorio que dejan las tiendas al instalar un juego
     "limpiar": True,          # al cerrar un juego, borrar la basura segura (volcados de errores, logs, caché web grande)
     "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam
     "tema": "claro",          # "claro" u "oscuro"

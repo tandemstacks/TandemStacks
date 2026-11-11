@@ -225,14 +225,17 @@ def evaluar(s, previas):
     s["causas"] = causas
     return s
 
-def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, drv, pm_ok):
+def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, drv, pm_ok, pid=None):
     dur = fin - inicio
     tiempos = []
     try:
         with open(csv_fps, newline="", encoding="utf-8", errors="ignore") as f:
             for r in csv.DictReader(f):
-                try:
-                    v = float(r.get("MsBetweenPresents") or r.get("FrameTime") or "")
+                try:  # PresentMon 2 con --v1_metrics escribe "msBetweenPresents" (con minúscula); sin esa opción, "FrameTime"
+                    r = {k.lower(): v for k, v in r.items() if k}
+                    if pid and r.get("processid") != str(pid) and (r.get("application") or "").lower() != os.path.basename(exe).lower():
+                        continue  # se graba todo lo que se dibuja: se cuenta solo el juego
+                    v = float(r.get("msbetweenpresents") or r.get("frametime") or "")
                     if 0 < v < 1000: tiempos.append(v)
                 except ValueError:
                     pass
@@ -286,6 +289,18 @@ def _proceso_principal(carpeta):
             mejor = (p.pid, mem, exe)
     return mejor
 
+def _limpiar_sesiones():
+    """Cierra sesiones de PresentMon que quedaron colgadas en Windows (si PresentMon se cerró a la fuerza, su sesión
+    sigue corriendo). Con sesiones colgadas, las nuevas perdían todos los eventos y la partida quedaba sin FPS."""
+    o = _correr(["logman", "query", "-ets"], timeout=10) or ""
+    vivas = {"TandemStacks_%d" % i for i in _activos_pid}
+    for n in re.findall(r"^(TandemStacks_\d+)\s", o, re.M):
+        if n not in vivas:
+            _correr(["logman", "stop", n, "-ets"], timeout=10)
+            _log("sesión colgada cerrada:", n)
+
+_activos_pid = set()  # pids de juegos que se están midiendo ahora (sus sesiones no se tocan)
+
 def medir(g, al_terminar=None):
     """Hilo de una partida: espera el proceso principal (hasta 3 min), mide hasta que se cierra y guarda el resumen."""
     try:
@@ -299,14 +314,20 @@ def medir(g, al_terminar=None):
         pid, _, exe = pp
         os.makedirs(TMP, exist_ok=True)
         csv_fps = os.path.join(TMP, "fps_%d.csv" % pid)
-        pm = None
+        _limpiar_sesiones()
+        _activos_pid.add(pid)
+        pm, sesion = None, "TandemStacks_%d" % pid
+        pm_txt = os.path.join(TMP, "pm_%d.txt" % pid)
         if os.path.exists(PM):
             try:
-                pm = subprocess.Popen([PM, "--process_id", str(pid), "--output_file", csv_fps, "--terminate_on_proc_exit",
-                                       "--session_name", "TandemStacks_%d" % pid, "--stop_existing_session", "--no_console_stats", "--v1_metrics"],
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
-                try: psutil.Process(pm.pid).nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
-                except Exception: pass
+                # graba todo lo que se dibuja y después se filtra por el proceso del juego: pedirle solo el juego
+                # (--process_id) no grababa nada cuando Windows no le deja identificar el proceso (juegos con anti-trampas)
+                with open(pm_txt, "w") as salida:
+                    pm = subprocess.Popen([PM, "--output_file", csv_fps, "--session_name", sesion, "--stop_existing_session",
+                                           "--no_console_stats", "--v1_metrics"],
+                                          stdout=salida, stderr=salida, creationflags=SIN_VENTANA)
+                # prioridad normal a propósito: con prioridad baja, con el juego usando el procesador, PresentMon
+                # no alcanzaba a leer los eventos de Windows, los perdía todos y la partida quedaba sin FPS
             except OSError as e:
                 _log("presentmon", e)
         inicio, muestras, cpu0, est = time.time(), [], tiempos_cpu(), {}
@@ -319,18 +340,36 @@ def medir(g, al_terminar=None):
         fin = time.time()
         pm_ok = False
         if pm:
-            try: pm_ok = pm.wait(timeout=20) == 0 or os.path.exists(csv_fps)
-            except Exception: pm.kill()
+            try:  # se le pide que cierre ordenado (así escribe lo último que tenía); si no responde, se mata
+                subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=15,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+                pm.wait(timeout=15)
+            except Exception:
+                pm.kill()
+            pm_ok = os.path.exists(csv_fps)
+            if not pm_ok:
+                try: _log("presentmon sin datos:", open(pm_txt, errors="ignore").read().replace("\n", " ")[:300])
+                except OSError: pass
         if fin - inicio >= MIN_SEG:
             s = resumir(csv_fps, muestras, g, exe, inicio, fin, fondo(cpu0, tiempos_cpu(), pid, fin - inicio),
-                        cierre_con_error(exe, inicio), version, drv, pm_ok)
+                        cierre_con_error(exe, inicio), version, drv, pm_ok, pid)
+            try:  # si TandemStacks ajustó NVIDIA para este juego, queda anotado en la partida (para comparar antes/después)
+                from . import nvidia
+                a = nvidia.aplicado(g["id"])
+                if a: s["nvidia"] = "; ".join(a["que"])
+                from . import escalera
+                p = escalera.en_prueba(g["id"])
+                if p: s["paso"] = p  # el paso de la escalera que se estaba probando en esta partida
+            except Exception: pass
             _guardar(g["id"], s)
             _log("guardado", g.get("name"), s["estado"], "; ".join(s["causas"]))
             if al_terminar:
                 try: al_terminar(g, s)
                 except Exception as e: _log("aviso", e)
-        try: os.remove(csv_fps)
-        except OSError: pass
+        for f in (csv_fps, pm_txt):
+            try: os.remove(f)
+            except OSError: pass
+        _activos_pid.discard(pid)
     except Exception as e:
         _log("medir", g.get("name"), e)
     finally:

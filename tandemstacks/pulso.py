@@ -252,7 +252,7 @@ def evaluar(s, previas):
         causas.append("Internet perdió %s %% de paquetes: el lag es de la conexión, no de la PC" % s["perdidaInternet"])
     elif s.get("pingInternetMax", 0) >= 150:
         causas.append("Picos de ping de %d ms (lag de la conexión)" % s["pingInternetMax"])
-    if s.get("perdidaServidor", 0) >= 5 and s.get("perdidaInternet", 0) < 5:
+    if 5 <= s.get("perdidaServidor", 0) < 95 and s.get("perdidaInternet", 0) < 5:  # ~100 % = el servidor no contesta pings (los bloquea), no es pérdida
         causas.append("El servidor del juego perdió %s %% de paquetes (problema del servidor, no tuyo)" % s["perdidaServidor"])
     if s.get("tironesMin", 0) > 5 and s.get("discoMBsMax", 0) >= 100:
         causas.append("El juego leyó hasta %d MB/s del disco: los tirones pueden ser de carga" % s["discoMBsMax"])

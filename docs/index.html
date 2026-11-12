@@ -43,7 +43,20 @@ header{background:var(--osc);color:#fff}
 .links{display:flex;gap:22px;align-items:center;font-size:14px}
 .links a{text-decoration:none;color:#c9c9c4}.links a:hover{color:#fff}
 .links .gh{display:inline-flex;align-items:center;gap:6px}
-@media (max-width:720px){.links a:not(.gh){display:none}}
+[data-pag]:not(.on){display:none!important}
+section.bloque[data-pag].on{padding-top:56px!important;min-height:calc(100vh - 220px)}
+.links a.pg.on{color:#fff;box-shadow:inset 0 -3px 0 var(--acc);padding-bottom:6px}
+.links a.bajarnav{background:var(--acc);color:#fff;padding:7px 14px;border-radius:4px;font-weight:700}
+.links a.bajarnav.on{box-shadow:none;padding-bottom:7px}
+.links a{white-space:nowrap}
+@media (max-width:1100px){.links{gap:14px;font-size:13px}}
+@media (max-width:980px){.links{gap:10px}.links .gh span{display:none}}
+@media (max-width:900px){
+  .nav{height:auto;flex-wrap:wrap;padding:10px 0;gap:8px}
+  .links{width:100%;overflow-x:auto;white-space:nowrap;padding-bottom:6px;scrollbar-width:none}
+  .links::-webkit-scrollbar{display:none}
+  .links a{flex:0 0 auto}
+}
 
 /* hero */
 .hero{background:var(--osc);color:#fff;padding:56px 0 0;overflow:hidden;position:relative}
@@ -147,15 +160,17 @@ footer a{color:var(--mu)}
 <body>
 <header>
   <div class="wrap nav">
-    <a class="marca" href="#"><img src="logo.png" alt="">Tandem<span>Stacks</span></a>
+    <a class="marca" href="#inicio"><img src="logo.png" alt="">Tandem<span>Stacks</span></a>
     <nav class="links">
-      <a href="#fin">Nuestro fin</a>
-      <a href="#que-hace">Qué hace</a>
-      <a href="#rendimiento">Rendimiento</a>
-      <a href="#asi-se-ve">Así se ve</a>
-      <a href="#confianza">Seguridad</a>
-      <a href="#como">Cómo funciona</a>
-      <a href="#faq">Preguntas</a>
+      <a class="pg" href="#inicio">Inicio</a>
+      <a class="pg" href="#que-hace">Qué hace</a>
+      <a class="pg" href="#rendimiento">Rendimiento</a>
+      <a class="pg" href="#asi-se-ve">Así se ve</a>
+      <a class="pg" href="#fin">Nuestro fin</a>
+      <a class="pg" href="#confianza">Seguridad</a>
+      <a class="pg" href="#faq">Preguntas</a>
+      <a class="pg" href="#comunidad">Comunidad</a>
+      <a class="pg bajarnav" href="#como">Descargar</a>
       <a class="gh" href="https://www.instagram.com/tandemstacks/" target="_blank" rel="noopener" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>Instagram</a>
       <a class="gh discord" href="#comunidad" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18.1a19.9 19.9 0 0 0 6 3l1.3-2.1a12.9 12.9 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.8 19.8 0 0 0 6-3c.5-5.2-.9-9.7-3.6-13.7zM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg>Discord</a>
       <a class="gh" href="https://github.com/tandemstacks/TandemStacks" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>GitHub</a>
@@ -163,7 +178,7 @@ footer a{color:var(--mu)}
   </div>
 </header>
 
-<section class="hero">
+<section class="hero on" data-pag="inicio">
   <div class="wrap">
     <div class="chip">Gratis · Sin fines de lucro · Windows 10/11 · <b id="ver">última versión</b></div>
     <h1>Todos tus juegos juntos, <em>y andando mejor</em></h1>
@@ -185,12 +200,12 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<div class="tiendas wrap">
+<div class="tiendas wrap on" data-pag="inicio">
   <small>Funciona con</small>
   <div class="logos" id="logos"></div>
 </div>
 
-<section class="bloque" id="fin">
+<section class="bloque" id="fin" data-pag="fin">
   <div class="wrap">
     <div class="fin">
       <small>Nuestro fin</small>
@@ -207,7 +222,7 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="que-hace">
+<section class="bloque" id="que-hace" data-pag="que-hace">
   <div class="wrap">
     <h2 class="tit">Todo junto</h2>
     <p class="sub">Abrís TandemStacks y ves todo lo que tenés, en todas las tiendas, con portada, ficha y cuánto ocupa.</p>
@@ -222,7 +237,7 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="rendimiento" style="padding-top:0">
+<section class="bloque" id="rendimiento" data-pag="rendimiento" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Que tus juegos anden mejor</h2>
     <p class="sub">TandemStacks no solo junta tus juegos: <b>te guía en el rendimiento</b>. Cada partida queda medida y te dice, en palabras simples, qué pasó y qué tocar.</p>
@@ -239,22 +254,22 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="asi-se-ve" style="padding-top:0">
+<section class="bloque" id="asi-se-ve" data-pag="asi-se-ve" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Así se ve</h2>
     <p class="sub">Capturas de la app tal como queda en una PC con varias tiendas. Tocá una para verla grande.</p>
     <div class="galeria">
-      <figure><a href="vista-ficha.jpg" target="_blank" rel="noopener"><img src="vista-ficha.jpg" loading="lazy" width="1440" height="810" alt="Ficha de cada juego"></a><figcaption><b>Ficha de cada juego:</b> datos de su tienda, reseñas, horas jugadas y botones para jugar o instalar.</figcaption></figure>
+      <figure><a href="vista-pulso.jpg" target="_blank" rel="noopener"><img src="vista-pulso.jpg" loading="lazy" width="1440" height="810" alt="Pulso de cada partida"></a><figcaption><b>Pulso de cada partida:</b> tus partidas en una línea de tiempo; tocás una y ves qué midió, qué cambió y por qué hubo tirones.</figcaption></figure>
+      <figure><a href="vista-relojes.jpg" target="_blank" rel="noopener"><img src="vista-relojes.jpg" loading="lazy" width="1440" height="810" alt="Relojes en vivo"></a><figcaption><b>Relojes en vivo:</b> procesador, RAM, placa, disco y red; cada gráfica se abre en grande y te explica cómo leerla.</figcaption></figure>
+      <figure><a href="vista-ficha.jpg" target="_blank" rel="noopener"><img src="vista-ficha.jpg" loading="lazy" width="1440" height="810" alt="Ficha de cada juego"></a><figcaption><b>Ficha de cada juego:</b> en pestañas: datos de su tienda, Pulso y los pasos para mejorar.</figcaption></figure>
       <figure><a href="vista-discos.jpg" target="_blank" rel="noopener"><img src="vista-discos.jpg" loading="lazy" width="1440" height="810" alt="Tus discos"></a><figcaption><b>Tus discos:</b> cuánto ocupa cada juego, con miniaturas y un gráfico de torta.</figcaption></figure>
-      <figure><a href="vista-paginas.jpg" target="_blank" rel="noopener"><img src="vista-paginas.jpg" loading="lazy" width="1440" height="810" alt="Un buscador en cada grupo"></a><figcaption><b>Un buscador en cada grupo:</b> listas largas de a 24 juegos por página, que se cargan recién al abrirlas.</figcaption></figure>
-      <figure><a href="vista-pulso.jpg" target="_blank" rel="noopener"><img src="vista-pulso.jpg" loading="lazy" width="1440" height="810" alt="Pulso de la última partida"></a><figcaption><b>Pulso de cada partida:</b> qué midió, qué cambió respecto de la anterior y el próximo paso para mejorar.</figcaption></figure>
-      <figure><a href="vista-relojes.jpg" target="_blank" rel="noopener"><img src="vista-relojes.jpg" loading="lazy" width="1440" height="810" alt="Relojes en vivo"></a><figcaption><b>Relojes en vivo:</b> cada gráfica se abre en grande y te explica cómo leerla.</figcaption></figure>
-      <figure><a href="vista-oscuro.jpg" target="_blank" rel="noopener"><img src="vista-oscuro.jpg" loading="lazy" width="1440" height="810" alt="Modo oscuro"></a><figcaption><b>Modo oscuro:</b> y también en inglés, desde el menú ⚙.</figcaption></figure>
+      <figure><a href="vista-paginas.jpg" target="_blank" rel="noopener"><img src="vista-paginas.jpg" loading="lazy" width="1440" height="810" alt="Lo que no tenés, con precio"></a><figcaption><b>Lo que no tenés:</b> más de 14.000 juegos con el precio de cada tienda y sus descuentos.</figcaption></figure>
+      <figure><a href="vista-claro.jpg" target="_blank" rel="noopener"><img src="vista-claro.jpg" loading="lazy" width="1440" height="810" alt="Modo claro"></a><figcaption><b>Claro u oscuro:</b> y en español o inglés, desde el menú ⚙.</figcaption></figure>
     </div>
   </div>
 </section>
 
-<section class="bloque" id="ram" style="padding-top:0">
+<section class="bloque" id="ram" data-pag="que-hace" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Lo que se comen los launchers</h2>
     <p class="sub">Memoria RAM de cada launcher abierto, medida en una PC con Windows 11. Muchos arrancan solos con Windows y quedan ahí aunque no juegues.</p>
@@ -262,7 +277,7 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="confianza" style="padding-top:0">
+<section class="bloque" id="confianza" data-pag="confianza" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Transparente y seguro</h2>
     <p class="sub">Un proyecto de la comunidad, sin fines de lucro. Todo lo que hace está a la vista.</p>
@@ -282,10 +297,11 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="como" style="padding-top:0">
+<section class="bloque" id="como" data-pag="como" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Cómo funciona</h2>
     <p class="sub">Tres pasos y listo. No hay nada que configurar.</p>
+    <p style="margin:0 0 22px"><a class="btn pri bajar2" href="https://github.com/tandemstacks/TandemStacks/releases/latest"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg> Descargar para Windows</a></p>
     <div class="pasos">
       <div class="paso"><h3>Descargá</h3><p>Bajá el instalador (~17 MB) con el botón naranja.</p></div>
       <div class="paso"><h3>Instalá</h3><p>Siguiente, siguiente. Si Windows avisa, tocá “Más información” → “Ejecutar de todas formas”.</p></div>
@@ -294,7 +310,7 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="novedades" style="padding-top:0">
+<section class="bloque" id="novedades" data-pag="como" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Novedades</h2>
     <p class="sub">Las últimas versiones y qué trajo cada una.</p>
@@ -302,7 +318,7 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="faq" style="padding-top:0">
+<section class="bloque" id="faq" data-pag="faq" style="padding-top:0">
   <div class="wrap">
     <h2 class="tit">Preguntas</h2>
     <div class="faq">
@@ -319,7 +335,7 @@ footer a{color:var(--mu)}
   </div>
 </section>
 
-<section class="bloque" id="comunidad" style="padding-top:0">
+<section class="bloque" id="comunidad" data-pag="comunidad" style="padding-top:0">
   <div class="wrap">
     <div class="comunidad">
       <div><h2>Sumate a la comunidad</h2><p>Ideas, errores, qué tienda falta: contalo en el Discord. Novedades y versiones nuevas también en Instagram.</p></div>
@@ -336,6 +352,20 @@ footer a{color:var(--mu)}
 </footer>
 
 <script>
+// secciones: se ve una por vez según el link (#fin, #rendimiento…). Un id de adentro de una sección también la abre.
+function irSeccion(){
+  const id = decodeURIComponent(location.hash.slice(1)) || 'inicio';
+  const el = document.getElementById(id);
+  const pag = (el && (el.dataset.pag || (el.closest('[data-pag]') || {}).dataset?.pag)) || 'inicio';
+  document.querySelectorAll('[data-pag]').forEach(x => x.classList.toggle('on', x.dataset.pag === pag));
+  document.querySelectorAll('.links a.pg').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + pag));
+  const activo = document.querySelector('.links a.pg.on'); if (activo && activo.scrollIntoView) activo.scrollIntoView({block: 'nearest', inline: 'center'});
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', irSeccion);
+document.addEventListener('DOMContentLoaded', irSeccion);
+addEventListener('load', () => setTimeout(() => window.scrollTo(0, 0), 0));  // el navegador salta al ancla al cargar: se vuelve arriba (el menú a la vista)
+
 // Link de invitación al Discord: cuando exista, pegarlo acá y los dos botones se activan solos.
 const DISCORD = 'https://discord.gg/CKqByMZ2m';
 const REPO = 'tandemstacks/TandemStacks';
@@ -361,7 +391,7 @@ fetch(`https://api.github.com/repos/${REPO}/releases/latest`).then(r=>r.ok?r.jso
   if(!j) return;
   const a=(j.assets||[]).find(x=>/Setup.*\.exe$/i.test(x.name));
   document.getElementById('ver').textContent='v'+String(j.tag_name||'').replace(/^v/,'');
-  if(a){document.getElementById('bajar').href=a.browser_download_url;
+  if(a){document.getElementById('bajar').href=a.browser_download_url;document.querySelectorAll('.bajar2').forEach(b=>b.href=a.browser_download_url);
     document.getElementById('nota').textContent=`${a.name} · ${(a.size/1048576).toFixed(0)} MB · open source (MIT)`;}
 }).catch(()=>{});
 

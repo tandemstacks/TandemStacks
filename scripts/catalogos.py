@@ -121,6 +121,20 @@ def itch(paginas=10):
             time.sleep(0.5)
     return juegos
 
+# itch.io: fuera los juegos con contenido sexual (regla del dueño). Se usan las etiquetas que pone el autor y el aviso de
+# contenido adulto de itch. NO se usan "yuri", "yaoi" ni "bara": son romance entre personas del mismo sexo, no contenido sexual.
+ITCH_ADULTO = {"adult", "sex", "sexual-content", "nsfw", "erotic", "eroge", "hentai", "porn", "lewd", "nudity", "r18", "smut", "ecchi", "adult-content", "nsfw-content"}
+
+def itch_sin_adultos(juegos):
+    def ok(j):
+        h = _pagina(j["i"])
+        if not h: return j  # si la página no contesta, queda (el listado público ya saca lo que itch marca como NSFW)
+        tags = set(re.findall(r"itch\.io/games/tag-([a-z0-9-]+)", h))
+        if ITCH_ADULTO & tags or "content_warning" in h or "adult_content" in h:
+            print("itch.io +18 fuera:", j["t"], flush=True); return None
+        return j
+    return _en_paralelo(ok, juegos, 6)
+
 def _pagina(url):
     for intento in range(3):
         try:
@@ -231,7 +245,7 @@ def guardar(tienda, juegos):
 
 if __name__ == "__main__":
     g, s, x = gog(), steam_adultos(steam()), xbox()
-    otras = (("itch.io", itch()), ("Battle.net", fijos(BATTLENET, "https://us.shop.battle.net/en-us/product/")),
+    otras = (("itch.io", itch_sin_adultos(itch())), ("Battle.net", fijos(BATTLENET, "https://us.shop.battle.net/en-us/product/")),
              ("Rockstar", fijos(ROCKSTAR, "https://store.rockstargames.com/game/")), ("Ubisoft", ubisoft()), ("EA", ea()))
     guardar("gog", [j for j in g if not j.get("x")])
     guardar("todos", juntar(g, s, x, otras))

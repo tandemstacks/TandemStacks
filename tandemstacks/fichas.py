@@ -4,7 +4,7 @@ Con caché en disco (por idioma). Si la tienda no da un dato, no se muestra. Ún
    Steam: logros del usuario, de los archivos de Steam (appcache/stats). Si no están, Web API con la clave (caché 6 h).
    Epic: página de la tienda por slug (store-content); solo vale si su namespace es el del catálogo local. Caché 30 días.
    Xbox: displaycatalog de Microsoft por ProductId (descripción, estudio, categorías, clasificación, puntuación). Caché 30 días."""
-import os, re, json, time, struct, threading, unicodedata, urllib.parse
+import os, re, html, json, time, struct, threading, unicodedata, urllib.parse, urllib.request
 from . import paths
 from .steam import http_json, steam_path, buscar_appid, ficha as steam_ficha
 
@@ -200,11 +200,85 @@ def xbox(g, idioma):
         _guardar(nombre, d)
     return _limpio(d)
 
+# ---------- Google Play: página pública del juego ----------
+GPLAY_CAT = {"ACTION": "Acción", "ADVENTURE": "Aventura", "ARCADE": "Arcade", "BOARD": "Tablero", "CARD": "Cartas", "CASINO": "Casino",
+             "CASUAL": "Casual", "EDUCATIONAL": "Educativo", "MUSIC": "Música", "PUZZLE": "Puzles", "RACING": "Carreras", "ROLE_PLAYING": "Rol",
+             "SIMULATION": "Simulación", "SPORTS": "Deportes", "STRATEGY": "Estrategia", "TRIVIA": "Preguntas", "WORD": "Palabras"}
+
+def _pagina(url, idioma):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "en-US" if idioma == "english" else "es-ES,es;q=0.9,en;q=0.5"})
+    b = urllib.request.urlopen(req, timeout=15).read()
+    try: return b.decode("utf-8")
+    except UnicodeDecodeError: return b.decode("cp1252", "ignore")
+
+def _meta(h, k):
+    m = re.search(r'<meta[^>]+(?:property|name)="%s"[^>]+content="([^"]*)"' % k, h) or re.search(r'<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="%s"' % k, h)
+    return re.sub(r"\s+", " ", html.unescape(m.group(1))).strip() if m else ""
+
+def google_play(g, idioma):
+    if not g.get("pkg"): return {}
+    nombre = "%s/%s.json" % (idioma, g["id"])
+    d = _leer(nombre, 30 * DIA)
+    if d is None:
+        url = "https://play.google.com/store/apps/details?id=%s&hl=%s" % (urllib.parse.quote(g["pkg"]), "en" if idioma == "english" else "es_419")
+        try:
+            h = _pagina(url, idioma)
+            m = re.search(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', h, re.S)
+            j = json.loads(m.group(1)) if m else {}
+            cat = str(j.get("applicationCategory") or "").replace("GAME_", "")
+            r = j.get("aggregateRating") or {}
+            d = {"desc": (j.get("description") or _meta(h, "og:description"))[:500], "dev": (j.get("author") or {}).get("name", ""),
+                 "genres": [(GPLAY_CAT.get(cat) if idioma != "english" else None) or cat.replace("_", " ").title()] if cat else [],
+                 "clasif": j.get("contentRating") or "", "url": url.split("&hl=")[0]}
+            if r.get("ratingValue"):
+                d.update(nota=round(float(r["ratingValue"]), 1), notaDe="Google Play", notaN=int(r.get("ratingCount") or 0))
+        except Exception as e:
+            paths.log("ficha google play", g.get("name"), e); return {}
+        _guardar(nombre, d)
+    return _limpio(d)
+
+# ---------- EA, Ubisoft y Rockstar: la página del juego en su tienda (el link sale del catálogo público de TandemStacks) ----------
+def _norm(n):
+    return re.sub(r"[^a-z0-9]", "", re.sub(r"[™®©]", "", (n or "").lower()))
+
+def _url_tienda(g):
+    """Link de la página del juego en su tienda, buscado por nombre en el catálogo (se lee una vez por juego y se guarda)."""
+    from . import steam
+    cache = os.path.join(paths.CACHE, "catalogo_todos.json")
+    try:
+        if time.time() - os.path.getmtime(cache) > 7 * DIA: raise OSError
+        cat = json.load(open(cache, encoding="utf-8"))
+    except Exception:
+        cat = steam.http_json("https://tandemstacks.github.io/TandemStacks/catalogo/todos.json", 30)
+        json.dump(cat, open(cache, "w", encoding="utf-8"), ensure_ascii=False)
+    n, tienda = _norm(g["name"]), g["store"]
+    cands = [j for j in cat.get("juegos", []) if isinstance((j.get("st") or {}).get(tienda), str)]
+    j = next((j for j in cands if _norm(j.get("t")) == n), None) \
+        or next((j for j in cands if _norm(j.get("t")).startswith(n) or n.startswith(_norm(j.get("t")) or "-")), None)
+    return j["st"][tienda] if j else ""
+
+def pagina_tienda(g, idioma):
+    nombre = "%s/%s.json" % (idioma, g["id"])
+    d = _leer(nombre, 30 * DIA)
+    if d is None:
+        d = {}
+        try:
+            url = _url_tienda(g)
+            if url:
+                d = {"url": url}
+                h = _pagina(url, idioma)
+                desc = _meta(h, "og:description") or _meta(h, "description")
+                if desc and _norm(desc) != _norm(g["name"]): d["desc"] = desc[:500]
+        except Exception as e:
+            paths.log("ficha tienda", g.get("store"), g.get("name"), e); return {}
+        _guardar(nombre, d)
+    return _limpio(d)
+
 def de(g, cfg):
     """Lo que se agrega a la ficha de g al abrirla."""
     idioma = cfg.get("idioma", "spanish")
     if g.get("store") == "Steam":
-        d = steam_logros(g.get("appid"), cfg.get("steam_api_key"), cfg.get("steam_id")) or {}
+        d = {}  # sin logros: el dueño sacó horas y logros de todas las tiendas (12/11/2026)
         if g.get("appid") and not g.get("desc"):  # la ficha de la tienda se baja recién ahora, al abrirla (queda en caché 30 días)
             from . import steam
             f = steam.ficha(g["appid"], idioma) or {}
@@ -215,4 +289,8 @@ def de(g, cfg):
         return epic(g, idioma)
     if g.get("store") == "Xbox":
         return xbox(g, idioma)
+    if g.get("store") == "Google Play":
+        return google_play(g, idioma)
+    if g.get("store") in ("EA", "Ubisoft", "Rockstar") and not g.get("desc"):
+        return pagina_tienda(g, idioma)
     return {}

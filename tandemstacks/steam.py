@@ -69,25 +69,58 @@ def _manif(f):
     try: t = open(f, encoding="utf-8", errors="ignore").read()
     except Exception: return {}
     val = lambda k: (re.search(r'"%s"\s*"([^"]*)"' % k, t) or [None, ""])[1]
-    d = {"name": val("name"), "flags": int(val("StateFlags") or 0), "total": int(val("BytesToDownload") or 0), "hecho": int(val("BytesDownloaded") or 0)}
+    d = {"name": val("name"), "flags": int(val("StateFlags") or 0), "total": int(val("BytesToDownload") or 0), "hecho": int(val("BytesDownloaded") or 0),
+         "etapa": int(val("BytesToStage") or 0), "etapa_hecho": int(val("BytesStaged") or 0)}
     _manifs[f] = (m, d)
     return d
 
-def descargas():
-    """Lo que Steam está bajando ahora: [{"name", "pct"}] por los appmanifest. Si Steam está cerrado no hay nada que mostrar."""
+def _bajado_desde(desde):
+    """Bytes que bajó Steam desde un momento, sumando las velocidades por minuto de logs/content_log.txt (lee solo el final)."""
     try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam\ActiveProcess") as k:
-            if not winreg.QueryValueEx(k, "pid")[0]:
-                return []
-    except OSError:
+        f = os.path.join(steam_path(), "logs", "content_log.txt")
+        with open(f, "rb") as h:
+            h.seek(max(0, os.path.getsize(f) - 200000)); t = h.read().decode("utf-8", "ignore")
+        total = 0
+        for fecha, mbps in re.findall(r"\[(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)\] Current download rate: ([\d.]+) Mbps", t):
+            if time.mktime(time.strptime(fecha, "%Y-%m-%d %H:%M:%S")) > desde:
+                total += float(mbps) * 1e6 / 8 * 60
+        return int(total)
+    except Exception:
+        return 0
+
+_avance = {}  # appid -> (fecha del manifiesto, bytes escritos por Steam al verlo, lo armado según el manifiesto)
+
+def descargas():
+    """Lo que Steam está bajando ahora: [{"name", "pct", "id", "pausa"}]. Si Steam está cerrado no hay nada que mostrar.
+    Steam anota el avance en el appmanifest solo al empezar y al pausar, así que mientras baja se suma lo que steam.exe
+    escribió en el disco desde entonces (lo que va armando del juego) sobre el total a armar (BytesToStage)."""
+    try:
+        import psutil
+        sp = next((q for q in psutil.process_iter(["name"]) if (q.info["name"] or "").lower() == "steam.exe"), None)
+        if not sp: return []  # el "pid" de ActiveProcess en el registro a veces queda en 0 con Steam andando: se mira el proceso
+        try: escrito = sp.io_counters().write_bytes
+        except Exception: escrito = None
+    except Exception:
         return []
     out = []
     for lib in _bibliotecas():
         for f in glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf")):
             d = _manif(f)
-            if d and d["total"] and d["hecho"] < d["total"] and d["flags"] & 2:  # 2 = le falta bajar algo
-                aid = re.search(r"appmanifest_(\d+)", f)
-                out.append({"name": d["name"], "pct": int(d["hecho"] * 100 / d["total"]), "id": aid.group(1) if aid else ""})
+            if not (d and d["total"] and d["hecho"] < d["total"] and d["flags"] & 2):  # 2 = le falta bajar algo
+                continue
+            aid = (re.search(r"appmanifest_(\d+)", f) or [None, ""])[1]
+            activa = bool(d["flags"] & 1024) and not d["flags"] & 512  # 1024 = actualización empezada, 512 = en pausa
+            pct = d["hecho"] / d["total"]
+            if activa and escrito is not None and d["etapa"]:
+                try: m = os.path.getmtime(f)
+                except OSError: m = 0
+                b = _avance.get(aid)
+                if not b or b[0] != m or escrito < b[1]:  # manifiesto nuevo o Steam reiniciado: se arranca la cuenta de nuevo
+                    # lo que bajó antes de que TandemStacks empezara a mirar: velocidades que Steam anota cada minuto en su registro
+                    previo = min(0.99, (d["hecho"] + _bajado_desde(m)) / d["total"])
+                    b = _avance[aid] = (m, escrito, previo)
+                pct = max(pct, min(0.99, b[2] + (escrito - b[1]) / d["etapa"]))
+            out.append({"name": d["name"], "pct": int(pct * 100), "id": aid, "pausa": not activa})
     return out
 
 def huella_instalados():
@@ -253,11 +286,12 @@ def buscar_appid(nombre):
     k = nrm(nombre)
     if not k:
         return ""
-    if k in _busq:
-        return _busq[k]
+    if _busq.get(k):  # "-" = ya se buscó y no está; "" = búsqueda vieja (con el nombre normalizado, fallaba con apóstrofos): se repite
+        return "" if _busq[k] == "-" else _busq[k]
     res = ""
-    try:
-        r = http_json("https://store.steampowered.com/api/storesearch/?cc=US&l=english&term=" + urllib.parse.quote(k), 20)
+    try:  # se busca con el nombre tal cual: normalizado, "Assassin's" queda "assassin s" y Steam no encuentra nada
+        termino = re.sub(r"[™®©]", "", nombre).strip()
+        r = http_json("https://store.steampowered.com/api/storesearch/?cc=US&l=english&term=" + urllib.parse.quote(termino), 20)
         mejor, score = None, 0
         for it in r.get("items", []):
             s = difflib.SequenceMatcher(None, k, nrm(it["name"])).ratio()
@@ -269,7 +303,7 @@ def buscar_appid(nombre):
         return ""  # sin cachear: se reintenta la próxima
     try:
         with _lock:
-            _busq[k] = res
+            _busq[k] = res or "-"
             json.dump(_busq, open(_busq_file, "w", encoding="utf-8"), ensure_ascii=False)
     except Exception:
         pass

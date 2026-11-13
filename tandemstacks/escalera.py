@@ -29,11 +29,10 @@ def hay_app_nvidia():
     return os.path.exists(NVAPP)
 
 def cuello(u):
-    """Qué frena la partida: 'vram', 'placa', 'procesador' o '' si no se sabe."""
+    """Qué frena la partida, con el criterio de Pulso: 'vram', 'placa', 'procesador', 'sobra' (le sobra placa) o 'nada'."""
     if (u.get("vramMaxPct") or 0) >= 92: return "vram"
-    if (u.get("gpuUso") or 0) >= 90: return "placa"
-    if (u.get("cpuNucleoMaxMax") or u.get("cpuNucleoMax") or 0) >= 85 or (u.get("cpuUso") or 0) >= 70: return "procesador"
-    return "placa" if (u.get("gpuUso") or 0) >= 75 else "procesador"
+    f = u.get("frena") or pulso.evaluar(dict(u), []).get("frena")
+    return {"juego": "procesador"}.get(f, f or "procesador")
 
 # pasos del juego (sin la app de NVIDIA): qué tocar en el menú de gráficos, según qué frena
 JUEGO = {
@@ -45,6 +44,9 @@ JUEGO = {
               ("sombras", "Sombras → medio", "Es de lo más pesado para la placa."),
               ("ilum", "Iluminación global / reflejos → medio", "Lumen y el trazado de rayos son lo más caro para la placa."),
               ("posproc", "Posprocesado y niebla → bajo", "Se nota poco y libera a la placa.")],
+    "sobra": [("texturas_mas", "Texturas → un nivel más", "Le sobra placa y memoria de video: las texturas son lo que más se nota y casi no cuestan FPS."),
+              ("sombras_mas", "Sombras → un nivel más", "Con placa de sobra, unas sombras mejores se notan mucho en la imagen."),
+              ("resol_mas", "Escala de resolución al 100 % (o DLSS/FSR en Calidad en vez de Rendimiento)", "Más píxeles reales: imagen más nítida, usando la placa que sobra.")],
     "vram": [("texturas", "Texturas → un nivel menos", "La memoria de video llegó al tope: el juego tiene que traer texturas del disco y se traba."),
              ("escalado", "DLSS o FSR → Calidad", "Dibujar a menos resolución también usa menos memoria de video.")],
 }
@@ -61,17 +63,36 @@ def _pasos(gid, u):
         out.append({"k": "nv_cache", "tipo": "nvidia", "que": "Caché de sombreadores sin límite (NVIDIA, toda la PC)",
                     "por": "Los tirones con mucha lectura de disco suelen ser sombreadores que se arman mientras jugás."})
     c = cuello(u)
+    if c == "sobra":  # anda bien y le sobra placa: los pasos son para SUBIR gráficos sin bajar del objetivo
+        obj = pulso.objetivo_fps(u)
+        if hay_app_nvidia():
+            for i in range(1, MAX_BARRA + 1):
+                out.append({"k": "subir_barra%d" % i, "tipo": "barra", "sube": True,
+                            "que": "App de NVIDIA → Gráficos → este juego: mové la barra 2 marcas %shacia «Quality»" % ("más " if i > 1 else ""),
+                            "por": "Llegás a %d FPS con la placa al %d %%: le sobra. Subí calidad mientras no bajes de %d FPS." % (u.get("fps") or 0, u.get("gpuUso") or 0, round(obj * 0.9)),
+                            "volver": "Volvé la barra 2 marcas hacia «Performance»."})
+        for k, que, por in JUEGO["sobra"]:
+            out.append({"k": "juego_" + k, "tipo": "juego", "sube": True, "que": "En el juego: " + que, "por": por, "volver": "Volvé ese ajuste del juego a como estaba."})
+        return out
+    if c == "nada":
+        return out
     if hay_app_nvidia() and c != "vram":
         for i in range(1, MAX_BARRA + 1):
             out.append({"k": "barra%d" % i, "tipo": "barra", "que": "App de NVIDIA → Gráficos → este juego: mové la barra 2 marcas %shacia «Performance»" % ("más " if i > 1 else ""),
                         "por": "Baja de una vez lo que más pesa (sombras, distancia, efectos) con los valores que NVIDIA probó para tu placa. Lo que frena es %s." % ("el procesador" if c == "procesador" else "la placa"),
                         "volver": "Volvé la barra 2 marcas hacia «Quality»."})
-    for k, que, por in JUEGO[c]:
+    for k, que, por in JUEGO.get(c, JUEGO["procesador"]):
         out.append({"k": "juego_" + k, "tipo": "juego", "que": "En el juego: " + que, "por": por, "volver": "Volvé ese ajuste del juego a como estaba."})
     return out
 
-def _comparar(antes, despues):
-    """'mejor', 'peor' o 'igual' entre dos partidas (tirones por minuto y 1 % más lento; los FPS solo si caen mucho)."""
+def _comparar(antes, despues, sube=False):
+    """'mejor', 'peor' o 'igual' entre dos partidas (tirones por minuto y 1 % más lento; los FPS solo si caen mucho).
+    Si el paso subía gráficos: 'mejor' si sigue llegando al 90 % del objetivo sin más tirones ni 1 % más lento bajo 30."""
+    if sube:
+        obj = pulso.objetivo_fps(despues)
+        fd, td, ld = despues.get("fps") or 0, despues.get("tironesMin") or 0, despues.get("fps1low")
+        ok = fd >= obj * 0.9 and td <= max(5, (antes.get("tironesMin") or 0) * 1.15) and (ld is None or ld >= 30)
+        return "mejor" if ok else "peor"
     ta, td = antes.get("tironesMin"), despues.get("tironesMin")
     la, ld = antes.get("fps1low"), despues.get("fps1low")
     fa, fd = antes.get("fps"), despues.get("fps")
@@ -82,7 +103,7 @@ def _comparar(antes, despues):
 
 def estado(gid):
     """Lo que muestra la ficha: el paso en prueba y su resultado, o el próximo paso. None si no hay partidas con FPS."""
-    ps = [p for p in pulso.historial(gid) if p.get("fps")]
+    ps = [p for p in pulso.reevaluar(pulso.historial(gid)) if p.get("fps")]  # con el criterio de hoy
     if not ps: return None
     d = _leer().get(gid, {"hechos": [], "prueba": None})
     u = ps[-1]
@@ -91,9 +112,9 @@ def estado(gid):
         despues = [p for p in ps if p["fecha"] > pr["base"]["fecha"]]
         if not despues:
             return {"prueba": pr, "esperando": True}
-        r = _comparar(pr["base"], despues[0])
+        r = _comparar(pr["base"], despues[0], pr.get("sube"))
         return {"prueba": pr, "resultado": r, "partida": despues[0], "base": pr["base"]}
-    if u.get("estado") == "verde" and (u.get("tironesMin") or 0) < 5:
+    if u.get("estado") == "verde" and cuello(u) != "sobra":
         return {"verde": True, "partida": u}
     hechos = set(d.get("hechos", []))
     sig = next((p for p in _pasos(gid, u) if p["k"] not in hechos), None)

@@ -293,13 +293,48 @@ BNET_GRATIS = [  # (id, código battlenet://, nombre, año, GB, géneros, desc, 
     ("bnet_hots", "Hero", "Heroes of the Storm", "2015", 20, ["MOBA", "Multijugador"], "MOBA con los héroes de todos los universos de Blizzard. Gratis.", None),
     ("bnet_rumble", "GRY", "Warcraft Rumble", "2023", 6, ["Estrategia", "Acción"], "Estrategia de acción con miniaturas de Warcraft, en PC desde 2024. Gratis.", None),
     ("bnet_dimm", "ANBS", "Diablo Immortal", "2022", 25, ["Acción", "RPG", "Multijugador"], "RPG de acción online entre Diablo II y III. Gratis.", None),
+    ("bnet_scr", "S1", "StarCraft", "1998", 7, ["Estrategia", "RTS"], "La estrategia en tiempo real clásica de Blizzard, con Brood War. Gratis (la versión Remastered es paga).", None),
     ("bnet_cod", "AUKS", "Call of Duty: Warzone", "2022", 125, ["Acción", "Shooter", "Multijugador"], "Battle royale gratis de Call of Duty (se instala desde Call of Duty HQ).", "1962663"),
 ]
 BNET_PAGOS = {  # clave del registro -> (id, código, nombre, appid Steam)
     "diablo iv": ("bnet_d4", "Fen", "Diablo IV", "2344520"), "diablo iii": ("bnet_d3", "D3", "Diablo III", None),
     "diablo ii resurrected": ("bnet_d2r", "OSI", "Diablo II: Resurrected", None), "world of warcraft": ("bnet_wow", "WoW", "World of Warcraft", None),
-    "warcraft iii": ("bnet_w3", "W3", "Warcraft III: Reforged", None), "starcraft": ("bnet_scr", "S1", "StarCraft: Remastered", None),
+    "warcraft iii": ("bnet_w3", "W3", "Warcraft III: Reforged", None),
 }
+
+_bnet_log = (None, [])  # (firma del log, descargas)
+
+def bnet_descargas():
+    """Lo que Battle.net está bajando: su agente escribe en Agent-*.log bloques JSON con "product_family", "progress" (0 a 1),
+    "paused" e "installed" (visto con una descarga real de StarCraft, 13/11/2026). Se lee solo el final del log más nuevo."""
+    global _bnet_log
+    logs = glob.glob(r"C:\ProgramData\Battle.net\Agent\Agent.*\Logs\Agent-*.log")
+    if not logs:
+        return []
+    f = max(logs, key=os.path.getmtime)
+    firma = (f, os.path.getsize(f), os.path.getmtime(f))
+    if _bnet_log[0] == firma:
+        return _bnet_log[1]
+    if time.time() - firma[2] > 120:  # el agente escribe seguido mientras baja: log quieto = nada bajando
+        _bnet_log = (firma, []); return []
+    try:
+        with open(f, "rb") as h:
+            h.seek(max(0, firma[1] - 300000)); txt = h.read().decode("utf-8", "ignore")
+    except OSError:
+        return []
+    ult = {}
+    for m in re.finditer(r'"installed":\s*(true|false)[\s\S]{0,600}?"paused":\s*(true|false)[\s\S]{0,300}?"product_family":\s*"([^"]+)",\s*"progress":\s*([\d.eE-]+)', txt):
+        ult[m.group(3).lower()] = (m.group(1) == "true", m.group(2) == "true", float(m.group(4)))
+    por_cod = {cod.lower(): (gid, nombre) for gid, cod, nombre, *_ in BNET_GRATIS}
+    por_cod.update({cod.lower(): (gid, nombre) for gid, cod, nombre, _ in BNET_PAGOS.values()})
+    out = []
+    for fam, (inst, pausa, prog) in ult.items():
+        if inst or prog >= 1 or fam in ("agent", "bna", "battle.net"):
+            continue
+        gid, nombre = por_cod.get(fam, ("bnet_" + fam, fam.upper()))
+        out.append({"name": nombre, "pct": max(0, min(99, int(prog * 100))), "pausa": pausa, "id": gid})
+    _bnet_log = (firma, out)
+    return out
 def battlenet(exe):
     inst = {n: v for n, v in reg_hijas(HKLM, r"SOFTWARE\WOW6432Node\Blizzard Entertainment").items() if n.lower() != "battle.net"}
     for e in uninstall_entries():
@@ -320,6 +355,7 @@ def battlenet(exe):
         c = instalado(nombre)
         if c is not None:
             g.update(installed=True, dir=c, drive=drive(c), sizeGB=tam_gb(c) if c and os.path.isdir(c) else 0)
+            if exe and os.path.exists(exe): g["launch"] = [exe, "--exec=launch " + cod]  # instalado: arranca el juego directo (como hace Playnite)
         out.append(g)
     for k, v in inst.items():  # pagos: solo si están instalados
         kk = nrm(k)
@@ -328,7 +364,7 @@ def battlenet(exe):
                 c = str(v.get("InstallPath") or v.get("InstallLocation") or "")
                 out.append({"id": gid, "name": nombre, "store": "Battle.net", "installed": True, "dir": c, "drive": drive(c),
                             "sizeGB": tam_gb(c) if c and os.path.isdir(c) else 0, "dev": "Blizzard", "steam_hint": hint,
-                            "cover_builtin": None if hint else gid + ".jpg", "launch": ("battlenet://" + cod) if exe and os.path.exists(exe) else None})
+                            "cover_builtin": None if hint else gid + ".jpg", "launch": [exe, "--exec=launch " + cod] if exe and os.path.exists(exe) else None})
     return _wow_versiones(out, exe)
 
 # WoW: cada versión (Retail, Classic, Aniversario...) se instala aparte, en su carpeta dentro de la de WoW.
@@ -393,6 +429,8 @@ def rockstar():
                 break
         out.append(g)
     lanzar = LAUNCHERS["Rockstar"]["abrir"](LAUNCHERS["Rockstar"]["exe"]()) if "abrir" in LAUNCHERS["Rockstar"] else None
+    for g in out:  # no instalado: se abre el launcher de Rockstar, que lo instala desde su biblioteca
+        if not g["launch"]: g["launch"] = lanzar
     out += [_sin_identificar("Rockstar", h, f, lanzar) for h, f in sorted(raras)]
     return out
 
@@ -594,7 +632,7 @@ def google_play():
                 continue
             vistos.add(m.group(1))
             g = {"id": "gplay_" + re.sub(r"[^A-Za-z0-9]", "", m.group(1))[:40], "name": os.path.splitext(os.path.basename(f))[0],
-                 "store": "Google Play", "installed": True, "dir": "", "launch": "googleplaygames://launch/?id=%s&lid=1&pid=1" % m.group(1)}
+                 "store": "Google Play", "installed": True, "dir": "", "pkg": m.group(1), "launch": "googleplaygames://launch/?id=%s&lid=1&pid=1" % m.group(1)}
             # portada: Google Play guarda en la PC el fondo y el logo de cada juego (no se baja nada)
             img = os.path.join(GPLAY_IMG, m.group(1))
             if os.path.exists(img + ".background.png"):
@@ -735,6 +773,101 @@ def epic_descargas(abierto=None):
         out.append({"name": m.get("DisplayName", ""), "pct": max(0, min(99, int(c[0] * 100 / total))), "pausa": not abierto,
                     "id": "epic_" + re.sub(r"[^A-Za-z0-9]", "", m.get("AppName", "") or m.get("DisplayName", ""))[:40]})
     return out
+
+def ubisoft_descargas(abierto=True):
+    """Lo que Ubisoft Connect está bajando: mientras baja, la carpeta del juego tiene uplay_download\\<id>\\<hash>.state,
+    un byte por pedazo del juego (1 = ya bajó). % = pedazos en 1 / total (visto con una descarga real, 13/11/2026)."""
+    raices = {os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), r"Ubisoft\Ubisoft Game Launcher\games")}
+    try:
+        with open(os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Ubisoft Game Launcher\settings.yaml"), encoding="utf-8") as h:
+            for linea in h:
+                if "game_installation_path:" in linea:
+                    raices.add(os.path.normpath(linea.split(":", 1)[1].strip().strip('"')))
+    except OSError:
+        pass
+    out = []
+    for r in raices:
+        for f in glob.glob(os.path.join(r, "*", "uplay_download", "*", "*.state")):
+            try:
+                with open(f, "rb") as h: b = h.read()
+            except OSError:
+                continue
+            if not b: continue
+            juego = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(f))))
+            uid = os.path.basename(os.path.dirname(f))
+            out.append({"name": juego, "pct": min(99, b.count(1) * 100 // len(b)), "pausa": not abierto, "id": "ubi_" + uid})
+    return out
+
+GOG_JOBS = r"C:\ProgramData\GOG.com\Galaxy\storage\jobs.db"
+_gog_dl = (None, [])
+
+def gog_descargas(abierto=True):
+    """Lo que GOG Galaxy está instalando o actualizando: storage\\jobs.db (InstallProductJobs / UpdateProductJobs) da nombre,
+    id, carpeta y tamaño; el avance que anota casi no se actualiza, así que el % sale de lo que ya ocupa la carpeta del juego
+    (visto con una descarga real de Beneath a Steel Sky, 13/11/2026)."""
+    global _gog_dl
+    if not os.path.exists(GOG_JOBS):
+        return []
+    firma = tuple((os.path.getsize(r), os.path.getmtime(r)) if os.path.exists(r) else None for r in (GOG_JOBS, GOG_JOBS + "-wal"))
+    if _gog_dl[0] != firma:
+        trabajos = []
+        c = _sqlite(GOG_JOBS)
+        if c:
+            try:
+                trabajos = c.execute("select gameName, productId, installationPrefix, downloadSize from InstallProductJobs").fetchall()
+                trabajos += [(n, p, "", s) for n, p, s in c.execute("select gameName, productId, downloadSize from UpdateProductJobs")]
+            except Exception:
+                pass
+            finally:
+                c.close()
+        _gog_dl = (firma, trabajos)
+    out = []
+    if not _gog_dl[1]:
+        _gog_base.clear(); return out
+    escrito = _gog_escrito()
+    for nombre, pid, prefijo, total in _gog_dl[1]:
+        base = _gog_base.setdefault(pid, escrito)  # lo que GOG ya había escrito cuando apareció el trabajo
+        pct = max(0, min(99, int((escrito - base) * 100 / total))) if total else 0
+        out.append({"name": str(nombre or pid), "pct": pct, "pausa": not abierto, "id": "gog_%s" % pid})
+    for p in [p for p in _gog_base if p not in {t[1] for t in _gog_dl[1]}]: _gog_base.pop(p)
+    return out
+
+_gog_base = {}  # productId: bytes escritos por GOG al empezar
+
+def _gog_escrito():
+    """Bytes que escribieron en el disco los procesos de GOG Galaxy. Mientras baja, Galaxy no deja los archivos en la carpeta
+    del juego hasta el final (medirla daba 0 %), así que el avance sale de cuánto escribió desde que empezó el trabajo."""
+    import psutil
+    t = 0
+    for p in psutil.process_iter(["name"]):
+        if (p.info.get("name") or "").lower().startswith("galaxy"):
+            try: t += p.io_counters().write_bytes
+            except Exception: pass
+    return t
+
+_itch_dl = (None, [])  # (firma de la base, nombres), para no copiarla si no cambió
+
+def itch_descargas():
+    """Nombres de lo que itch.io está bajando (tabla downloads de su base, sin terminar ni descartado).
+    El % no se puede: baja el comprimido y lo descomprime a la vez en la carpeta final (lo vimos con una descarga real)."""
+    global _itch_dl
+    if not os.path.exists(ITCH_DB):
+        return []
+    firma = tuple((os.path.getsize(r), os.path.getmtime(r)) if os.path.exists(r) else None for r in (ITCH_DB, ITCH_DB + "-wal"))
+    if _itch_dl[0] == firma:
+        return _itch_dl[1]
+    nombres = []
+    c = _sqlite(ITCH_DB)
+    if c:
+        try:
+            nombres = [r[0] for r in c.execute("select g.title from downloads d join games g on g.id=d.game_id "
+                                               "where d.finished_at is null and not coalesce(d.discarded,0) order by d.position") if r[0]]
+        except Exception:
+            pass
+        finally:
+            c.close()
+    _itch_dl = (firma, nombres)
+    return nombres
 
 def huella_bases():
     """Qué juegos hay en las bases de GOG, Amazon e itch (no su fecha: los launchers las tocan seguido aunque nada cambie)."""

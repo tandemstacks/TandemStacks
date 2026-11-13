@@ -46,11 +46,9 @@ class Nucleo:
                 bib = steam.biblioteca_local()  # sin clave: lo que Steam guardó de tu biblioteca en la PC
                 local = bib is not None
             vistos = set()
-            jugado = steam.tiempos(self.cfg.get("steam_id"))  # horas y última vez, de los archivos de Steam (sin red)
             for aid, nombre, mins, ult in (bib or []):
                 if aid not in inst and steam.NO_JUEGO.search(nombre or ""):
                     continue
-                if mins or ult: jugado[aid] = (max(mins, jugado.get(aid, (0, 0))[0]), max(ult, jugado.get(aid, (0, 0))[1]))  # la Web API suma otras PC
                 g = {"id": aid, "appid": aid, "name": nombre, "store": "Steam", "installed": False, "launch": "steam://run/" + aid}
                 if aid in inst:
                     g.update(installed=True, sizeGB=inst[aid]["gb"], drive=inst[aid]["drive"], dir=inst[aid]["dir"])
@@ -58,10 +56,6 @@ class Nucleo:
             for aid, i in inst.items():
                 if aid not in vistos:
                     juegos.append({"id": aid, "appid": aid, "name": i["name"], "store": "Steam", "installed": True, "sizeGB": i["gb"], "drive": i["drive"], "dir": i["dir"], "launch": "steam://run/" + aid})
-            for g in juegos:
-                mins, ult = jugado.get(g["appid"], (0, 0))
-                if mins: g["horas"] = round(mins / 60, 1)
-                if ult: g["ultima"] = ult
             steam_info = ("%d juegos · sin clave API puede faltar alguno" % len(bib)) if local else ("%d juegos" % len(bib)) if bib is not None else ("%d instalados · sin clave API no se ve la biblioteca completa" % len(inst) if not self.cfg.get("steam_api_key") else "%d instalados · la clave o el perfil no dejaron leer la biblioteca" % len(inst))
             # otras tiendas
             paso("Epic")
@@ -336,11 +330,24 @@ class Api:
         except Exception: bajando = []
         try: bajando += stores.epic_descargas("Epic" in abiertas)  # se reusa la lista de procesos de watch
         except Exception as e: paths.log("descargas epic", e)
+        try: bajando += stores.ubisoft_descargas("Ubisoft" in abiertas)
+        except Exception as e: paths.log("descargas ubisoft", e)
+        try: bajando += stores.gog_descargas("GOG" in abiertas)
+        except Exception as e: paths.log("descargas gog", e)
+        try: bajando += stores.bnet_descargas()
+        except Exception as e: paths.log("descargas battle.net", e)
         try:  # las demás tiendas: no dicen qué ni cuánto falta, pero sí a qué velocidad escriben en el disco
             for t, v in watch.descargando(NUC.launchers).items():
-                if t in ("Steam", "Epic") and any(d.get("id", "").startswith("epic_") == (t == "Epic") for d in bajando):
-                    continue  # Steam y Epic ya muestran nombre y porcentaje
-                bajando.append({"tienda": t, "vel": v})
+                pref = {"Epic": "epic_", "Ubisoft": "ubi_", "Battle.net": "bnet_", "GOG": "gog_"}
+                if t in ("Steam", *pref) and any(
+                        (d.get("id", "").startswith(pref[t]) if t in pref else not d.get("id", "").startswith(tuple(pref.values())))
+                        for d in bajando if d.get("id")):
+                    continue  # Steam, Epic, Ubisoft y Battle.net ya muestran nombre y porcentaje
+                d = {"tienda": t, "vel": v}
+                if t == "itch.io":  # itch dice qué baja, no cuánto le falta
+                    try: d["name"] = ", ".join(stores.itch_descargas())
+                    except Exception: pass
+                bajando.append(d)
         except Exception as e: paths.log("descargas", e)
         return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo(), abiertas=abiertas)
 
@@ -379,7 +386,7 @@ class Api:
 
     def partidas(self, ids):
         """Todas las partidas guardadas (hasta 200 por juego), solo al abrir el historial."""
-        return {i: pulso.historial(i) for i in ids or []}
+        return {i: pulso.reevaluar(pulso.historial(i)) for i in ids or []}  # con el criterio de hoy
 
     def partidas_cuenta(self, ids):
         return sum(len(pulso.historial(i)) for i in ids or [])
@@ -588,7 +595,8 @@ class Api:
         if des:  # desinstalar un juego de otra tienda: comando propio si la tienda lo tiene, si no Aplicaciones instaladas de Windows
             g = next((x for x in NUC.juegos if x["id"] == des), None)
             u = g.get("uninstall") if g else None
-            if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]))
+            if g and not u: u = _desinstalador(g)  # el que el juego dejó en "Programas instalados" de Windows
+            if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]) or None)
             elif u: os.startfile(u)
             else: os.startfile("ms-settings:appsfeatures")
             return g["store"] if u and g else True
@@ -602,6 +610,20 @@ class Api:
             else: os.startfile(d)
             return g["store"]  # la página espera a que abra su launcher
         return False
+
+def _desinstalador(g):
+    """Comando de desinstalación de Windows del juego: la entrada cuya carpeta es la del juego (o, si no, con el mismo nombre)."""
+    norm = lambda p: str(p or "").strip('"').lower().rstrip("\\/")
+    d, n = norm(g.get("dir")), (g.get("name") or "").lower()
+    ent = detect.uninstall_entries()
+    e = next((e for e in ent if d and norm(e.get("InstallLocation")) == d), None)         or next((e for e in ent if n and str(e.get("DisplayName", "")).lower() == n), None)
+    cmd = str((e or {}).get("UninstallString") or "")
+    if not cmd: return None
+    import shlex
+    try: partes = shlex.split(cmd, posix=False)
+    except ValueError: return None
+    partes = [x.strip('"') for x in partes]
+    return partes if partes and (os.path.exists(partes[0]) or partes[0].lower().endswith("msiexec.exe")) else None
 
 _DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
            (detect.HKLM, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
@@ -728,6 +750,33 @@ def _tamano_inicial():
     except Exception:
         return 1400, 900, None, None
 
+VENTANA = os.path.join(os.path.dirname(paths.CONFIG), "ventana.json")  # tamaño, lugar y si estaba maximizada al cerrar
+
+def _ventana_guardada():
+    """La ventana como quedó la última vez, si todavía entra en alguna pantalla (si se desenchufó un monitor, arranca centrada)."""
+    try:
+        with open(VENTANA, encoding="utf-8") as f: d = json.load(f)
+        w, h, x, y = int(d["w"]), int(d["h"]), int(d["x"]), int(d["y"])
+        for p in webview.screens:
+            px, py = getattr(p, "x", 0) or 0, getattr(p, "y", 0) or 0
+            if px - 50 <= x < px + p.width - 100 and py - 10 <= y < py + p.height - 100:  # que se vea la barra del título
+                return min(w, p.width), min(h, p.height), x, y, bool(d.get("max"))
+    except Exception:
+        pass
+    return None
+
+def _guardar_ventana(v, estado):
+    """Al cerrar: guarda el tamaño y el lugar de la ventana normal (no de la maximizada ni la minimizada)."""
+    try:
+        d = dict(estado.get("normal") or {})
+        if not estado.get("max") and not NUC.minimizada and v.width and v.height:
+            d = {"w": v.width, "h": v.height, "x": v.x, "y": v.y}
+        if d:
+            d["max"] = bool(estado.get("max"))
+            with open(VENTANA, "w", encoding="utf-8") as f: json.dump(d, f)
+    except Exception:
+        pass
+
 def _minimizada(ventana, si):
     """Minimizada no se ve nada: el visor baja su memoria y se suspende, así la página tampoco queda consultando."""
     NUC.minimizada = si
@@ -809,10 +858,23 @@ def main():
         build.escribir([], [], NUC.cfg, NUC.estado)
         try: open(marca, "w").write(huella)
         except OSError: pass
-    ancho, alto, x, y = _tamano_inicial()
+    previa = _ventana_guardada()  # como quedó la última vez; si no, grande y centrada
+    ancho, alto, x, y = previa[:4] if previa else _tamano_inicial()
+    maxi = bool(previa and previa[4])
     con_windows = "--inicio" in sys.argv  # la abrió Windows al iniciar: arranca minimizada y dormida
     v = webview.create_window("TandemStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
-                              min_size=(820, 520), background_color="#f2f2ef", minimized=con_windows)
+                              min_size=(820, 520), background_color="#f2f2ef", minimized=con_windows, maximized=maxi and not con_windows)
+    est = {"max": maxi, "normal": {"w": ancho, "h": alto, "x": x, "y": y} if previa else None}
+    def _normal():  # anota el tamaño de la ventana normal (al maximizar ya no se puede leer)
+        try:
+            u = ctypes.windll.user32; h = u.FindWindowW(None, v.title)
+            if not est["max"] and not NUC.minimizada and not (h and (u.IsZoomed(h) or u.IsIconic(h))): est["normal"] = {"w": v.width, "h": v.height, "x": v.x, "y": v.y}
+        except Exception: pass
+    v.events.resized += lambda *a: _normal()
+    v.events.moved += lambda *a: _normal()
+    v.events.maximized += lambda: est.update(max=True)
+    v.events.restored += lambda: est.update(max=False)
+    v.events.closing += lambda: _guardar_ventana(v, est)
     v.events.shown += lambda: _poner_icono(v, icono)
     if con_windows: v.events.shown += lambda: _minimizada(v, True)
     v.events.minimized += lambda: _minimizada(v, True)

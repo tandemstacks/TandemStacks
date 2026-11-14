@@ -55,8 +55,10 @@ def _correr(args, timeout=10):
 
 _nv_ultimo = [0, {}]  # última lectura de nvidia-smi: los relojes y Pulso la comparten si tiene menos de 3 s
 
-def nvsmi():
-    if time.time() - _nv_ultimo[0] < 3: return dict(_nv_ultimo[1])
+def nvsmi(guardada=False):
+    """guardada=True (relojes con un juego abierto): devuelve la última muestra de Pulso sin abrir nvidia-smi otra vez."""
+    if time.time() - _nv_ultimo[0] < (20 if guardada else 3): return dict(_nv_ultimo[1])
+    if guardada: return None
     v = _nvsmi()
     _nv_ultimo[:] = [time.time(), v]
     return dict(v)

@@ -47,6 +47,7 @@ def _anotar(**suma):
 _rutas = {}  # (pid, cuándo arrancó): ruta del programa. Pedir la ruta obliga a abrir el proceso: se pide una sola vez por proceso
 
 _candado = threading.Lock()
+EN_JUEGO = [False]  # hay un juego andando (lo mira la página para consultar menos seguido y no robarle al juego)
 
 def _procs():
     """[(proceso, nombre, ruta)] de todo lo que corre. Se arma entero bajo candado: lo usan dos hilos a la vez."""
@@ -258,6 +259,7 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None, al_medir=None):
         time.sleep(INTERVALO if desde else REPOSO)
         try:
             ahora_j = en_curso(juegos())
+            EN_JUEGO[0] = bool(ahora_j)
             if ahora_j:
                 ahora = time.time()
                 if not desde and al_jugar:

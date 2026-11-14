@@ -370,7 +370,8 @@ class Api:
         except Exception as e: paths.log("descargas", e)
         try: NUC.estado["desinstalando"] = _desinstalando()
         except Exception as e: paths.log("desinstalando", e)
-        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo(), abiertas=abiertas)
+        return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo(), abiertas=abiertas,
+                    enJuego=watch.EN_JUEGO[0])
 
     def top(self, tipo):
         """Para la ventana grande de los relojes: qué programas usan más procesador o RAM."""
@@ -765,9 +766,12 @@ def _en_vivo():
                "ramTotal": round(m.total / 1073741824), "baja": max(0, round(baja)), "sube": max(0, round(sube)),
                "dlee": max(0, round(dl)), "descr": max(0, round(de)), "dOcup": max(0, round(ocup))}
         # placa de video: solo NVIDIA (nvidia-smi viene con el driver). Si no está, no se vuelve a probar
+        # con un juego medido por Pulso se usa su última muestra (cada 5 s): no se abre nvidia-smi otra vez
         if _gpu[0] is not False:
-            v = pulso.nvsmi()
-            if v:
+            midiendo = _gpu[0] and bool(pulso._activos)
+            v = pulso.nvsmi(guardada=midiendo)
+            if v is None: pass  # Pulso todavía no midió: esta vez sin placa
+            elif v:
                 _gpu[0] = True
                 out.update(gpu=round(v["gpu_uso"]), vram=round(v["vram"] / 1024, 1), vramTotal=round(v["vram_total"] / 1024),
                            vramPct=round(100 * v["vram"] / v["vram_total"]) if v["vram_total"] else 0,

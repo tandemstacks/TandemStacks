@@ -1185,8 +1185,8 @@ function sincronizar(){
 todo();
 try{if(sessionStorage.getItem('menuAbierto')){sessionStorage.removeItem('menuAbierto');$('#ddmenu').open=true;}}catch(e){}
 function alArrancar(){
-  // mientras trabaja pregunta cada 1 s para que el texto vaya cambiando; quieto, cada 4 s
-  (function ciclo(){sincronizar();setTimeout(ciclo,EST.fase&&EST.fase!=='listo'?1000:4000);})();
+  // mientras trabaja pregunta cada 1 s para que el texto vaya cambiando; quieto, cada 4 s; con un juego abierto, cada 10 s (no robarle al juego)
+  (function ciclo(){sincronizar();setTimeout(ciclo,EST.fase&&EST.fase!=='listo'?1000:EST.enJuego?10000:4000);})();
   if(CONF.primer_arranque){api('preferencia','primer_arranque',false);setTimeout(()=>configuracion(true),800);}  // se muestra una sola vez
   setTimeout(()=>api('version_nueva').then(tag=>{if(tag){$('#updtag').textContent=tag;$('#updlink').onclick=()=>api('actualizar').then(r=>{if(r==='ok'){$('#upd').classList.remove('show');EST={fase:'actualizando',msg:'Descargando la actualización…',hecho:0,total:0};progreso();}});$('#upd').classList.add('show');}}).catch(()=>{}),3000);
 }

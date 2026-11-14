@@ -278,7 +278,8 @@ const TXT={
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
-  jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ver en la tienda',desinstalar:'Desinstalar',desinstalando:'Desinstalando…',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
+  jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ver en la tienda',desinstalar:'Desinstalar',desinstalando:'Desinstalando…',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',
+  desPasos:{'Epic':'Epic abrió tu Biblioteca: en <b>{j}</b> tocá <b>⋯</b> → <b>Desinstalar</b>.','GOG':'GOG Galaxy abrió <b>{j}</b>: tocá <b>⚙</b> (al lado de Jugar) → <b>Administrar instalación</b> → <b>Desinstalar</b>.','itch.io':'itch abrió <b>{j}</b>: tocá <b>⚙</b> (al lado de Jugar) → <b>Desinstalar</b>.','Google Play':'En Google Play Juegos andá a <b>Biblioteca</b>, tocá <b>{j}</b> con el botón derecho (o <b>⋮</b>) → <b>Desinstalar</b>.','Xbox':'Windows abrió <b>{j}</b>: tocá <b>Desinstalar</b>.'},desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
   loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',horas:'horas jugadas',verLogros:'Ver tus logros en Steam',ultima:'última vez',logros:'logros',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
   listo:'Listo: si hace falta confirmar, fijate en la ventana que se abrió.',noPudo:'No se pudo.',disco:'disco',
   tLeida:'Leída',tParcial:'Parcial',tNo:'No instalada',clicCfg:'Clic para ver cómo configurarla',
@@ -304,7 +305,8 @@ cerrar:'Cerrar',ningunaAbierta:'ninguna abierta',bajandoEn:'Bajando en',cancelar
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TandemStacks se cierra y vuelve a abrir sola…':'Installing the new version: TandemStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
-  jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'See in store',desinstalar:'Uninstall',desinstalando:'Uninstalling…',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
+  jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'See in store',desinstalar:'Uninstall',desinstalando:'Uninstalling…',desinstalarWin:'Uninstall (opens Windows Installed apps)',
+  desPasos:{'Epic':'Epic opened your Library: on <b>{j}</b> click <b>⋯</b> → <b>Uninstall</b>.','GOG':'GOG Galaxy opened <b>{j}</b>: click <b>⚙</b> (next to Play) → <b>Manage installation</b> → <b>Uninstall</b>.','itch.io':'itch opened <b>{j}</b>: click <b>⚙</b> (next to Play) → <b>Uninstall</b>.','Google Play':'In Google Play Games go to <b>Library</b>, right-click <b>{j}</b> (or <b>⋮</b>) → <b>Uninstall</b>.','Xbox':'Windows opened <b>{j}</b>: click <b>Uninstall</b>.'},desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
   loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',horas:'hours played',ultima:'last played',logros:'achievements',rev:['Overwhelmingly positive','Very positive','Mostly positive','Mixed','Mostly negative','Very negative'],notaFicha:'Install and uninstall open the store; you confirm there.',
   listo:'Done: if confirmation is needed, check the window that opened.',noPudo:'It didn\'t work.',disco:'disk',
   tLeida:'Read',tParcial:'Partial',tNo:'Not installed',clicCfg:'Click to see how to set it up',
@@ -807,6 +809,9 @@ function jugarYa(g){
   noti(L.abriendo.replace('{j}',esc(g.name)),5); accion(q);
 }
 function accion(q){const fin=ok=>{
+    // tiendas sin pregunta propia de desinstalar: se abrió su biblioteca y se dice qué botón tocar
+    const di=/desinstalar=([^&]+)/.exec(q), it=ok&&di&&RAW.find(x=>x.id===decodeURIComponent(di[1]));
+    if(it&&L.desPasos[it.store]) noti(L.desPasos[it.store].replace('{j}',esc(it.name)),25);
     if(ok&&/tipo=uninstall|desinstalar=/.test(q)&&$('#bg').classList.contains('show')){cerrar();return;}  // desinstalar: la tienda ya abrió su pregunta, la ficha se cierra
     const n=$('#nota');if(n)n.textContent=ok?L.listo:L.noPudo;};
   if(/tipo=install|lanzar=/.test(q)) esperaDescarga=Date.now();

@@ -131,7 +131,8 @@ vidia.json` y "Deshacer" vuelve exacto (probado en Bodycam). La partida siguient
 
 ## Mismas funciones en todas las tiendas (12/11/2026)
 
-- **Desinstalar:** si la tienda no tiene comando propio, `app._desinstalador(g)` usa el desinstalador que el juego dejó en "Programas instalados" (misma carpeta o mismo nombre); si no hay, Aplicaciones de Windows.
+- **Desinstalar lleva a la tienda** (pedido del dueño 14/11/2026: "te tiene que llevar a la biblioteca y dejarte en el botón de desinstalar"). Con pregunta propia (Steam, Ubisoft, Riot, Battle.net, EA, Rockstar, Amazon): se abre esa pregunta. Sin link de desinstalar: Epic abre su Biblioteca (`com.epicgames.launcher://store/library`; `://library` abre la tienda), GOG abre el juego en Galaxy (`openGameView`; Galaxy no tiene comando de desinstalar), itch el juego en itch, Google Play su launcher (solo entiende `launch`), Xbox la página de la app en Windows; y la página muestra 25 s qué botón tocar (`L.desPasos`). No se puede hacer clic adentro de otro programa.
+- **Desinstalar (comando suelto):** si la tienda no tiene comando propio, `app._desinstalador(g)` usa el desinstalador que el juego dejó en "Programas instalados" (misma carpeta o mismo nombre); si no hay, Aplicaciones de Windows.
 - **Cancelar descarga:** todas las tiendas que bajan muestran ✕; salvo Steam (que desinstala lo a medio bajar), abre su launcher para cancelar ahí.
 - **Battle.net:** los instalados arrancan directo con `Battle.net.exe --exec="launch <código>"`; los no instalados abren su página (`battlenet://`).
 - **Rockstar:** los no instalados abren el launcher de Rockstar para instalarlos.

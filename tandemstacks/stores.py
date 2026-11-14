@@ -113,8 +113,9 @@ def epic():
                                                    "name": m["DisplayName"], "store": "Epic", "epic_ns": m.get("CatalogNamespace", "")}
         g.update(installed=True, dir=loc, drive=drive(loc), sizeGB=round(m.get("InstallSize", 0) / 1073741824, 1),
                  launch=_epic_uri(m.get("CatalogNamespace"), m.get("CatalogItemId"), m.get("AppName")))
-        # sin "uninstall": Epic no tiene link para desinstalar (su registro dice "no encuentro manejador" para ?action=uninstall,
-        # 13/11/2026); Desinstalar abre Epic y ahí se hace desde Biblioteca → ⋯ → Desinstalar
+        # Epic no tiene link para desinstalar (su registro dice "no encuentro manejador" para ?action=uninstall, 13/11/2026):
+        # se abre su Biblioteca (store/library, probado 14/11/2026) y la página explica: ⋯ del juego → Desinstalar
+        g["uninstall"] = "com.epicgames.launcher://store/library"
         juegos[m.get("CatalogItemId") or g["id"]] = g
     return list(juegos.values())
 
@@ -572,9 +573,13 @@ def gog(exe):
         g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta),
                  launch=[exe, "/command=runGame", "/gameId=" + pid, "/path=" + carpeta] if exe and os.path.exists(exe)
                  else (juego_exe if os.path.exists(juego_exe) else None))
-        if desins is None: desins = {str(e.get("_key", "")): str(e.get("UninstallString", "")) for e in uninstall_entries()}  # se lee una sola vez
-        uni = desins.get(pid + "_is1", "")
-        if uni: g["uninstall"] = uni
+        # con Galaxy: se abre el juego en la biblioteca de Galaxy (⚙ → Administrar instalación → Desinstalar; Galaxy no tiene
+        # comando para desinstalar y su desinstalador suelto lo deja creyendo que sigue instalado). Sin Galaxy: el desinstalador del juego
+        if exe and os.path.exists(exe): g["uninstall"] = "goggalaxy://openGameView/gog_" + pid
+        else:
+            if desins is None: desins = {str(e.get("_key", "")): str(e.get("UninstallString", "")) for e in uninstall_entries()}  # se lee una sola vez
+            uni = desins.get(pid + "_is1", "")
+            if uni: g["uninstall"] = uni
         juegos[pid] = g
     return list(juegos.values())
 

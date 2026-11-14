@@ -117,6 +117,9 @@ main{padding:16px 22px 60px}
 .reloj img,.reloj .ph{width:100%;height:100%;object-fit:cover;display:block}
 .card .pct{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:124px;height:124px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(0,0,0,.8) 0,rgba(0,0,0,.66) 30%,rgba(0,0,0,0) 70%);color:#fff;font-weight:700;font-size:18px;line-height:1.1;pointer-events:none}
 .card .pct small{font-size:12px;opacity:.9}
+.card.desins>img,.card.desins>.ph{filter:grayscale(1) brightness(.45)}.card.desins{cursor:default}
+.card .pct.dsn{width:auto;height:auto;border-radius:4px;padding:8px 12px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;background:rgba(0,0,0,.75);animation:dsn 1.6s ease-in-out infinite}
+@keyframes dsn{50%{opacity:.55}}
 .tag .gris{opacity:.45;filter:grayscale(1)}
 .card.off:hover img,.card.off:hover .ph{filter:none}
 .ph{color:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;font-size:15px;line-height:1.2}
@@ -177,7 +180,7 @@ details.mas{margin:4px 0 8px}details.mas summary{cursor:pointer;color:var(--acct
 .btn.del:hover{filter:none;color:#fff;background:var(--bad)}
 .x{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--mu);font-size:26px;cursor:pointer}
 .nota{font-size:12px;color:var(--mu);margin-top:10px;min-height:1em}
-.lgb{display:inline-flex;vertical-align:-3px;margin-right:2px}
+.lgb{display:inline-flex;vertical-align:-3px;margin-right:8px}
 .pulso{background:var(--bg);border-radius:4px;padding:10px 12px;margin:0 0 14px}.pulso .stats{margin:6px 0}
 .ptit{display:flex;align-items:center;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}.sem{width:11px;height:11px;border-radius:50%;flex:none}
 .causas{margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.5}
@@ -264,18 +267,18 @@ document.documentElement.dataset.tema=CONF.tema||'claro';
 const $=s=>document.querySelector(s);
 // signo de ayuda: al pasar el mouse muestra la explicación (el clic no dispara la acción del botón)
 const ayuda=t=>`<span class="ayuda" onclick="event.stopPropagation()">?<span class="tip">${esc(t)}</span></span>`;
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));  // también ' : hay textos dentro de onclick='…'
 const api=(fn,...a)=>(window.pywebview&&window.pywebview.api&&window.pywebview.api[fn])?window.pywebview.api[fn](...a):Promise.reject('sin api');
 
 // ---------- idioma ----------
 const TXT={
  spanish:{sinId:'Este juego está en tu cuenta de {t}, pero TandemStacks todavía no sabe cuál es. Si nos avisás cuál es, en la próxima versión aparece con su nombre para todos. Código:',avisar:'Avisar cuál es',
-  noComprados:'No comprados',catAyuda:'Juegos de las tiendas que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',sinOfertas:'No hay ofertas con estos filtros. Solo GOG, Steam e itch.io publican qué juegos están en oferta.',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TandemStacks abierta. Tocá para ver tus medallas.',abriendo:'Abriendo',contacto:'Contacto:',gratis:'Gratis',descuento:'Descuento',buscandoOf:'Buscando ofertas en {t}…',noPublica:'{t} no publica qué juegos están en oferta. Las tiendas que sí lo hacen son GOG, Steam e itch.io.',noPublican:'{t} no publican qué juegos están en oferta. Las tiendas que sí lo hacen son GOG, Steam e itch.io.',noOficial:'TandemStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
+  noComprados:'No comprados',catAyuda:'Juegos de las tiendas que no están en tu biblioteca. Tocá uno y se abre en su tienda para comprarlo (si ya lo tenés, la tienda te ofrece instalarlo).',sinOfertas:'No hay ofertas con estos filtros. Solo GOG, Steam e itch.io publican qué juegos están en oferta.',ncElegir:'Está en varias tiendas. ¿En cuál lo querés ver?',nivel:'Nivel',nivelAyuda:'Horas jugadas con TandemStacks abierta. Tocá para ver tus medallas.',contacto:'Contacto:',gratis:'Gratis',descuento:'Descuento',buscandoOf:'Buscando ofertas en {t}…',noPublica:'{t} no publica qué juegos están en oferta. Las tiendas que sí lo hacen son GOG, Steam e itch.io.',noPublican:'{t} no publican qué juegos están en oferta. Las tiendas que sí lo hacen son GOG, Steam e itch.io.',noOficial:'TandemStacks no es un producto oficial de ninguna tienda ni está respaldado por ellas. Los nombres y logos de las tiendas y de los juegos son de sus dueños.',medallas:'Medallas',medAyuda:'Una medalla cada 5 niveles. Cada nivel pide un poco más que el anterior: el nivel 100 lleva unas 2.200 horas, casi 3 años jugando 2 horas por día.',medTiers:['Bronce','Plata','Oro','Platino','Leyenda'],medFalta:'a las {h} h',medLograda:'lograda',nivelMax:'nivel máximo',bajando:'Bajando',antPag:'Página anterior',sigPag:'Siguiente página',pagina:'Página',cargandoCat:'Cargando catálogo…',
   buscar:'Buscar juego...',orden:['Orden: nombre','Mejor valorados','Más pesados','Más nuevos'],ordenNC:['Más populares','Orden: nombre','Más nuevos'],grilla:'Ver en grilla',enLista:'Ver en lista',porPag:'{n} por página',generos:'Géneros',todos:'Todos',instalados:'Instalados',noInst:'No instalados',de:'de',juegos:'juegos',sinRes:'Sin resultados.',verTienda:'Ver cómo funciona',
   vacio:'No encontré juegos. Revisá la configuración (⚙): quizás falte la clave de Steam o algún launcher.',buscando:'Buscando tus juegos…',trabajando:'Trabajando…',
   msgs:{},
   discos:'Discos',verJuegos:'ver juegos',libres:'libres de',otros:'Otros archivos',libre:'Libre',cadaColor:'Cada color es un juego',pocoEsp:'Poco espacio en',pocoEsp2:'conviene desinstalar algo que no juegues.',sinJuegos:'Sin juegos',
-  jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ver en la tienda',desinstalar:'Desinstalar',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
+  jugar:'Jugar',instalar:'Instalar',instalarEn:'Instalar en',abrir:'Abrir',ficha:'Ver en la tienda',desinstalar:'Desinstalar',desinstalando:'Desinstalando…',desinstalarWin:'Desinstalar (abre Aplicaciones instaladas de Windows)',desdeDonde:'¿Desde dónde lo instalás?',cancelar:'Cancelar',instalarPuntos:'Instalar…',
   loTenes:'Lo tenés en',instalado:'Instalado',noInstalado:'No instalado',ocupaEn:'Ocupa en',necesita:'Necesita (requisito)',ocupa:'Ocupa',resenas:'Reseñas Steam',horas:'horas jugadas',verLogros:'Ver tus logros en Steam',ultima:'última vez',logros:'logros',rev:['Extremadamente positivas','Muy positivas','Mayormente positivas','Mixtas','Mayormente negativas','Muy negativas'],notaFicha:'Instalar y desinstalar abren la tienda; la confirmación la hacés ahí.',
   listo:'Listo: si hace falta confirmar, fijate en la ventana que se abrió.',noPudo:'No se pudo.',disco:'disco',
   tLeida:'Leída',tParcial:'Parcial',tNo:'No instalada',clicCfg:'Clic para ver cómo configurarla',
@@ -296,12 +299,12 @@ vAyuda:{cpu:{lineas:['Uso del procesador'],que:'cuánto está trabajando el proc
 cerrar:'Cerrar',ningunaAbierta:'ninguna abierta',bajandoEn:'Bajando en',cancelarDl:'Cancelar descarga en',cancelarAyuda:'Se abre {t} para cancelar la descarga; la confirmación la hacés ahí.',cerrandoT:'Cerrando tiendas…',cerradasT:'{n} tiendas cerradas · {mb} liberados',conJuegoT:'Hay un juego abierto: cerralo primero',cAhorro:'Lo que ahorró TandemStacks',cAhL:'launchers cerrados',cAhR:'de memoria liberada',cAhD:'de disco liberado',cAhNada:'Todavía nada: se mide a partir de tu próxima partida.',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TandemStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
-  noComprados:'Not owned',catAyuda:'Store games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',sinOfertas:'No deals with these filters. Only GOG, Steam and itch.io publish which games are on sale.',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TandemStacks open. Click to see your medals.',abriendo:'Opening',contacto:'Contact:',gratis:'Free',descuento:'On sale',buscandoOf:'Looking for deals on {t}…',noPublica:'{t} does not publish which games are on sale. GOG, Steam and itch.io do.',noPublican:'{t} do not publish which games are on sale. GOG, Steam and itch.io do.',noOficial:'TandemStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
+  noComprados:'Not owned',catAyuda:'Store games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',sinOfertas:'No deals with these filters. Only GOG, Steam and itch.io publish which games are on sale.',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TandemStacks open. Click to see your medals.',contacto:'Contact:',gratis:'Free',descuento:'On sale',buscandoOf:'Looking for deals on {t}…',noPublica:'{t} does not publish which games are on sale. GOG, Steam and itch.io do.',noPublican:'{t} do not publish which games are on sale. GOG, Steam and itch.io do.',noOficial:'TandemStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
   buscar:'Search game...',orden:['Sort: name','Best rated','Largest','Newest'],ordenNC:['Most popular','Sort: name','Newest'],grilla:'Grid view',enLista:'List view',porPag:'{n} per page',generos:'Genres',todos:'All',instalados:'Installed',noInst:'Not installed',de:'of',juegos:'games',sinRes:'No results.',verTienda:'See how it works',
   vacio:'No games found. Check the settings (⚙): maybe the Steam key or a launcher is missing.',buscando:'Looking for your games…',trabajando:'Working…',
   msgs:{'Descargando la actualización…':'Downloading the update…','Instalando la versión nueva: TandemStacks se cierra y vuelve a abrir sola…':'Installing the new version: TandemStacks will close and reopen by itself…','Buscando launchers instalados…':'Looking for installed launchers…','Leyendo juegos de %s…':'Reading %s games…','Armando la biblioteca…':'Building the library…','Buscando portadas en Steam…':'Looking up covers on Steam…','Bajando ficha y portada de %s…':'Downloading details and cover for %s…','Bajando ficha de %s…':'Downloading details for %s…','Preparando la biblioteca…':'Preparing the library…','Escaneando…':'Scanning…'},
   discos:'Drives',verJuegos:'see games',libres:'free of',otros:'Other files',libre:'Free',cadaColor:'Each color is a game',pocoEsp:'Low space on',pocoEsp2:'consider uninstalling something you don\'t play.',sinJuegos:'No games',
-  jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'See in store',desinstalar:'Uninstall',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
+  jugar:'Play',instalar:'Install',instalarEn:'Install on',abrir:'Open',ficha:'See in store',desinstalar:'Uninstall',desinstalando:'Uninstalling…',desinstalarWin:'Uninstall (opens Windows Installed apps)',desdeDonde:'Where do you want to install it from?',cancelar:'Cancel',instalarPuntos:'Install…',
   loTenes:'You own it on',instalado:'Installed',noInstalado:'Not installed',ocupaEn:'Size on',necesita:'Needs (requirement)',ocupa:'Size',resenas:'Steam reviews',horas:'hours played',ultima:'last played',logros:'achievements',rev:['Overwhelmingly positive','Very positive','Mostly positive','Mixed','Mostly negative','Very negative'],notaFicha:'Install and uninstall open the store; you confirm there.',
   listo:'Done: if confirmation is needed, check the window that opened.',noPudo:'It didn\'t work.',disco:'disk',
   tLeida:'Read',tParcial:'Partial',tNo:'Not installed',clicCfg:'Click to see how to set it up',
@@ -566,7 +569,7 @@ function filtrosGrupo(k,base,tiendasDe,generosDe,ordenes){
 // mientras se abre una tienda la app queda en espera, así no se toca dos veces; la ventanita se saca al terminar
 function abriendo(p,nombre){
   const d=document.createElement('div'); d.className='dlgbg';
-  d.innerHTML=`<div class="dlg"><p class="cargando">${L.abriendo}${nombre?' '+esc(nombre):''}…</p></div>`;
+  d.innerHTML=`<div class="dlg"><p class="cargando">${L.abriendo.replace(nombre?'{j}':' {j}',nombre?esc(nombre):'')}</p></div>`;
   document.body.appendChild(d);
   return p.then(r=>typeof r==='string'?api('esperar_tienda',r).then(()=>r,()=>r):new Promise(f=>setTimeout(()=>f(r),1500)))
     .catch(()=>false).then(r=>{d.remove();return r;});
@@ -578,7 +581,7 @@ function verNC(j){
   $('#modal').innerHTML=`<button class="x" aria-label="Cerrar">×</button>
     <div class="cov">${j.c?`<img decoding="async" referrerpolicy="no-referrer" src="${esc(chica(j.c))}" alt="" data-n="${esc(j.t)}" data-s="${esc(st[0])}" onerror="sinPortada(this)">`:ph({store:st[0],name:j.t})}</div>
     <div style="flex:1;min-width:0"><h2>${esc(j.t)}</h2><p style="margin:0 0 12px;font-size:14px;color:var(--mu)">${L.ncElegir}</p>
-      <div class="acts">${st.map(s=>{const p=(PRECIO[CAT.indexOf(j)]||{})[s];return `<button class="btn" data-ir="${esc(s)}">${logo(s,sc(s),18)} ${esc(s)}${p?` · ${fmtPrecio(p)}`:''}</button>`;}).join('')}</div></div>`;
+      <div class="acts">${st.map(s=>{const p=(PRECIO[CAT.indexOf(j)]||{})[s];return `<button class="btn" data-ir="${esc(s)}"><span class="lgb">${logo(s,sc(s),18)}</span>${esc(s)}${p?` · ${fmtPrecio(p)}`:''}</button>`;}).join('')}</div></div>`;
   $('#modal').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{ir(b.dataset.ir);cerrar();});
   $('#bg').classList.add('show');
 }
@@ -623,10 +626,14 @@ function render(){
   const by={nombre:(a,b)=>a.name.localeCompare(b.name,'es'),valor:(a,b)=>(b.revPct||0)-(a.revPct||0),peso:(a,b)=>peso(b)-peso(a),anio:(a,b)=>(b.anio||0)-(a.anio||0)};
   const filtra=(lista,k)=>{const f=FIL[k];return lista.filter(g=>(!f.t.size||g.stores.some(s=>f.t.has(s)))&&(!f.gens.size||[...f.gens].some(x=>(g.genres||[]).includes(x)))&&coincide(g.name,k)).sort(by[f.orden]||by.nombre);};
   const ordLib=['nombre','valor','peso','anio'].map((v,i)=>[v,L.orden[i]]), ordNC=['popular','nombre','anio'].map((v,i)=>[v,L.ordenNC[i]]);
-  const card=g=>{const p=bajandoDe(g);return `<div class="card${p!=null?' baja':g.installed?' conb':' off'}" data-i="${J.indexOf(g)}">${img(g)}${p!=null?`<div class="reloj" data-dl="${esc(g.items.map(x=>x.id).join('|'))}" style="--p:${p}">${img(g)}</div><span class="pct">${pctTxt(g.items.map(x=>x.id),p)}</span>`:''}
+  const card=g=>{const p=bajandoDe(g), de=g.items.some(x=>(EST.desinstalando||[]).includes(x.id));
+    if(de) return `<div class="card desins" data-i="${J.indexOf(g)}">${img(g)}<span class="pct dsn">${L.desinstalando}</span>
+    <span class="tag">${tiendasTarjeta(g)}</span><div class="nm">${esc(g.name)}</div></div>`;  // la tienda está borrando el juego: queda en gris con el aviso
+    return `<div class="card${p!=null?' baja':g.installed?' conb':' off'}" data-i="${J.indexOf(g)}">${img(g)}${p!=null?`<div class="reloj" data-dl="${esc(g.items.map(x=>x.id).join('|'))}" style="--p:${p}">${img(g)}</div><span class="pct">${pctTxt(g.items.map(x=>x.id),p)}</span>`:''}
     <span class="tag">${tiendasTarjeta(g)}</span>${g.installed?`<span class="inst" title="${L.instalado}"></span>`:''}
     <div class="nm">${esc(g.name)}</div><span class="fx">${[g.anio,g.installed&&g.sizeGB?g.sizeGB+' GB':(g.reqGB?'~'+g.reqGB+' GB':'')].filter(Boolean).map(esc).join(' · ')}</span>${g.installed&&p==null?`<button class="cb info" data-info title="${esc(L.informacion)}" aria-label="${esc(L.informacion)}">i</button>`:''}</div>`;};
-  const inst=J.filter(g=>g.installed||bajandoDe(g)!=null), no=J.filter(g=>!g.installed&&bajandoDe(g)==null);  // lo que se baja ya va a Instalados
+  const desDe=g=>g.items.some(x=>(EST.desinstalando||[]).includes(x.id));
+  const inst=J.filter(g=>g.installed||bajandoDe(g)!=null||desDe(g)), no=J.filter(g=>!g.installed&&bajandoDe(g)==null&&!desDe(g));  // lo que se baja ya va a Instalados; lo que se desinstala sigue ahí con el aviso
   const foco=document.activeElement&&document.activeElement.dataset.q, cursor=foco&&document.activeElement.selectionStart;  // al redibujar se sigue escribiendo
   const buscador=k=>`<input class="qgrupo" data-q="${k}" autocomplete="off" placeholder="${esc(L.buscar)}" value="${esc(BUSCA[k])}">`;
   const nada=lista=>lista.length?'':`<p class="catayuda">${L.sinRes}</p>`;
@@ -708,7 +715,7 @@ const cancelDl=d=>{if(!d.id&&!d.tienda)return '';const i=String(d.id),t=d.tienda
 function descargas(){
   const hd=(EST.descargas||[]).map(d=>d.tienda
     ?`<div class="dl"><span>${logo(d.tienda,sc(d.tienda),13)} <b>${esc(d.tienda)}</b> ${d.name?L.bajando+' <b>'+esc(d.name)+'</b>':L.bajandoVel}</span><div class="nbar ind"><i></i></div><span>${velo(d.vel)}</span>${cancelDl(d)}</div>`
-    :`<div class="dl"><span>${L.bajando} <b>${esc(d.name)}</b></span><div class="nbar"><i style="width:${d.pct}%"></i></div><span>${d.pausa?`<b title="${esc(L.pausa)}">⏸</b>`:`<b title="${esc(L.bajando)}">▶</b>`} ${d.pct}%</span>${cancelDl(d)}</div>`).join('');  // ▶ bajando, ⏸ en pausa
+    :`<div class="dl"><span>${L.bajando} <b>${esc(d.name)}</b></span><div class="nbar"><i style="width:${d.pct}%"></i></div><span>${d.pausa?`<b title="${esc(L.pausa)}">⏸</b>`:`<b title="${esc(L.bajando)}">▶</b>`} ${pctN(d.pct)}%</span>${cancelDl(d)}</div>`).join('');  // ▶ bajando, ⏸ en pausa
   if($('#descargas')._h!==hd){$('#descargas').innerHTML=hd;$('#descargas')._h=hd;}  // solo si cambió algo
 }
 function todo(){agrupar();cabecera();discos();render();progreso();}
@@ -775,11 +782,12 @@ const dlIds=()=>{const ds=EST.descargas||[];if(dlMemo[0]===ds&&dlMemo[2]===RAW)r
   dlMemo=[ds,ids,RAW];return ids;};
 const DL=()=>{const m={},ids=dlIds();(EST.descargas||[]).forEach((d,i)=>{if(ids[i])m[ids[i]]=d.pct;});return m;};
 const enPausa=id=>{const ids=dlIds();return (EST.descargas||[]).some((d,i)=>ids[i]===id&&d.pausa);};
-const pctTxt=(ids,p)=>{const pa=ids.some(enPausa);return `${pa?`<small title="${esc(L.pausa)}">⏸</small>`:''}${p}%`;};  // en pausa: solo el ícono, el texto queda en el globito
+const pctN=p=>IDIOMA==='spanish'?String(p).replace('.',','):String(p);  // 0,7 % en español
+const pctTxt=(ids,p)=>{const pa=ids.some(enPausa);return `${pa?`<small title="${esc(L.pausa)}">⏸</small>`:''}${pctN(p)}%`;};  // en pausa: solo el ícono, el texto queda en el globito
 const bajandoDe=g=>{const m=DL();const it=(g.items||[g]).find(x=>m[x.id]!=null);return it?m[it.id]:null;};
 let dlClave='', esperaDescarga=0;
 function relojes(){
-  const m=DL(), clave=Object.keys(m).sort().join(',');
+  const m=DL(), clave=Object.keys(m).sort().join(',')+'|'+(EST.desinstalando||[]).join(',');  // también si empieza o termina una desinstalación
   if(esperaDescarga&&clave&&Date.now()-esperaDescarga<180000&&$('#bg').classList.contains('show')){esperaDescarga=0;cerrar();}  // empezó a bajar: la ficha se cierra sola
   if(clave!==dlClave){dlClave=clave;render();return;}  // empezó o terminó una descarga: el juego cambia de grupo
   document.querySelectorAll('.reloj[data-dl]').forEach(r=>{const id=r.dataset.dl.split('|').find(i=>m[i]!=null);if(id==null)return;
@@ -798,8 +806,11 @@ function jugarYa(g){
   const q=it.store==='Steam'&&it.appid?`tipo=run&appid=${it.appid}`:it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(it.store);
   noti(L.abriendo.replace('{j}',esc(g.name)),5); accion(q);
 }
-function accion(q){const fin=ok=>{const n=$('#nota');if(n)n.textContent=ok?L.listo:L.noPudo;};
+function accion(q){const fin=ok=>{
+    if(ok&&/tipo=uninstall|desinstalar=/.test(q)&&$('#bg').classList.contains('show')){cerrar();return;}  // desinstalar: la tienda ya abrió su pregunta, la ficha se cierra
+    const n=$('#nota');if(n)n.textContent=ok?L.listo:L.noPudo;};
   if(/tipo=install|lanzar=/.test(q)) esperaDescarga=Date.now();
+  if(/tipo=(install|uninstall)|lanzar=|desinstalar=/.test(q)){BUSCA.si=BUSCA.no=BUSCA.nc='';}  // el juego cambia de grupo: los buscadores vuelven a cero y aparece en su lugar
   abriendo(api('accion',q)).then(fin);}
 window.accion=accion;
 function botonesDe(it,conTienda){

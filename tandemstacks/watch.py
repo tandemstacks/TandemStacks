@@ -145,12 +145,32 @@ def necesita(carpeta, _cache={}):
     _cache[carpeta] = extra
     return extra
 
+def _bajando(l, victimas):
+    """¿El launcher está bajando algo? Steam: su manifiesto activo; todos: escribe en el disco a 1 MB/s o más (2 s de muestra)."""
+    if l == "Steam":
+        try:
+            from . import steam
+            if any(not d.get("pausa") for d in steam.descargas()): return True
+        except Exception: pass
+    def escrito():
+        t = 0
+        for pr in victimas:
+            try: t += pr.io_counters().write_bytes
+            except Exception: pass
+        return t
+    a = escrito(); time.sleep(2)
+    return (escrito() - a) / 2 >= MIN_DESCARGA
+
 def cerrar(l, launchers, antes_de=None):
     """Cierra un launcher y devuelve los MB de memoria que usaba. Con antes_de, solo si todos sus procesos son anteriores
-    (si arrancó después del juego, es porque el juego lo pidió: no se toca)."""
+    (si arrancó después del juego, es porque el juego lo pidió: no se toca). Nunca si está bajando algo (13/11/2026: al
+    terminar una partida se cerró Steam en medio de una descarga)."""
     d = launchers[l]
     victimas = [pr for pr, n, e in _procs() if _es_de(n, e, d)]
     if antes_de and any((pr.info.get("create_time") or 0) > antes_de for pr in victimas):
+        return 0
+    if victimas and _bajando(l, victimas):
+        paths.log("no se cierra %s: está bajando algo" % l)
         return 0
     mb = 0
     for pr in victimas:

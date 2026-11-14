@@ -331,20 +331,30 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
     dur = fin - inicio
     tiempos, momentos, ocupada, modos, sync = [], [], [], {}, {}
     try:
-        with open(csv_fps, newline="", encoding="utf-8", errors="ignore") as f:
-            for r in csv.DictReader(f):
-                try:  # PresentMon 2 con --v1_metrics escribe "msBetweenPresents" (con minúscula); sin esa opción, "FrameTime"
-                    r = {k.lower(): v for k, v in r.items() if k}
-                    if pid and r.get("processid") != str(pid) and (r.get("application") or "").lower() != os.path.basename(exe).lower():
-                        continue  # se graba todo lo que se dibuja: se cuenta solo el juego
-                    v = float(r.get("msbetweenpresents") or r.get("frametime") or "")
+        with open(csv_fps, newline="", encoding="utf-8-sig", errors="ignore") as f:  # -sig: PresentMon empieza con BOM y "Application" no se reconocía
+            lector = csv.reader(f)
+            cab = [c.strip().strip("﻿").lower() for c in next(lector, [])]
+            col = lambda n: cab.index(n) if n in cab else -1
+            # PresentMon 2 con --v1_metrics escribe "msBetweenPresents" (con minúscula); sin esa opción, "FrameTime"
+            i_v = col("msbetweenpresents") if col("msbetweenpresents") >= 0 else col("frametime")
+            i_pid, i_app, i_t, i_gpu, i_modo, i_sync = (col("processid"), col("application"), col("timeinseconds"),
+                                                       col("msgpuactive"), col("presentmode"), col("syncinterval"))
+            spid, sexe = str(pid or ""), os.path.basename(exe).lower()
+            n_col = len(cab)
+            for n, r in enumerate(lector):
+                if n % 20000 == 0: time.sleep(0)  # suelta el procesador a la ventana: leer millones de filas la trababa
+                if i_v < 0 or len(r) < n_col: continue
+                # índices y comparaciones directas (antes un diccionario por fila: 10 veces más lento)
+                if pid and (i_pid < 0 or r[i_pid] != spid) and (i_app < 0 or r[i_app].lower() != sexe):
+                    continue  # si se grabó todo lo que se dibuja: se cuenta solo el juego
+                try:
+                    v = float(r[i_v])
                     if not 0 < v < 30000: continue
                     tiempos.append(v)
-                    momentos.append(float(r.get("timeinseconds") or 0))  # cuándo se dibujó cada cuadro
-                    g_act = r.get("msgpuactive")
-                    if g_act: ocupada.append(min(1.0, float(g_act) / v))  # parte del cuadro con la placa trabajando
-                    m_ = r.get("presentmode") or ""; modos[m_] = modos.get(m_, 0) + 1
-                    si = r.get("syncinterval") or ""; sync[si] = sync.get(si, 0) + 1
+                    momentos.append(float(r[i_t]) if i_t >= 0 and r[i_t] else 0.0)  # cuándo se dibujó cada cuadro
+                    if i_gpu >= 0 and r[i_gpu]: ocupada.append(min(1.0, float(r[i_gpu]) / v))  # parte del cuadro con la placa trabajando
+                    if i_modo >= 0: modos[r[i_modo]] = modos.get(r[i_modo], 0) + 1
+                    if i_sync >= 0: sync[r[i_sync]] = sync.get(r[i_sync], 0) + 1
                 except ValueError:
                     pass
     except OSError:
@@ -482,18 +492,21 @@ def medir(g, al_terminar=None):
         _activos_pid.add(pid)
         pm, sesion = None, "TandemStacks_%d" % pid
         pm_txt = os.path.join(TMP, "pm_%d.txt" % pid)
+        def lanzar_pm(solo_juego):
+            # solo_juego: graba únicamente el exe del juego (--process_name). Grabar todo lo que se dibuja (Windows, Steam,
+            # Discord, la propia TandemStacks) hacía archivos de millones de filas y, al cerrar el juego, leerlas trababa la
+            # app (13/11/2026, Cyberpunk 35 min). --process_id no servía con anti-trampas; por nombre se prueba y, si al
+            # minuto no grabó nada, se vuelve a grabar todo.
+            args = [PM, "--output_file", csv_fps, "--session_name", sesion, "--stop_existing_session", "--no_console_stats", "--v1_metrics"]
+            if solo_juego: args += ["--process_name", os.path.basename(exe)]
+            with open(pm_txt, "w") as salida:
+                return subprocess.Popen(args, stdout=salida, stderr=salida, creationflags=SIN_VENTANA)
+            # prioridad normal a propósito: con prioridad baja, con el juego usando el procesador, PresentMon
+            # no alcanzaba a leer los eventos de Windows, los perdía todos y la partida quedaba sin FPS
         if os.path.exists(PM):
-            try:
-                # graba todo lo que se dibuja y después se filtra por el proceso del juego: pedirle solo el juego
-                # (--process_id) no grababa nada cuando Windows no le deja identificar el proceso (juegos con anti-trampas)
-                with open(pm_txt, "w") as salida:
-                    pm = subprocess.Popen([PM, "--output_file", csv_fps, "--session_name", sesion, "--stop_existing_session",
-                                           "--no_console_stats", "--v1_metrics"],
-                                          stdout=salida, stderr=salida, creationflags=SIN_VENTANA)
-                # prioridad normal a propósito: con prioridad baja, con el juego usando el procesador, PresentMon
-                # no alcanzaba a leer los eventos de Windows, los perdía todos y la partida quedaba sin FPS
-            except OSError as e:
-                _log("presentmon", e)
+            try: pm = lanzar_pm(True)
+            except OSError as e: _log("presentmon", e)
+        solo_juego = pm is not None
         inicio, muestras, cpu0, est = time.time(), [], tiempos_cpu(), {}
         version, drv = version_juego(g), driver()
         psutil.cpu_percent(interval=None, percpu=True)
@@ -501,6 +514,21 @@ def medir(g, al_terminar=None):
             time.sleep(MUESTRA)
             try: muestras.append(muestrear(pid, est))
             except Exception as e: _log("muestra", e)
+            if solo_juego and time.time() - inicio > 60:  # al minuto: ¿grabó algo del juego?
+                solo_juego = False
+                try: vacio = os.path.getsize(csv_fps) < 2048  # solo el encabezado
+                except OSError: vacio = True
+                if vacio:
+                    _log("presentmon: por nombre no grabó nada, se graba todo", os.path.basename(exe))
+                    try:
+                        subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=15,
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+                        pm.wait(10)
+                    except Exception:
+                        try: pm.kill()
+                        except Exception: pass
+                    try: pm = lanzar_pm(False)
+                    except OSError as e: _log("presentmon", e); pm = None
         fin = time.time()
         pm_ok = False
         if pm:

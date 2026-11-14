@@ -90,27 +90,52 @@ def _bajado_desde(desde):
 
 _avance = {}  # appid -> (fecha del manifiesto, bytes escritos por Steam al verlo, lo armado según el manifiesto)
 
+_ULTIMO = None  # {appid: % visto por última vez}, guardado en la PC para mostrarlo con Steam cerrado (o después de reiniciar)
+
+def _ultimos():
+    global _ULTIMO
+    if _ULTIMO is None:
+        try: _ULTIMO = json.load(open(os.path.join(paths.CACHE, "steam_descargas.json"), encoding="utf-8"))
+        except Exception: _ULTIMO = {}
+    return _ULTIMO
+
+def _anotar_ultimos(out):
+    u = _ultimos()
+    nuevo = {d["id"]: max(d["pct"], u.get(d["id"], 0)) for d in out}  # solo los que siguen pendientes: lo terminado o cancelado se olvida
+    if nuevo != u:
+        _ULTIMO.clear(); _ULTIMO.update(nuevo)
+        try: json.dump(nuevo, open(os.path.join(paths.CACHE, "steam_descargas.json"), "w", encoding="utf-8"))
+        except OSError: pass
+
 def descargas():
-    """Lo que Steam está bajando ahora: [{"name", "pct", "id", "pausa"}]. Si Steam está cerrado no hay nada que mostrar.
+    """Lo que Steam está bajando: [{"name", "pct", "id", "pausa"}].
     Steam anota el avance en el appmanifest solo al empezar y al pausar, así que mientras baja se suma lo que steam.exe
-    escribió en el disco desde entonces (lo que va armando del juego) sobre el total a armar (BytesToStage)."""
+    escribió en el disco desde entonces (lo que va armando del juego) sobre el total a armar (BytesToStage).
+    Con Steam cerrado (pedido del dueño, 13/11/2026): el appmanifest sigue diciendo que falta bajar, así que el juego sigue
+    en Instalados, en pausa y con el último % que se vio; cuando Steam abre, él decide si sigue o si se canceló."""
     try:
         import psutil
         sp = next((q for q in psutil.process_iter(["name"]) if (q.info["name"] or "").lower() == "steam.exe"), None)
-        if not sp: return []  # el "pid" de ActiveProcess en el registro a veces queda en 0 con Steam andando: se mira el proceso
-        try: escrito = sp.io_counters().write_bytes
+        try: escrito = sp.io_counters().write_bytes if sp else None  # el "pid" de ActiveProcess a veces queda en 0: se mira el proceso
         except Exception: escrito = None
     except Exception:
-        return []
-    out = []
+        sp, escrito = None, None
+    out, pend = [], []
     for lib in _bibliotecas():
         for f in glob.glob(os.path.join(lib, "steamapps", "appmanifest_*.acf")):
             d = _manif(f)
             if not (d and d["total"] and d["hecho"] < d["total"] and d["flags"] & 2):  # 2 = le falta bajar algo
                 continue
+            try: m = os.path.getmtime(f)
+            except OSError: m = 0
+            pend.append((m, f, d))
+    # Steam baja de a uno: el activo es el último manifiesto que tocó; los demás quedan en cola aunque digan "empezada"
+    # (si no, lo que escribe para uno se le sumaba también a los otros)
+    actual = max((p for p in pend if p[2]["flags"] & 1024 and not p[2]["flags"] & 512), default=None, key=lambda p: p[0]) if sp else None
+    for m, f, d in pend:
             aid = (re.search(r"appmanifest_(\d+)", f) or [None, ""])[1]
-            activa = bool(d["flags"] & 1024) and not d["flags"] & 512  # 1024 = actualización empezada, 512 = en pausa
-            pct = d["hecho"] / d["total"]
+            activa = actual is not None and f == actual[1]  # 1024 = actualización empezada, 512 = en pausa
+            pct = max(d["hecho"] / d["total"], _ultimos().get(aid, 0) / 100)  # nunca menos que lo último que se vio
             if activa and escrito is not None and d["etapa"]:
                 try: m = os.path.getmtime(f)
                 except OSError: m = 0
@@ -118,9 +143,17 @@ def descargas():
                 if not b or b[0] != m or escrito < b[1]:  # manifiesto nuevo o Steam reiniciado: se arranca la cuenta de nuevo
                     # lo que bajó antes de que TandemStacks empezara a mirar: velocidades que Steam anota cada minuto en su registro
                     previo = min(0.99, (d["hecho"] + _bajado_desde(m)) / d["total"])
+                    if b and escrito >= b[1]:  # Steam solo reescribió el manifiesto: lo ya estimado no se pierde (antes el % volvía para atrás)
+                        previo = max(previo, min(0.99, b[2] + (escrito - b[1]) / d["etapa"]))
                     b = _avance[aid] = (m, escrito, previo)
                 pct = max(pct, min(0.99, b[2] + (escrito - b[1]) / d["etapa"]))
-            out.append({"name": d["name"], "pct": int(pct * 100), "id": aid, "pausa": not activa})
+            elif aid in _avance and escrito is not None:  # en cola o en pausa: queda donde iba y lo que se escriba ahora no le cuenta
+                b = _avance[aid]
+                pct = max(pct, b[2])
+                _avance[aid] = (m, escrito, pct)
+            pct = pct * 100
+            out.append({"name": d["name"], "pct": round(pct, 1) if pct < 10 else int(pct), "id": aid, "pausa": not activa})  # un decimal al principio: en juegos grandes 1 % tarda mucho
+    _anotar_ultimos(out)
     return out
 
 def huella_instalados():

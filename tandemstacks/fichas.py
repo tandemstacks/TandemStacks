@@ -255,7 +255,12 @@ def _url_tienda(g):
     cands = [j for j in cat.get("juegos", []) if isinstance((j.get("st") or {}).get(tienda), str)]
     j = next((j for j in cands if _norm(j.get("t")) == n), None) \
         or next((j for j in cands if _norm(j.get("t")).startswith(n) or n.startswith(_norm(j.get("t")) or "-")), None)
-    return j["st"][tienda] if j else ""
+    url = j["st"][tienda] if j else ""
+    # solo páginas de las tiendas (si el catálogo viniera adulterado, no se lee ninguna otra dirección ni archivos locales)
+    return url if TIENDA_URL.match(url) else ""
+
+TIENDA_URL = re.compile(r"https://(store\.ubisoft\.com|www\.ea\.com|store\.rockstargames\.com|www\.rockstargames\.com|"
+                        r"us\.shop\.battle\.net|[a-z0-9-]+\.itch\.io|itch\.io)/")
 
 def pagina_tienda(g, idioma):
     nombre = "%s/%s.json" % (idioma, g["id"])

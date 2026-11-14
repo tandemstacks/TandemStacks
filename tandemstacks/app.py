@@ -255,28 +255,47 @@ class Nucleo:
 
     # ---------- versión nueva ----------
     @staticmethod
-    def _link_setup(release):
-        """Link del instalador (TandemStacks-Setup-x.y.z.exe) dentro de una release de GitHub."""
+    def _asset_setup(release):
+        """El instalador (TandemStacks-Setup-x.y.z.exe) dentro de una release de GitHub: {name, browser_download_url, digest…}."""
         for a in release.get("assets") or []:
             if re.match(r"(TandemStacks|TasloStacks|SantiStacks)-Setup-.*\.exe$", a.get("name", ""), re.I):
-                return a.get("browser_download_url", "")
-        return ""
+                return a
+        return {}
+
+    @staticmethod
+    def _link_setup(release):
+        return Nucleo._asset_setup(release).get("browser_download_url", "")
 
     def actualizar(self, solo=False):
         """Baja el instalador nuevo mostrando el avance, lo corre en silencio y cierra la app (el instalador la vuelve a abrir).
-        solo=True: es la actualización automática al abrir; si falla, la app sigue igual sin abrir páginas."""
+        solo=True: es la actualización automática al abrir; si falla, la app sigue igual sin abrir páginas.
+        Seguridad (informe del 13/11/2026): solo baja de GitHub por HTTPS, a una carpeta nueva con nombre al azar, compara el
+        SHA-256 con el que publica GitHub para ese archivo y revisa la firma de Windows (ver _firma_ok) antes de correrlo."""
         try:
+            import hashlib, tempfile
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % self.cfg.get("repo"), 15)
-            url = self._link_setup(j)
+            a = self._asset_setup(j)
+            url = a.get("browser_download_url", "")
             if not url: raise RuntimeError("la release no tiene instalador")
-            destino = os.path.join(os.environ.get("TEMP", paths.DATA), os.path.basename(urllib.parse.urlparse(url).path))
+            if not re.match(r"https://github\.com/%s/releases/download/" % re.escape(self.cfg.get("repo")), url):
+                raise RuntimeError("el instalador no viene del repo oficial: %s" % url)
+            esperado = str(a.get("digest") or "")
+            if not esperado.startswith("sha256:"): raise RuntimeError("GitHub no dio el hash del instalador")
+            nombre = os.path.basename(urllib.parse.urlparse(url).path)
+            if not re.fullmatch(r"[A-Za-z]+-Setup-[0-9.]+\.exe", nombre): raise RuntimeError("nombre de instalador raro: %s" % nombre)
+            destino = os.path.join(tempfile.mkdtemp(prefix="TandemStacks_act_"), nombre)  # carpeta nueva: nadie la conoce de antemano
             self.estado.update(fase="actualizando", msg="Descargando la actualización…", de="", hecho=0, total=0)
+            h = hashlib.sha256()
             with urllib.request.urlopen(urllib.request.Request(url, headers=steam.UA), timeout=30) as r, open(destino, "wb") as f:
                 self.estado["total"] = int(r.headers.get("Content-Length") or 0)
                 while True:
                     b = r.read(256 * 1024)
                     if not b: break
-                    f.write(b); self.estado["hecho"] += len(b)
+                    f.write(b); h.update(b); self.estado["hecho"] += len(b)
+            if "sha256:" + h.hexdigest() != esperado.lower():
+                os.remove(destino); raise RuntimeError("el instalador bajado no coincide con el hash de GitHub")
+            if not _firma_ok(destino):
+                os.remove(destino); raise RuntimeError("la firma del instalador no es válida")
             self.estado.update(msg="Instalando la versión nueva: TandemStacks se cierra y vuelve a abrir sola…", hecho=0, total=0)
             time.sleep(2)  # que la página llegue a mostrar el mensaje
             # si se instaló "para todos los usuarios" (Program Files), el instalador en silencio por defecto pone una copia
@@ -349,6 +368,8 @@ class Api:
                     except Exception: pass
                 bajando.append(d)
         except Exception as e: paths.log("descargas", e)
+        try: NUC.estado["desinstalando"] = _desinstalando()
+        except Exception as e: paths.log("desinstalando", e)
         return dict(NUC.estado, jugado=round(NUC.jugado), descargas=bajando, aviso=NUC.aviso, pc=_en_vivo(), abiertas=abiertas)
 
     def top(self, tipo):
@@ -588,16 +609,21 @@ class Api:
         q = urllib.parse.parse_qs(q)
         tipo, appid, que, lz = q.get("tipo", [""])[0], q.get("appid", [""])[0], q.get("abrir", [""])[0], q.get("lanzar", [""])[0]
         if tipo in ("install", "uninstall", "run") and re.fullmatch(r"\d{1,9}", appid):
+            if tipo == "uninstall":
+                _anotar_desinstalar(next((x for x in NUC.juegos if x.get("store") == "Steam" and str(x.get("appid")) == appid), None))
             uri = "steam://%s/%s" % (tipo, appid)
             os.startfile(uri)
             return "Steam"
         des = q.get("desinstalar", [""])[0]
         if des:  # desinstalar un juego de otra tienda: comando propio si la tienda lo tiene, si no Aplicaciones instaladas de Windows
             g = next((x for x in NUC.juegos if x["id"] == des), None)
+            _anotar_desinstalar(g)
             u = g.get("uninstall") if g else None
             if g and not u: u = _desinstalador(g)  # el que el juego dejó en "Programas instalados" de Windows
             if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]) or None)
             elif u: os.startfile(u)
+            elif g and NUC.launchers.get(g["store"], {}).get("ok"):  # sin comando propio (Google Play): se desinstala desde la biblioteca de su tienda
+                os.startfile(NUC.launchers[g["store"]]["abrir"]); u = True
             else: os.startfile("ms-settings:appsfeatures")
             return g["store"] if u and g else True
         if que in NUC.launchers:
@@ -610,6 +636,62 @@ class Api:
             else: os.startfile(d)
             return g["store"]  # la página espera a que abra su launcher
         return False
+
+# Mientras el instalador no esté firmado (SignPath en trámite) se acepta sin firma; con firma, tiene que ser válida.
+# Cuando llegue la firma: FIRMA_OBLIGATORIA = True en la versión siguiente, y desde ahí ningún instalador sin firmar se corre.
+FIRMA_OBLIGATORIA = False
+FIRMANTE = ""  # parte del nombre del certificado (p. ej. "SignPath Foundation"); vacío = todavía no se sabe, no se compara
+
+def _firma_ok(exe):
+    """Firma de Windows (Authenticode) del instalador: Valid → sí; NotSigned → solo si todavía no es obligatoria; cualquier
+    otra cosa (archivo tocado después de firmar, certificado revocado o vencido) → no."""
+    try:
+        cmd = ("$s = Get-AuthenticodeSignature -LiteralPath '%s'; $s.Status.ToString(); "
+               "if ($s.SignerCertificate) { $s.SignerCertificate.Subject }") % exe.replace("'", "''")  # comillas simples: nada se interpreta
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", cmd],
+                           capture_output=True, text=True, timeout=60, creationflags=0x08000000)
+        lineas = (r.stdout or "").strip().splitlines()
+        estado, quien = (lineas + ["", ""])[0].strip(), (lineas + ["", ""])[1].strip()
+    except Exception as e:
+        paths.log("firma", e); return False
+    paths.log("firma del instalador:", estado, quien)
+    if estado == "Valid":
+        return not FIRMANTE or FIRMANTE.lower() in quien.lower()  # firmado, pero por quien corresponde
+    return estado == "NotSigned" and not FIRMA_OBLIGATORIA
+
+_desins = {}  # id: {"dir", "t", "n0", "n", "tm", "ya"}: juegos a los que se les tocó Desinstalar
+
+def _anotar_desinstalar(g):
+    if g and g.get("installed"):
+        _desins[g["id"]] = {"dir": g.get("dir") or "", "t": time.time(), "n0": None, "tm": 0, "ya": False}
+
+def _contar(d):
+    n = 0
+    for _, _, fs in os.walk(d):
+        n += len(fs)
+    return n
+
+def _desinstalando():
+    """Ids de juegos que se están desinstalando: se les tocó Desinstalar y su carpeta se está vaciando o ya no está.
+    Hasta que el usuario confirma en la tienda no cambia nada; si cancela, a los 15 min se olvida. Cuando el escaneo
+    ya no lo ve instalado, sale de la lista."""
+    ahora, out = time.time(), []
+    inst = {g["id"] for g in NUC.juegos if g.get("installed")}
+    for i, d in list(_desins.items()):
+        if not d["ya"] and (not d["dir"] or not os.path.isdir(d["dir"])):
+            d["ya"], d["tya"] = True, ahora  # la carpeta ya no está (los juegos chicos se borran en un segundo)
+        if i not in inst:  # el escaneo ya no lo ve instalado: el aviso queda unos segundos para que se llegue a ver
+            if d["ya"] and ahora - d.get("tya", ahora) < 8: out.append(i)
+            else: _desins.pop(i)
+            continue
+        if ahora - d["t"] > 900 and not d["ya"]:
+            _desins.pop(i); continue  # canceló en la tienda
+        if not d["ya"] and ahora - d["tm"] > 6:  # contar archivos cuesta: como mucho cada 6 s
+            n = _contar(d["dir"]); d["tm"] = ahora
+            if d["n0"] is None: d["n0"] = n
+            elif n < d["n0"]: d["ya"], d["tya"] = True, ahora
+        if d["ya"]: out.append(i)
+    return out
 
 def _desinstalador(g):
     """Comando de desinstalación de Windows del juego: la entrada cuya carpeta es la del juego (o, si no, con el mismo nombre)."""

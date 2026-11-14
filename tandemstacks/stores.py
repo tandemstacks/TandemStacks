@@ -113,6 +113,8 @@ def epic():
                                                    "name": m["DisplayName"], "store": "Epic", "epic_ns": m.get("CatalogNamespace", "")}
         g.update(installed=True, dir=loc, drive=drive(loc), sizeGB=round(m.get("InstallSize", 0) / 1073741824, 1),
                  launch=_epic_uri(m.get("CatalogNamespace"), m.get("CatalogItemId"), m.get("AppName")))
+        # sin "uninstall": Epic no tiene link para desinstalar (su registro dice "no encuentro manejador" para ?action=uninstall,
+        # 13/11/2026); Desinstalar abre Epic y ahí se hace desde Biblioteca → ⋯ → Desinstalar
         juegos[m.get("CatalogItemId") or g["id"]] = g
     return list(juegos.values())
 
@@ -187,6 +189,7 @@ $out | ConvertTo-Json -Compress'''
         loc = p.get("Dir", "")
         out.append({"id": "xbox_" + re.sub(r"[^A-Za-z0-9]", "", p.get("Family", nombre))[:40], "name": nombre, "store": "Xbox", "installed": True,
                     "dir": loc, "drive": drive(loc), "sizeGB": tam_gb(loc), "launch": "shell:AppsFolder\\%s!%s" % (p.get("Family"), p.get("AppId")),
+                    "uninstall": "ms-settings:appsfeatures-app?%s" % p.get("Family"),  # la página del juego en Aplicaciones de Windows (ahí se desinstala lo de Xbox)
                     "family": p.get("Family", "")})
     familias = {g["family"].lower() for g in out if g.get("family")}
     try:
@@ -722,7 +725,7 @@ def itch():
                 if not r or not r[1]: continue
                 g = juegos[gid] = nuevo(r)
             g.update(installed=True, dir=carpeta, drive=drive(carpeta) if carpeta else "", sizeGB=tam_gb(carpeta) if carpeta and os.path.isdir(carpeta) else 0,
-                     launch="itch://caves/%s/launch" % cid)
+                     launch="itch://caves/%s/launch" % cid, uninstall="itch://games/%s" % gid)  # itch no tiene link de desinstalar: abre el juego en itch (⋯ → Desinstalar)
     finally:
         c.close()
     return list(juegos.values())

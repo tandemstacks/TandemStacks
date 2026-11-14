@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, relojes, VERSION
 from . import precios as precios_tiendas
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io", "Google Play"]
@@ -713,9 +713,6 @@ _DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
            (detect.HKCU, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
 
 _aviso_candado = threading.Lock()
-_red = [0, 0, 0.0]
-_cpu = [0.0, 0.0]  # tiempo ocupado y total del procesador en la consulta anterior  # bytes bajados, subidos y cuándo, para calcular la velocidad entre dos consultas
-_disco = [0, 0, 0, 0]
 _gpu = [None]  # None: sin probar · True: hay NVIDIA · False: no hay (no se vuelve a llamar a nvidia-smi)
 _procs_top = {}  # pid: proceso, para medir el procesador de cada programa contra la consulta anterior
 
@@ -744,43 +741,35 @@ def _top(tipo):
 
 def _en_vivo():
     """Procesador, RAM y red en este momento (lo pide la página cada 4 s, solo con la ventana a la vista). Leerlo no gasta casi nada."""
-    import psutil
+    # todo con los contadores del Administrador de tareas (relojes.py), más la parte del juego abierto
     try:
-        m, n, t = psutil.virtual_memory(), psutil.net_io_counters(), time.time()
-        dt = t - _red[2] if _red[2] else 0
-        baja, sube = ((n.bytes_recv - _red[0]) / dt, (n.bytes_sent - _red[1]) / dt) if dt > 0 else (0, 0)
-        _red[:] = [n.bytes_recv, n.bytes_sent, t]
-        # procesador: se calcula contra la consulta anterior. psutil.cpu_percent() guarda eso por hilo y cada consulta
-        # de la página llega en un hilo nuevo, así que siempre daba 0
-        c = psutil.cpu_times()
-        ocupado, total = c.user + c.system + getattr(c, "interrupt", 0) + getattr(c, "dpc", 0), sum(c)
-        cpu = 100 * (ocupado - _cpu[0]) / (total - _cpu[1]) if _cpu[1] and total > _cpu[1] else 0
-        _cpu[:] = [ocupado, total]
-        # disco: bytes leídos y escritos por segundo, y cuánto del tiempo estuvo ocupado (read_time + write_time, en ms)
-        d = psutil.disk_io_counters()
-        dl = (d.read_bytes - _disco[0]) / dt if dt > 0 and _disco[2] else 0
-        de = (d.write_bytes - _disco[1]) / dt if dt > 0 and _disco[2] else 0
-        ocup = min(100, (d.read_time + d.write_time - _disco[3]) / (dt * 10)) if dt > 0 and _disco[2] else 0
-        _disco[:] = [d.read_bytes, d.write_bytes, t, d.read_time + d.write_time]
-        out = {"cpu": max(0, min(100, round(cpu))), "ram": round(m.percent), "ramGB": round(m.used / 1073741824, 1),
-               "ramTotal": round(m.total / 1073741824), "baja": max(0, round(baja)), "sube": max(0, round(sube)),
-               "dlee": max(0, round(dl)), "descr": max(0, round(de)), "dOcup": max(0, round(ocup))}
-        # placa de video: solo NVIDIA (nvidia-smi viene con el driver). Si no está, no se vuelve a probar
-        # con un juego medido por Pulso se usa su última muestra (cada 5 s): no se abre nvidia-smi otra vez
-        if _gpu[0] is not False:
+        pids, nombre = watch.JUEGO
+        out = relojes.medir(pids if watch.EN_JUEGO[0] else ())
+        if out.get("juego") is not None: out["juego"]["nombre"] = nombre
+        # FPS: con juego, los de Pulso (PresentMon); sin juego, los Hz del monitor (lo que dibuja la pantalla como máximo)
+        if watch.EN_JUEGO[0]:
+            out["fps"] = pulso.fps_ahora()
+            if out["fps"] is None: out["fpsSin"] = "pulso" if not NUC.cfg.get("pulso", True) else "espera"
+        if not _hz[1] or time.time() - _hz[1] > 60: _hz[:] = [pulso.hz_monitor(), time.time()]
+        out["hz"] = _hz[0]
+        # temperatura y consumo de la placa: solo NVIDIA (nvidia-smi viene con el driver). Si no está, no se vuelve a probar.
+        # Con un juego medido por Pulso se usa su última muestra (cada 5 s): no se abre nvidia-smi otra vez
+        if _gpu[0] is not False and "gpu" in out:
             midiendo = _gpu[0] and bool(pulso._activos)
             v = pulso.nvsmi(guardada=midiendo)
-            if v is None: pass  # Pulso todavía no midió: esta vez sin placa
+            if v is None: pass  # Pulso todavía no midió: esta vez sin temperatura
             elif v:
                 _gpu[0] = True
-                out.update(gpu=round(v["gpu_uso"]), vram=round(v["vram"] / 1024, 1), vramTotal=round(v["vram_total"] / 1024),
-                           vramPct=round(100 * v["vram"] / v["vram_total"]) if v["vram_total"] else 0,
-                           gpuTemp=round(v["gpu_temp"]), gpuW=round(v["gpu_w"]))
+                out.update(gpuTemp=round(v["gpu_temp"]), gpuW=round(v["gpu_w"]))
+                if not out.get("vramTotal") and v.get("vram_total"): out["vramTotal"] = round(v["vram_total"] / 1024)
             elif _gpu[0] is None:
                 _gpu[0] = False
         return out
-    except Exception:
+    except Exception as e:
+        paths.log("relojes", e)
         return None
+
+_hz = [None, 0]  # Hz del monitor y cuándo se leyeron (se relee cada minuto: puede cambiar de pantalla)
 
 def _con_windows(si):
     """Abrir TandemStacks al iniciar Windows (minimizada), con la clave Run del usuario. Solo el programa instalado."""

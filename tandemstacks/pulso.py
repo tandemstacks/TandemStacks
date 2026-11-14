@@ -476,6 +476,37 @@ def _limpiar_sesiones():
             _log("sesión colgada cerrada:", n)
 
 _activos_pid = set()  # pids de juegos que se están midiendo ahora (sus sesiones no se tocan)
+_vivo = {}            # pid: (CSV de PresentMon, exe del juego), para el reloj de FPS
+_cab = {}             # CSV: columnas (tiempo, ms entre cuadros, programa), leídas una vez
+
+def fps_ahora(seg=3):
+    """FPS del juego en los últimos segundos, leyendo solo el final del CSV que PresentMon va escribiendo (64 KB, ~1 ms).
+    None si no hay medición; 0 si PresentMon no escribió nada en 10 s (juego en pausa, minimizado o sin permiso)."""
+    for pid, (csv_fps, exe) in list(_vivo.items()):
+        try:
+            if time.time() - os.path.getmtime(csv_fps) > 10: return 0
+            if csv_fps not in _cab:
+                with open(csv_fps, encoding="utf-8-sig", errors="ignore") as f:
+                    cols = [c.strip().lower() for c in f.readline().split(",")]
+                if "msbetweenpresents" not in cols: continue
+                _cab[csv_fps] = (cols.index("timeinseconds"), cols.index("msbetweenpresents"), cols.index("application") if "application" in cols else -1, len(cols))
+            it, ims, iap, n = _cab[csv_fps]
+            with open(csv_fps, "rb") as f:
+                f.seek(0, 2); tam = f.tell(); f.seek(max(0, tam - 65536))
+                lineas = f.read().decode("utf-8", "ignore").splitlines()[1:]
+            filas = []
+            for l in lineas:
+                r = l.split(",")
+                if len(r) != n or (iap >= 0 and r[iap].lower() != exe): continue  # sin filtro graba también otros programas
+                try: filas.append((float(r[it]), float(r[ims])))
+                except ValueError: pass
+            if not filas: return 0
+            ult = filas[-1][0]
+            ms = [m for t, m in filas if t >= ult - seg and m > 0]
+            return round(1000 * len(ms) / sum(ms)) if ms else 0
+        except OSError:
+            continue
+    return None
 
 def medir(g, al_terminar=None):
     """Hilo de una partida: espera el proceso principal (hasta 3 min), mide hasta que se cierra y guarda el resumen."""
@@ -492,6 +523,7 @@ def medir(g, al_terminar=None):
         csv_fps = os.path.join(TMP, "fps_%d.csv" % pid)
         _limpiar_sesiones()
         _activos_pid.add(pid)
+        _vivo[pid] = (csv_fps, os.path.basename(exe).lower())
         pm, sesion = None, "TandemStacks_%d" % pid
         pm_txt = os.path.join(TMP, "pm_%d.txt" % pid)
         def lanzar_pm(solo_juego):
@@ -567,6 +599,7 @@ def medir(g, al_terminar=None):
             try: os.remove(f)
             except OSError: pass
         _activos_pid.discard(pid)
+        _vivo.pop(pid, None); _cab.pop(csv_fps, None)
     except Exception as e:
         _log("medir", g.get("name"), e)
     finally:

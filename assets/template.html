@@ -73,6 +73,8 @@ main{padding:16px 22px 60px}
 .vivo{background:var(--panel);border-radius:4px;box-shadow:var(--sh);margin-bottom:10px;padding:8px 10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:6px 10px;font-size:13px;color:var(--mu)}
 .vivo:empty{display:none}.vivo>div{min-width:0}.vivo .lbl{gap:8px}.vivo .lbl span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vivo .lbl b{white-space:nowrap}.vivo .lbl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}.vivo b{color:var(--tx);font-size:17px;letter-spacing:0;text-transform:none}
 .vivo .gr{display:block;width:100%;height:48px;background:var(--bg);border-radius:4px}.vivo small{font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px}.vivo .sube{color:var(--mu);font-size:14px}
+.vivo{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:1500px){.vivo{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.vivo{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.vivo{grid-template-columns:1fr}}  /* 6 relojes: filas parejas */
+.vivo .jg{margin:-3px 0 6px;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vivo .jg b{font-size:13px;font-weight:600}.vivo .jg .sube{font-size:12px}
 #noti{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);opacity:0;transition:opacity .25s,transform .25s;z-index:60;display:flex;align-items:center;gap:12px;background:#1a1a1a;color:#fff;padding:12px 10px 12px 18px;border-radius:5px;box-shadow:0 6px 24px rgba(0,0,0,.35);font-weight:600;font-size:14px;max-width:calc(100% - 32px)}
 #noti.ver{opacity:1;transform:translate(-50%,0)}#noti::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--acc);border-radius:5px 0 0 5px}
 #noti button{background:none;border:0;color:#bbb;font-size:15px;cursor:pointer;padding:2px 7px;border-radius:3px}#noti button:hover{color:#fff;background:rgba(255,255,255,.15)}
@@ -296,7 +298,9 @@ vAyuda:{cpu:{lineas:['Uso del procesador'],que:'cuánto está trabajando el proc
  ram:{lineas:['RAM usada'],que:'cuánta memoria están usando los programas. La RAM es el espacio de trabajo rápido de la PC.',leer:'suele ser una línea pareja: sube cuando abrís cosas y baja cuando las cerrás.',ojo:'arriba del 85-90 % Windows empieza a usar el disco como memoria y todo se pone lento y con tirones. Cerrá tiendas o pestañas del navegador.'},
  gpu:{lineas:['Uso de la placa','VRAM ocupada'],que:'la placa de video es la que dibuja el juego. El uso es cuánto está trabajando; la VRAM es su memoria propia, donde guarda las texturas.',leer:'naranja = uso de la placa; gris = VRAM ocupada. Jugando, que el uso esté cerca del 100 % es bueno: la placa está dando todo.',ojo:'si la VRAM llega al tope, el juego tiene tirones: bajá la calidad de texturas. Más de 85 °C seguido: limpiá el polvo o revisá los ventiladores.'},
  disco:{lineas:['Lectura','Escritura'],que:'cuánto está leyendo (naranja) y escribiendo (gris) el disco por segundo. "Ocupado" es la parte del tiempo que el disco estuvo trabajando.',leer:'sube al abrir juegos, cargar niveles, instalar o actualizar. Que suba un rato es normal.',ojo:'si el disco está ocupado cerca del 100 % mucho rato, todo se traba: puede ser una descarga, una actualización de Windows o el antivirus.'},
- red:{lineas:['Bajada','Subida'],que:'cuánto está bajando (naranja) y subiendo (gris) tu conexión, sumando todos los programas.',leer:'una descarga de un juego se ve como una meseta alta. Jugando online se usa poco: ahí importa el ping, no la velocidad.',ojo:'si jugás online y ves mucha bajada al mismo tiempo, alguna tienda o Windows está descargando: pausala para que no te suba el ping.'}},
+ red:{lineas:['Bajada','Subida'],que:'cuánto está bajando (naranja) y subiendo (gris) tu conexión, sumando todos los programas. Windows no cuenta la red de cada programa por separado, así que acá no se puede ver la parte del juego.',leer:'una descarga de un juego se ve como una meseta alta. Jugando online se usa poco: ahí importa el ping, no la velocidad.',ojo:'si jugás online y ves mucha bajada al mismo tiempo, alguna tienda o Windows está descargando: pausala para que no te suba el ping.'},
+ fps:{lineas:['FPS del juego'],que:'con un juego abierto, cuántas imágenes por segundo dibuja (FPS). Sin juego se ven los Hz del monitor: cuántas veces por segundo se actualiza la pantalla, el máximo que podés llegar a ver.',leer:'más es mejor. Si los FPS llegan a los Hz del monitor, ves todo lo que la pantalla puede mostrar. Lo mide Pulso (tiene que estar prendido en Configuración).',ojo:'si baja de 30 se nota trabado. Si salta mucho de arriba a abajo, se sienten tirones aunque el promedio sea alto: mirá la ficha del juego, pestaña Pulso.'}},
+vJuego:'Juego',vJuegoLinea:'Parte del juego',vRedJuego:'no se separa por programa',vHz:'Hz del monitor',vSinJuego:'sin juego',vFpsEspera:'midiendo…',vFpsPulso:'prendé Pulso',
 cerrar:'Cerrar',ningunaAbierta:'ninguna abierta',bajandoEn:'Bajando en',cancelarDl:'Cancelar descarga en',cancelarAyuda:'Se abre {t} para cancelar la descarga; la confirmación la hacés ahí.',cerrandoT:'Cerrando tiendas…',cerradasT:'{n} tiendas cerradas · {mb} liberados',conJuegoT:'Hay un juego abierto: cerralo primero',cAhorro:'Lo que ahorró TandemStacks',cAhL:'launchers cerrados',cAhR:'de memoria liberada',cAhD:'de disco liberado',cAhNada:'Todavía nada: se mide a partir de tu próxima partida.',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TandemStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
@@ -323,7 +327,9 @@ vAyuda:{cpu:{lineas:['CPU usage'],que:'how hard your CPU is working, from 0 to 1
  ram:{lineas:['RAM used'],que:'how much memory programs are using. RAM is the PC\'s fast working space.',leer:'it is usually a flat line: it rises when you open things and drops when you close them.',ojo:'above 85-90 % Windows starts using the disk as memory and everything gets slow and stuttery. Close stores or browser tabs.'},
  gpu:{lineas:['GPU usage','VRAM used'],que:'the graphics card draws the game. Usage is how hard it works; VRAM is its own memory, where textures live.',leer:'orange = GPU usage; grey = VRAM used. While gaming, usage near 100 % is good: the card is giving everything.',ojo:'if VRAM hits the top, the game stutters: lower texture quality. Above 85 °C for long: clean the dust or check the fans.'},
  disco:{lineas:['Read','Write'],que:'how much the disk is reading (orange) and writing (grey) per second. "Busy" is the share of time the disk was working.',leer:'it rises when opening games, loading levels, installing or updating. A while of high activity is normal.',ojo:'if the disk stays busy near 100 % for long, everything freezes up: it may be a download, a Windows update or the antivirus.'},
- red:{lineas:['Download','Upload'],que:'how much your connection is downloading (orange) and uploading (grey), adding up every program.',leer:'a game download looks like a high plateau. Online gaming uses little: what matters there is ping, not speed.',ojo:'if you play online and see heavy downloading at the same time, a store or Windows is downloading: pause it so your ping does not rise.'}},
+ red:{lineas:['Download','Upload'],que:'how much your connection is downloading (orange) and uploading (grey), adding up every program. Windows does not count network per program, so the game\'s share cannot be shown here.',leer:'a game download looks like a high plateau. Online gaming uses little: what matters there is ping, not speed.',ojo:'if you play online and see heavy downloading at the same time, a store or Windows is downloading: pause it so your ping does not rise.'},
+ fps:{lineas:['Game FPS'],que:'with a game open, how many images per second it draws (FPS). Without a game you see the monitor Hz: how many times per second the screen refreshes, the most you can see.',leer:'higher is better. If FPS reach the monitor Hz, you see everything the screen can show. Pulse measures it (it must be on in Settings).',ojo:'below 30 it feels choppy. If it jumps up and down a lot, you feel stutters even with a high average: check the game card, Pulse tab.'}},
+vJuego:'Game',vJuegoLinea:'Game share',vRedJuego:'not split per program',vHz:'monitor Hz',vSinJuego:'no game',vFpsEspera:'measuring…',vFpsPulso:'turn on Pulse',
 cerrar:'Close',ningunaAbierta:'none open',bajandoEn:'Downloading on',cancelarDl:'Cancel download on',cancelarAyuda:'Opens {t} to cancel the download; you confirm it there.',cerrandoT:'Closing stores…',cerradasT:'{n} stores closed · {mb} freed',conJuegoT:'A game is running: close it first',cAhorro:'What TandemStacks saved',cAhL:'launchers closed',cAhR:'of memory freed',cAhD:'of disk freed',cAhNada:'Nothing yet: it starts measuring on your next game.',
   cGuardar:'Save and scan',cInicio:'Windows startup',cInicioBtn:'Remove launchers from startup',cInicioAct:'start with Windows',cInicioOk:'No launcher starts with Windows',cInicioAdmin:'These are set for all users and need administrator rights (remove them from Task Manager → Startup):',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
 };
@@ -388,7 +394,7 @@ function torta(d){
 // procesador, RAM y red en vivo (llega con estado() cada 4 s; minimizada no se pide)
 const velo=b=>b>=1048576?(b/1048576).toFixed(1)+' MB/s':b>=1024?Math.round(b/1024)+' KB/s':b+' B/s';
 // guarda los últimos 5 min (75 muestras); minimizada se suelta
-const HV={cpu:[],ram:[],baja:[],sube:[],dlee:[],descr:[],dOcup:[],gpu:[],vramPct:[]}, HN=75;
+const HV={cpu:[],ram:[],baja:[],sube:[],dlee:[],descr:[],dOcup:[],gpu:[],vramPct:[],fps:[],jcpu:[],jram:[],jgpu:[],jdisco:[]}, HN=75;
 function graf(series,max){  // series: [[valores,color],...] → gráfica de área en el tiempo
   const y=v=>(40-Math.min(1,v/max)*37).toFixed(1), x=(i,n)=>((i+HN-n)*100/(HN-1)).toFixed(2);
   return `<svg class="gr" viewBox="0 0 100 40" preserveAspectRatio="none">${series.map(([a,c])=>{if(!a.length)return '';
@@ -418,25 +424,35 @@ function cerrarTiendas(){
   });
 }
 // relojes en vivo: cada uno es una gráfica de los últimos 5 min; al tocarlo se abre la ventana grande con más datos
+// j: la serie con la parte del juego (línea del color del texto); solo se dibuja con un juego abierto
 const VIVO={
-  cpu:{t:()=>L.pCpuM,s:[['cpu','var(--acc)']],max:()=>100,u:'%'},
-  ram:{t:()=>'RAM',s:[['ram','var(--acc)']],max:()=>100,u:'%'},
-  gpu:{t:()=>L.vGpu,s:[['gpu','var(--acc)'],['vramPct','var(--mu)']],max:()=>100,u:'%'},
-  disco:{t:()=>L.vDisco,s:[['dlee','var(--acc)'],['descr','var(--mu)']],max:()=>Math.max(10485760,pico(HV.dlee),pico(HV.descr))*1.1,u:'B'},
-  red:{t:()=>L.red,s:[['baja','var(--acc)'],['sube','var(--mu)']],max:()=>Math.max(102400,pico(HV.baja),pico(HV.sube))*1.1,u:'B'}
+  cpu:{t:()=>L.pCpuM,s:[['cpu','var(--acc)']],j:'jcpu',max:()=>100,u:'%'},
+  ram:{t:()=>'RAM',s:[['ram','var(--acc)']],j:'jram',max:()=>100,u:'%'},
+  gpu:{t:()=>L.vGpu,s:[['gpu','var(--acc)'],['vramPct','var(--mu)']],j:'jgpu',max:()=>100,u:'%'},
+  disco:{t:()=>L.vDisco,s:[['dlee','var(--acc)'],['descr','var(--mu)']],j:'jdisco',max:()=>Math.max(10485760,pico(HV.dlee),pico(HV.descr))*1.1,u:'B'},
+  red:{t:()=>L.red,s:[['baja','var(--acc)'],['sube','var(--mu)']],max:()=>Math.max(102400,pico(HV.baja),pico(HV.sube))*1.1,u:'B'},
+  fps:{t:()=>'FPS',s:[['fps','var(--acc)']],max:()=>Math.max(60,(EST.pc&&EST.pc.hz)||0,pico(HV.fps))*1.1,u:'fps'}
 };
 const pico=a=>a.length?Math.max(...a):0, prom=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const colV=v=>v>=90?'var(--bad)':v>=75?'var(--warn)':'var(--acc)';
-const fmtV=(v,u)=>u==='%'?Math.round(v)+' %':velo(Math.round(v));
+const fmtV=(v,u)=>u==='%'?Math.round(v)+' %':u==='fps'?Math.round(v)+' FPS':velo(Math.round(v));
 function enVivo(p){
   if(!p){$('#vivo').innerHTML='';Object.values(HV).forEach(a=>a.length=0);cerrarGraf();return;}
-  for(const k of ['cpu','ram','baja','sube','dlee','descr','dOcup','gpu','vramPct']){(HV[k]=HV[k]||[]).push(p[k]||0);if(HV[k].length>HN)HV[k].shift();}
-  const caja=(k,pk,txt,series)=>`<div class="vv" onclick="verGraf('${k}')" title="${esc(L.verMas)}"><div class="lbl"><span>${VIVO[k].t()} <small>${pk}</small></span><b>${txt}</b></div>${graf(series,VIVO[k].max())}</div>`;
-  let h=caja('cpu',`${L.pico} ${pico(HV.cpu)} %`,p.cpu+' %',[[HV.cpu,colV(p.cpu)]])
-    +caja('ram',`${L.pico} ${pico(HV.ram)} %`,`${p.ram} % · ${p.ramGB} / ${p.ramTotal} GB`,[[HV.ram,colV(p.ram)]]);
-  if(p.gpu!=null) h+=caja('gpu',`VRAM ${p.vram} / ${p.vramTotal} GB`,p.gpu+' %',[[HV.gpu,colV(p.gpu)],[HV.vramPct,'var(--mu)']]);
-  h+=caja('disco',`${L.ocupado} ${p.dOcup} %`,`↓ ${velo(p.dlee)} · <span class="sube">↑ ${velo(p.descr)}</span>`,[[HV.dlee,'var(--acc)'],[HV.descr,'var(--mu)']])
-    +caja('red',`${L.pico} ↓ ${velo(pico(HV.baja))}`,`↓ ${velo(p.baja)} · <span class="sube">↑ ${velo(p.sube)}</span>`,[[HV.baja,'var(--acc)'],[HV.sube,'var(--mu)']]);
+  const J=p.juego||null;
+  // FPS: con juego, los del juego; sin juego, los Hz del monitor (lo que dibuja la pantalla)
+  const fps=J?(p.fps||0):(p.hz||0);
+  const val={...p,fps,jcpu:J?J.cpu:0,jram:J?J.ram:0,jgpu:J?(J.gpu||0):0,jdisco:J?J.dlee+J.descr:0};
+  for(const k in HV){HV[k].push(val[k]||0);if(HV[k].length>HN)HV[k].shift();}
+  const jl=(k,txt)=>J?`<div class="jg">🎮 ${esc(L.vJuego)} <b>${txt}</b></div>`:'';  // la parte del juego, debajo del título
+  const caja=(k,pk,txt,series,jtxt)=>{if(J&&VIVO[k].j)series=series.concat([[HV[VIVO[k].j],'var(--tx)']]);
+    return `<div class="vv" onclick="verGraf('${k}')" title="${esc(L.verMas)}"><div class="lbl"><span>${VIVO[k].t()} <small>${pk}</small></span><b>${txt}</b></div>${jl(k,jtxt)}${graf(series,VIVO[k].max())}</div>`;};
+  let h=caja('cpu',`${L.pico} ${pico(HV.cpu)} %`,p.cpu+' %',[[HV.cpu,colV(p.cpu)]],J&&J.cpu+' %')
+    +caja('ram',`${L.pico} ${pico(HV.ram)} %`,`${p.ram} % · ${p.ramGB} / ${p.ramTotal} GB`,[[HV.ram,colV(p.ram)]],J&&`${J.ram} % · ${J.ramGB} GB`);
+  if(p.gpu!=null) h+=caja('gpu',`VRAM ${p.vram} / ${p.vramTotal} GB`,p.gpu+' %',[[HV.gpu,colV(p.gpu)],[HV.vramPct,'var(--mu)']],J&&`${J.gpu||0} % · VRAM ${J.vram||0} GB`);
+  h+=caja('disco',`${L.ocupado} ${p.dOcup} %`,`↓ ${velo(p.dlee)} · <span class="sube">↑ ${velo(p.descr)}</span>`,[[HV.dlee,'var(--acc)'],[HV.descr,'var(--mu)']],J&&`↓ ${velo(J.dlee)} · ↑ ${velo(J.descr)}`)
+    +caja('red',`${L.pico} ↓ ${velo(pico(HV.baja))}`,`↓ ${velo(p.baja)} · <span class="sube">↑ ${velo(p.sube)}</span>`,[[HV.baja,'var(--acc)'],[HV.sube,'var(--mu)']],`<span class="sube">${esc(L.vRedJuego)}</span>`);
+  const fpsTxt=J?(p.fps!=null?p.fps+' FPS':p.fpsSin==='pulso'?L.vFpsPulso:L.vFpsEspera):(p.hz?p.hz+' Hz':'—');
+  h+=caja('fps',J?(p.hz?`${L.vHz} ${p.hz}`:''):`${L.vSinJuego} · ${L.vHz}`,fpsTxt,[[HV.fps,'var(--acc)']],J&&esc(J.nombre||''));
   $('#vivo').innerHTML=h;
   if(grafAbierta) pintarGraf();
 }
@@ -457,12 +473,14 @@ function pintarGraf(){
   const V=VIVO[k], X=L.vAyuda[k], max=V.max(), W=600, H=200, p=EST.pc||{};
   const yv=v=>(H-Math.min(1,v/max)*(H-8)).toFixed(1), xv=(i,n)=>((i+HN-n)*W/(HN-1)).toFixed(1);
   const lineas=[25,50,75,100].map(q=>{const y=H-(q/100)*(H-8);return `<line x1="0" x2="${W}" y1="${y}" y2="${y}" class="gl"/><text x="4" y="${q===100?y+13:y-3}" class="gt">${fmtV(max*q/100,V.u)}</text>`;}).join('');
-  const series=V.s.map(([key,col])=>{const a=HV[key]||[];if(!a.length)return '';const pts=a.map((v,i)=>xv(i,a.length)+','+yv(v)).join(' ');
+  const J=p.juego, S=J&&V.j?V.s.concat([[V.j,'var(--tx)']]):V.s, nombres=J&&V.j?X.lineas.concat([L.vJuegoLinea+(J.nombre?' ('+J.nombre+')':'')]):X.lineas;
+  const series=S.map(([key,col])=>{const a=HV[key]||[];if(!a.length)return '';const pts=a.map((v,i)=>xv(i,a.length)+','+yv(v)).join(' ');
     return `<polygon points="${xv(0,a.length)},${H} ${pts} ${W},${H}" fill="${col}" opacity=".15"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5"/>`;}).join('');
-  const stats=V.s.map(([key,col],i)=>{const a=HV[key]||[];return `<div class="gs"><b style="color:${col==='var(--mu)'?'var(--mu)':'var(--acct)'}">● ${X.lineas[i]}</b>
+  const stats=S.map(([key,col],i)=>{const a=HV[key]||[];return `<div class="gs"><b style="color:${col==='var(--mu)'?'var(--mu)':col==='var(--tx)'?'var(--tx)':'var(--acct)'}">● ${esc(nombres[i])}</b>
     <span>${L.ahora} <b>${fmtV(a[a.length-1]||0,V.u)}</b></span><span>${L.promedio} <b>${fmtV(prom(a),V.u)}</b></span><span>${L.pico} <b>${fmtV(pico(a),V.u)}</b></span><span>${L.minimo} <b>${fmtV(a.length?Math.min(...a):0,V.u)}</b></span></div>`;}).join('');
-  const extra=k==='gpu'&&p.gpu!=null?`<div class="gx"><span>🌡 ${p.gpuTemp} °C</span><span>⚡ ${p.gpuW} W</span><span>VRAM ${p.vram} / ${p.vramTotal} GB</span></div>`
-    :k==='ram'?`<div class="gx"><span>${p.ramGB} / ${p.ramTotal} GB</span></div>`:k==='disco'?`<div class="gx"><span>${L.ocupado}: ${p.dOcup} %</span></div>`:'';
+  const extra=k==='gpu'&&p.gpu!=null?`<div class="gx">${p.gpuTemp!=null?`<span>🌡 ${p.gpuTemp} °C</span><span>⚡ ${p.gpuW} W</span>`:''}<span>VRAM ${p.vram} / ${p.vramTotal||'?'} GB</span>${J?`<span>🎮 VRAM ${J.vram||0} GB</span>`:''}</div>`
+    :k==='ram'?`<div class="gx"><span>${p.ramGB} / ${p.ramTotal} GB</span>${J?`<span>🎮 ${J.ramGB} GB</span>`:''}</div>`:k==='disco'?`<div class="gx"><span>${L.ocupado}: ${p.dOcup} %</span></div>`
+    :k==='fps'?`<div class="gx">${p.hz?`<span>${L.vHz}: ${p.hz}</span>`:''}${J?`<span>🎮 ${esc(J.nombre||'')}</span>`:`<span>${L.vSinJuego}</span>`}</div>`:'';
   const prev=$('#grafTop')?$('#grafTop').innerHTML:`<small>${L.midiendo}</small>`;
   c.innerHTML=`<h3>${V.t()}</h3>${extra}
     <svg class="gbig" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${lineas}${series}</svg>

@@ -308,6 +308,10 @@ class Nucleo:
             else:
                 subprocess.Popen([destino] + args, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
             time.sleep(1)
+            try:
+                pulso.apagar()
+            except Exception:
+                pass
             os._exit(0)
         except Exception as e:
             paths.log("actualizar", e)
@@ -746,12 +750,15 @@ def _en_vivo():
         pids, nombre = watch.JUEGO
         out = relojes.medir(pids if watch.EN_JUEGO[0] else ())
         if out.get("juego") is not None: out["juego"]["nombre"] = nombre
-        # FPS: con juego, los de Pulso (PresentMon); sin juego, los Hz del monitor (lo que dibuja la pantalla como máximo)
+        # FPS: con juego, los del juego (Pulso); sin juego, los de la pantalla (PresentMon solo mientras la ventana está a la vista)
         if watch.EN_JUEGO[0]:
             out["fps"] = pulso.fps_ahora()
             if out["fps"] is None: out["fpsSin"] = "pulso" if not NUC.cfg.get("pulso", True) else "espera"
+        else:
+            out["fps"] = pulso.fps_escritorio()
+            if out["fps"] is None: out["fpsSin"] = "espera"
         if not _hz[1] or time.time() - _hz[1] > 60: _hz[:] = [pulso.hz_monitor(), time.time()]
-        out["hz"] = _hz[0]
+        out["hz"] = _hz[0]  # solo para la escala de la gráfica
         # temperatura y consumo de la placa: solo NVIDIA (nvidia-smi viene con el driver). Si no está, no se vuelve a probar.
         # Con un juego medido por Pulso se usa su última muestra (cada 5 s): no se abre nvidia-smi otra vez
         if _gpu[0] is not False and "gpu" in out:
@@ -985,3 +992,7 @@ def main():
                           "--disable-features=Translate,msEdgeTranslate,msSmartScreenProtection,OptimizationHints,MediaRouter,msShoppingTrigger,msEdgeSidebarV2")
     webview.start(lambda: threading.Thread(target=arranque, daemon=True).start(), icon=icono,
                   private_mode=False, storage_path=os.path.join(paths.DATA, "visor"))
+    try:
+        pulso.apagar()  # que no quede ningún PresentMon andando al cerrar
+    except Exception:
+        pass

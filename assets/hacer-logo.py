@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Logo de TandemStacks: cuadrado naranja industrial con "TS" blanco armado con bloques apilados
+# Logo de TandemStacks (paleta 14/11/2026: azul #006BB6, naranja #F58426): cuadrado azul con base naranja con "TS" blanco armado con bloques apilados
 # (barras rectas con una sombra corta, estilo bloque/estantería).
 # Salida: logo.png (256) e icon.ico (16-256 px), junto a este script.
 import os
@@ -7,12 +7,12 @@ from PIL import Image, ImageDraw
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 N = 1024
-NARANJA, OSCURO, BLANCO, SOMBRA = (255, 106, 0, 255), (205, 78, 0, 255), (255, 255, 255, 255), (170, 62, 0, 255)
+NARANJA, OSCURO, BLANCO, SOMBRA = (0, 107, 182, 255), (245, 132, 38, 255), (255, 255, 255, 255), (0, 66, 112, 255)  # fondo azul, base naranja, sombra azul oscuro
 
 img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
 d = ImageDraw.Draw(img)
 d.rounded_rectangle((24, 24, N - 24, N - 24), radius=60, fill=NARANJA)
-# banda inferior oscura (base industrial)
+# banda inferior naranja (base industrial)
 d.rectangle((24, N - 150, N - 24, N - 84), fill=OSCURO)
 d.rounded_rectangle((24, N - 150, N - 24, N - 24), radius=60, fill=OSCURO)
 

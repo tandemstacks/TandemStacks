@@ -10,7 +10,7 @@ Queda en %APPDATA%\\TandemStacks\\pulso\\<id del juego>.jsonl (las últimas 20 p
 Solo mide: no cambia nada del sistema ni de los juegos. Todo oculto y con prioridad baja.
 PresentMon necesita que el usuario esté en el grupo de Windows "Performance Log Users" (o la app como administrador):
 si no, no hay FPS pero se mide todo lo demás."""
-import os, re, csv, json, glob, time, ctypes, datetime, statistics, subprocess, threading, urllib.request
+import io, os, re, csv, json, glob, time, ctypes, datetime, statistics, subprocess, threading, collections, urllib.request
 import psutil
 from . import paths
 
@@ -476,38 +476,123 @@ def _limpiar_sesiones():
             _log("sesión colgada cerrada:", n)
 
 _activos_pid = set()  # pids de juegos que se están midiendo ahora (sus sesiones no se tocan)
-_vivo = {}            # pid: (CSV de PresentMon, exe del juego), para el reloj de FPS
-_cab = {}             # CSV: columnas (tiempo, ms entre cuadros, programa), leídas una vez
+_vivo = {}            # pid: (_Lector de PresentMon, exe del juego), para el reloj de FPS
 
-def fps_ahora(seg=3):
-    """FPS del juego en los últimos segundos, leyendo solo el final del CSV que PresentMon va escribiendo (64 KB, ~1 ms).
-    None si no hay medición; 0 si PresentMon no escribió nada en 10 s (juego en pausa, minimizado o sin permiso)."""
-    for pid, (csv_fps, exe) in list(_vivo.items()):
+class _Lector(threading.Thread):
+    """Lee lo que PresentMon manda por su salida (--output_stdout): PresentMon no deja leer su archivo mientras graba, así
+    que el CSV lo escribe este hilo (si hace falta, para el resumen de la partida) y guarda los últimos cuadros en memoria
+    para el reloj de FPS. Llegan de a tandas de ~1 s."""
+    def __init__(self, proc, archivo=None):
+        super().__init__(daemon=True)
+        self.proc, self.archivo, self.t0 = proc, archivo, time.time()
+        self.cuadros = collections.deque(maxlen=6000)  # (segundo, ms entre cuadros, programa, modo, descartado)
+        self.start()
+    def run(self):
+        out = None
         try:
-            if time.time() - os.path.getmtime(csv_fps) > 10: return 0
-            if csv_fps not in _cab:
-                with open(csv_fps, encoding="utf-8-sig", errors="ignore") as f:
-                    cols = [c.strip().lower() for c in f.readline().split(",")]
-                if "msbetweenpresents" not in cols: continue
-                _cab[csv_fps] = (cols.index("timeinseconds"), cols.index("msbetweenpresents"), cols.index("application") if "application" in cols else -1, len(cols))
-            it, ims, iap, n = _cab[csv_fps]
-            with open(csv_fps, "rb") as f:
-                f.seek(0, 2); tam = f.tell(); f.seek(max(0, tam - 65536))
-                lineas = f.read().decode("utf-8", "ignore").splitlines()[1:]
-            filas = []
-            for l in lineas:
-                r = l.split(",")
-                if len(r) != n or (iap >= 0 and r[iap].lower() != exe): continue  # sin filtro graba también otros programas
-                try: filas.append((float(r[it]), float(r[ims])))
+            if self.archivo: out = open(self.archivo, "w", encoding="utf-8", newline="")
+            cab = None
+            for linea in io.TextIOWrapper(self.proc.stdout, encoding="utf-8", errors="ignore"):
+                if out: out.write(linea)
+                r = linea.rstrip("\r\n").split(",")
+                if cab is None:
+                    cols = [c.strip().lstrip("﻿").lower() for c in r]
+                    if "timeinseconds" in cols and "msbetweenpresents" in cols:
+                        ix = lambda c: cols.index(c) if c in cols else -1
+                        cab = (ix("timeinseconds"), ix("msbetweenpresents"), ix("application"), ix("presentmode"), ix("dropped"), ix("processid"), len(cols))
+                    continue
+                it, ims, iap, imo, idr, ipi, n = cab
+                if len(r) != n: continue
+                try: self.cuadros.append((float(r[it]), float(r[ims]), r[iap].lower() if iap >= 0 else "",
+                                          r[imo].lower() if imo >= 0 else "", idr >= 0 and r[idr] == "1", r[ipi] if ipi >= 0 else ""))
                 except ValueError: pass
-            if not filas: return 0
-            ult = filas[-1][0]
-            ms = [m for t, m in filas if t >= ult - seg and m > 0]
+        except Exception as e:
+            _log("lector presentmon", e)
+        finally:
+            if out: out.close()
+            try: self.proc.stdout.close()
+            except Exception: pass
+
+    def fps(self, exe=None, pid=None, seg=3):
+        """exe/pid: FPS del juego (cuadros ÷ tiempo entre ellos; por nombre o, si sale <unknown>, por número de proceso).
+        Sin exe: la pantalla (cuadros "Hardware…" que llegaron a la pantalla en los últimos segundos, contados contra el
+        reloj: si la pantalla está quieta, son pocos)."""
+        c = list(self.cuadros)
+        if exe:
+            c = [x for x in c if x[2] == exe or x[5] == str(pid)]
+            if not c: return 0
+            ult = c[-1][0]
+            ms = [x[1] for x in c if x[0] >= ult - seg and x[1] > 0]
             return round(1000 * len(ms) / sum(ms)) if ms else 0
-        except OSError:
-            continue
+        ahora = time.time() - self.t0  # TimeInSeconds cuenta desde que arrancó PresentMon
+        return round(sum(1 for x in c if x[0] > ahora - seg - 1 and x[0] <= ahora - 1 and x[3].startswith("hardware") and not x[4]) / seg)
+
+def _esperar_lector(pid):
+    lec = (_vivo.get(pid) or (None,))[0]
+    if lec: lec.join(30)
+
+def fps_ahora():
+    """FPS del juego que mide Pulso (últimos 3 s). None si no hay medición."""
+    for pid, (lector, exe) in list(_vivo.items()):
+        if lector: return lector.fps(exe, pid)
     return None
 
+# ---- FPS de la pantalla (sin juego): solo mientras la ventana de TandemStacks está a la vista ----
+# Sin administrador, dwm.exe (el que dibuja el escritorio) sale como <unknown> y no se puede filtrar por nombre: se graba
+# todo y se cuentan los cuadros "Hardware…" (Windows mandando a la pantalla, o un video/juego que va directo). Los
+# "Composed" son programas que le pasan su imagen a Windows: no llegan solos a la pantalla. Nada se escribe en el disco.
+_esc = {"pm": None, "lector": None, "pedido": 0.0, "hilo": None}
+SESION_ESC = "TandemStacks_escritorio"  # no la toca _limpiar_sesiones (busca TandemStacks_<número>)
+TANDA_ESC = 300  # PresentMon corre de a 5 min y se relanza (por si Windows lo corta)
+
+def _pm_parar(pm, sesion):
+    if not pm: return
+    try:
+        subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=15,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+        pm.wait(10)
+    except Exception:
+        try: pm.kill()
+        except Exception: pass
+
+def _hilo_esc():
+    """Mide mientras la página lo siga pidiendo (cada 4 s); a los 15 s sin pedidos (ventana minimizada o cerrada) o con un
+    juego medido por Pulso, se apaga."""
+    try:
+        while time.time() - _esc["pedido"] < 15 and not _vivo:
+            if not _esc["pm"] or _esc["pm"].poll() is not None:
+                _esc["pm"] = subprocess.Popen([PM, "--output_stdout", "--session_name", SESION_ESC, "--stop_existing_session",
+                                               "--no_console_stats", "--v1_metrics", "--timed", str(TANDA_ESC), "--terminate_after_timed"],
+                                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+                _esc["lector"] = _Lector(_esc["pm"])
+            time.sleep(2)
+    except Exception as e:
+        _log("fps pantalla", e)
+    finally:
+        _pm_parar(_esc["pm"], SESION_ESC)
+        _esc["pm"] = _esc["lector"] = None
+        _esc["hilo"] = None
+
+def apagar():
+    """Al cerrar TandemStacks: ningún PresentMon queda andando (ni el de la pantalla ni el de un juego en curso)."""
+    _esc["pedido"] = 0
+    _pm_parar(_esc["pm"], SESION_ESC)
+    for pid in list(_activos_pid):
+        try: subprocess.run([PM, "--terminate_existing_session", "--session_name", "TandemStacks_%d" % pid], timeout=10,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+        except Exception: pass
+
+def fps_escritorio():
+    """FPS de lo que muestra la pantalla sin juego. Arranca la medición la primera vez que se pide; None mientras arranca
+    o si PresentMon no está."""
+    if not os.path.exists(PM): return None
+    _esc["pedido"] = time.time()
+    if not _esc["hilo"]:
+        _esc["hilo"] = threading.Thread(target=_hilo_esc, daemon=True)
+        _esc["hilo"].start()
+        return None
+    lec = _esc["lector"]
+    return lec.fps() if lec and time.time() - lec.t0 > 4 else None
 def medir(g, al_terminar=None):
     """Hilo de una partida: espera el proceso principal (hasta 3 min), mide hasta que se cierra y guarda el resumen."""
     try:
@@ -523,7 +608,7 @@ def medir(g, al_terminar=None):
         csv_fps = os.path.join(TMP, "fps_%d.csv" % pid)
         _limpiar_sesiones()
         _activos_pid.add(pid)
-        _vivo[pid] = (csv_fps, os.path.basename(exe).lower())
+        _vivo[pid] = (None, os.path.basename(exe).lower())
         pm, sesion = None, "TandemStacks_%d" % pid
         pm_txt = os.path.join(TMP, "pm_%d.txt" % pid)
         def lanzar_pm(solo_juego):
@@ -531,10 +616,14 @@ def medir(g, al_terminar=None):
             # Discord, la propia TandemStacks) hacía archivos de millones de filas y, al cerrar el juego, leerlas trababa la
             # app (13/11/2026, Cyberpunk 35 min). --process_id no servía con anti-trampas; por nombre se prueba y, si al
             # minuto no grabó nada, se vuelve a grabar todo.
-            args = [PM, "--output_file", csv_fps, "--session_name", sesion, "--stop_existing_session", "--no_console_stats", "--v1_metrics"]
+            # --output_stdout: PresentMon no deja leer su archivo mientras graba; el CSV lo escribe _Lector, que además
+            # guarda los últimos cuadros para el reloj de FPS en vivo (14/11/2026)
+            args = [PM, "--output_stdout", "--session_name", sesion, "--stop_existing_session", "--no_console_stats", "--v1_metrics"]
             if solo_juego: args += ["--process_name", os.path.basename(exe)]
             with open(pm_txt, "w") as salida:
-                return subprocess.Popen(args, stdout=salida, stderr=salida, creationflags=SIN_VENTANA)
+                p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=salida, creationflags=SIN_VENTANA)
+            _vivo[pid] = (_Lector(p, csv_fps), os.path.basename(exe).lower())
+            return p
             # prioridad normal a propósito: con prioridad baja, con el juego usando el procesador, PresentMon
             # no alcanzaba a leer los eventos de Windows, los perdía todos y la partida quedaba sin FPS
         if os.path.exists(PM):
@@ -561,6 +650,7 @@ def medir(g, al_terminar=None):
                     except Exception:
                         try: pm.kill()
                         except Exception: pass
+                    _esperar_lector(pid)  # que termine de escribir antes de que el nuevo abra el mismo archivo
                     try: pm = lanzar_pm(False)
                     except OSError as e: _log("presentmon", e); pm = None
         fin = time.time()
@@ -572,6 +662,7 @@ def medir(g, al_terminar=None):
                 pm.wait(timeout=15)
             except Exception:
                 pm.kill()
+            _esperar_lector(pid)  # el CSV lo escribe el lector: que termine antes de leerlo
             pm_ok = os.path.exists(csv_fps)
             if not pm_ok:
                 try:  # PresentMon escribe en UTF-16; lo útil está al final (eventos perdidos, errores)
@@ -599,7 +690,7 @@ def medir(g, al_terminar=None):
             try: os.remove(f)
             except OSError: pass
         _activos_pid.discard(pid)
-        _vivo.pop(pid, None); _cab.pop(csv_fps, None)
+        _vivo.pop(pid, None)
     except Exception as e:
         _log("medir", g.get("name"), e)
     finally:

@@ -393,19 +393,31 @@ class Api:
         _procs_top.clear(); return True  # al cerrar la ventana se sueltan los procesos guardados
 
     def cerrar_tiendas(self):
-        """Botón "Cerrar tiendas": cierra todos los launchers abiertos (a la vez: Steam tarda unos segundos en apagarse).
-        Con un juego andando no toca nada: puede necesitar su tienda."""
-        if watch.en_curso(NUC.juegos):
-            return {"juego": True}
+        """Botón "Cerrar tiendas": cierra todos los launchers abiertos que se pueda (a la vez: Steam tarda unos segundos en
+        apagarse) y avisa cuáles no y por qué (pedido del dueño 15/11/2026: "cerrás las que sí podés y avisás").
+        Con un juego andando se dejan su tienda y las que pide (Ubisoft, EA, Rockstar por archivos de su carpeta);
+        las que están bajando algo tampoco se tocan."""
         lanz = {n: d for n, d in NUC.launchers.items() if d["ok"]}
-        abiertas = list(watch.abiertos(lanz))
+        abiertas = watch.abiertos(lanz)
+        motivo = {}
+        jugando = watch.en_curso(NUC.juegos)
+        if jugando:
+            usa = {j["tienda"] for j in jugando.values()}
+            for carpeta in jugando:
+                if not str(carpeta).startswith("steam:"): usa |= watch.necesita(carpeta)
+            for t in abiertas & usa: motivo[t] = "juego"
+        intentar = [t for t in abiertas if t not in motivo]
         res = {}
-        hilos = [threading.Thread(target=lambda t=t: res.__setitem__(t, watch.cerrar(t, lanz)), daemon=True) for t in abiertas]
+        hilos = [threading.Thread(target=lambda t=t: res.__setitem__(t, watch.cerrar(t, lanz, motivo=motivo)), daemon=True) for t in intentar]
         for h in hilos: h.start()
         for h in hilos: h.join(30)
-        mb = sum(res.values())
-        if abiertas: watch._anotar(launchers=len(abiertas), ram_mb=mb)
-        return {"cerradas": len(abiertas), "mb": round(mb)}
+        siguen = watch.abiertos(lanz) if intentar else set()
+        for t in intentar:
+            if t in siguen and t not in motivo: motivo[t] = "error"  # el programa no se dejó cerrar (servicio de Windows, permisos)
+        cerradas = [t for t in intentar if t not in motivo]
+        mb = sum(res.get(t) or 0 for t in cerradas)
+        if cerradas: watch._anotar(launchers=len(cerradas), ram_mb=mb)
+        return {"cerradas": len(cerradas), "mb": round(mb), "no": motivo}
 
     def aviso_visto(self):
         NUC.aviso = None

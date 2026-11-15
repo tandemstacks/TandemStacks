@@ -67,6 +67,10 @@ Borrar esas dos carpetas deja todo como recién instalado.
 
 Python 3.12 + [pywebview](https://pywebview.flowrl.com/) (ventana con WebView2), [psutil](https://github.com/giampaolo/psutil) y [Pillow](https://python-pillow.org/). La interfaz es un HTML con CSS y JS sin frameworks. Fuentes de datos: manifiestos y registro de Windows de cada launcher, Steam Web API, Steam Store API, SteamSpy, tienda Epic (portadas). Logos de tiendas: [Simple Icons](https://simpleicons.org/).
 
+## Privacidad
+
+TandemStacks no manda nada a ningún lado, salvo una opción **apagada de fábrica**: *Configuración → Tiendas → Ayudar a reconocer juegos de Ubisoft*. Si la activás, cuando tenés un juego de Ubisoft instalado manda a un formulario del proyecto el código del ícono que baja Ubisoft Connect, el nombre del juego y su número de Ubisoft (una vez por juego), para sumarlo a la tabla pública [`docs/catalogo/ubisoft_iconos.json`](docs/catalogo/ubisoft_iconos.json). Nada de tu cuenta, tu usuario ni tu PC. Las mediciones de Pulso quedan siempre en tu PC.
+
 ## Donaciones
 
 TandemStacks es sin fines de lucro y hoy no recibe plata. **Estamos buscando patrocinios** u otras formas de generar ingresos que nos permitan hacer donaciones, y **todo lo que entre se dona** a lugares que la comunidad propone y elige por votación en Discord. **Por ahora son de Montevideo (Uruguay)**, por logística: así podemos conocer de cerca el lugar que eligió la gente y dar garantías de a dónde va el dinero. La comunidad puede ser de cualquier país. Cada donación se publica con su monto y su comprobante.

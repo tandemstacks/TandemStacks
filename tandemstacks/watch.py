@@ -164,7 +164,7 @@ def _bajando(l, victimas):
     a = escrito(); time.sleep(2)
     return (escrito() - a) / 2 >= MIN_DESCARGA
 
-def cerrar(l, launchers, antes_de=None):
+def cerrar(l, launchers, antes_de=None, motivo=None):
     """Cierra un launcher y devuelve los MB de memoria que usaba. Con antes_de, solo si todos sus procesos son anteriores
     (si arrancó después del juego, es porque el juego lo pidió: no se toca). Nunca si está bajando algo (13/11/2026: al
     terminar una partida se cerró Steam en medio de una descarga)."""
@@ -174,6 +174,7 @@ def cerrar(l, launchers, antes_de=None):
         return 0
     if victimas and _bajando(l, victimas):
         paths.log("no se cierra %s: está bajando algo" % l)
+        if motivo is not None: motivo[l] = "bajando"
         return 0
     mb = 0
     for pr in victimas:

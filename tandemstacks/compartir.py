@@ -17,8 +17,8 @@ REMOTO = os.path.join(paths.CACHE, "ubi_iconos_remoto.json")
 ENVIADOS = os.path.join(paths.CACHE, "ubi_enviados.json")
 URL_TABLA = "https://tandemstacks.github.io/TandemStacks/catalogo/ubisoft_iconos.json"
 # Formulario de Google del proyecto (cuenta tandemstacks). Cada campo tiene su "entry.<número>".
-FORM = ""
-CAMPOS = {"codigo": "", "nombre": "", "id": "", "version": ""}
+FORM = "https://docs.google.com/forms/d/e/1FAIpQLSfw5ijNXW7OJRz3hY9S_aLTu8EA14QzAPlCvTK2qk4o2bGyYw/formResponse"
+CAMPOS = {"codigo": "entry.1912621861", "nombre": "entry.640217272", "id": "entry.171040126", "version": "entry.1315843040"}
 
 def _leer(f, defecto):
     try:

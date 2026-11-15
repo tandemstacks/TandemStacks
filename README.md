@@ -13,7 +13,7 @@ Comunidad: [Discord](https://discord.gg/CKqByMZ2m) · [Instagram @tandemstacks](
 ## Qué hace
 
 - **Detecta solo** los launchers instalados y arma la biblioteca sin que tengas que configurar nada.
-- **Steam**: juegos instalados siempre; con una clave Web API (gratis, 1 minuto) también toda tu biblioteca.
+- **Steam**: tus juegos instalados y los que Steam ya guarda de tu cuenta en la PC, sin pedirte nada.
 - **Riot y Battle.net**: catálogo gratis (LoL, VALORANT, Overwatch 2, Hearthstone…) más lo que tengas instalado.
 - **Rockstar**: los juegos de tu cuenta (los lee del launcher) y lo instalado.
 - **Epic**: toda tu biblioteca (la lee del catálogo que guarda el launcher, sin pedir login).
@@ -39,14 +39,7 @@ Comunidad: [Discord](https://discord.gg/CKqByMZ2m) · [Instagram @tandemstacks](
 
 Bajá el instalador (`TandemStacks-Setup-x.y.z.exe`) desde [Releases](../../releases/latest) y seguí los pasos. No hace falta Python ni nada más.
 
-La primera vez se abre la **configuración**: revisá los launchers detectados, pegá la clave de Steam si querés la biblioteca completa y guardá.
-
-### Clave Web API de Steam (opcional)
-
-1. Entrá a <https://steamcommunity.com/dev/apikey> con tu cuenta.
-2. En *Nombre de dominio* poné cualquier cosa (por ejemplo `tandemstacks`) y aceptá.
-3. Copiá la clave en TandemStacks → ⚙ Configuración.
-4. Tu perfil de Steam tiene que tener los **detalles de juegos** en público (Perfil → Editar perfil → Privacidad).
+No te pide cuentas, claves ni contraseñas: usa lo que ya está instalado y con la sesión iniciada en tu PC.
 
 ## Correr desde el código
 

@@ -137,6 +137,10 @@ def muestrear(pid, est):
     ab = afterburner.leer()  # MSI Afterburner abierto: temperatura del procesador y, si no es NVIDIA, de la placa
     if ab:
         if "cpuTemp" in ab: m["cpu_temp"] = ab["cpuTemp"]
+        for k, nom in (("cpuMHz", "cpu_mhz"), ("cpuW", "cpu_w"), ("gpuFan", "gpu_fan")):
+            if k in ab: m[nom] = ab[k]
+        if "frenos" not in m and ("limTemp" in ab or "limPot" in ab):  # placas que no son NVIDIA: el freno lo dice Afterburner
+            m["frenos"] = (CALOR if ab.get("limTemp") else 0) | (ENERGIA if ab.get("limPot") else 0)
         if "gpu_temp" not in m and "gpuTemp" in ab: m["gpu_temp"], m["gpu_w"] = ab["gpuTemp"], ab.get("gpuW", 0)
     if "cpu_temp" not in m and est.get("lhm", True):  # si LibreHardwareMonitor no contestó la primera vez, no se insiste
         t = temp_cpu()
@@ -421,6 +425,11 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
     if dk: s["discoMBs"], s["discoMBsMax"] = round(statistics.mean(dk), 1), round(max(dk), 1)
     ct = col("cpu_temp")
     if ct: s["cpuTemp"], s["cpuTempMax"] = round(statistics.mean(ct), 1), round(max(ct), 1)
+    for k, nom in (("cpu_mhz", "cpuMHz"), ("cpu_w", "cpuW"), ("gpu_fan", "gpuFan")):  # de MSI Afterburner, si estaba abierto
+        v = col(k)
+        if v: s[nom], s[nom + "Max"] = round(statistics.mean(v)), round(max(v))
+    mh = col("cpu_mhz")
+    if mh: s["cpuMHzMin"] = round(min(mh))
     for k, nom in (("ping_srv", "pingServidor"), ("ping_inet", "pingInternet")):
         v = col(k)
         if v: s[nom], s[nom + "Max"] = round(statistics.mean(v)), max(v)

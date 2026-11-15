@@ -56,7 +56,7 @@ class Nucleo:
             for aid, i in inst.items():
                 if aid not in vistos:
                     juegos.append({"id": aid, "appid": aid, "name": i["name"], "store": "Steam", "installed": True, "sizeGB": i["gb"], "drive": i["drive"], "dir": i["dir"], "launch": "steam://run/" + aid})
-            steam_info = ("%d juegos · sin clave API puede faltar alguno" % len(bib)) if local else ("%d juegos" % len(bib)) if bib is not None else ("%d instalados · sin clave API no se ve la biblioteca completa" % len(inst) if not self.cfg.get("steam_api_key") else "%d instalados · la clave o el perfil no dejaron leer la biblioteca" % len(inst))
+            steam_info = ("%d juegos" % len(bib)) if bib is not None else ("%d instalados" % len(inst))
             # otras tiendas
             paso("Epic")
             try: juegos += stores.epic()
@@ -464,10 +464,11 @@ class Api:
         c["launchers_vista"] = NUC.cfg.get("_launchers_vista", [])
         c["steam_user"] = NUC.cfg.get("_steam_user", "")
         c["version"] = VERSION
+        c["ab"] = "ok" if afterburner.leer() else (("cerrado" if afterburner.tiene_tarea() else "sin_tarea") if afterburner.instalado() else "no")
         return c
 
     def guardar_config(self, c):
-        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "sin_accesos", "pulso", "inicio_windows", "idioma"):
+        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "sin_accesos", "pulso", "inicio_windows", "abrir_afterburner", "idioma"):
             if k in c: NUC.cfg[k] = c[k]
         if "launchers" in c:  # {"Steam": "ruta"} -> solo las que el usuario escribió
             NUC.cfg["launchers"] = {n: {"exe": p} for n, p in c["launchers"].items() if p}
@@ -780,12 +781,13 @@ def _en_vivo():
         ab = afterburner.leer()
         if ab:
             out["ab"] = "ok"
-            for k in ("cpuTemp", "cpuW"):
+            for k in ("cpuTemp", "cpuW", "cpuMHz", "gpuFan", "gpuFanRPM", "gpuMHz", "gpuMemMHz", "limTemp", "limPot", "limVolt"):
                 if k in ab: out[k] = ab[k]
             if "gpuTemp" not in out and "gpuTemp" in ab: out["gpuTemp"], out["gpuW"] = ab["gpuTemp"], ab.get("gpuW")
         else:
-            if _ab[0] is None: _ab[0] = afterburner.instalado()  # una vez: dice "abrilo" o "bajalo"
-            out["ab"] = "cerrado" if _ab[0] else "no"
+            if _ab[0] is None:  # una vez por sesión: qué decirle al usuario para tener la temperatura
+                _ab[0] = ("cerrado" if afterburner.tiene_tarea() else "sin_tarea") if afterburner.instalado() else "no"
+            out["ab"] = _ab[0]
         return out
     except Exception as e:
         paths.log("relojes", e)
@@ -1097,6 +1099,8 @@ def main():
             import traceback; paths.log("escaneo inicial", traceback.format_exc())  # sin esto un error deja la página vieja sin rastro
         threading.Thread(target=NUC.vigilar, daemon=True).start()
         threading.Thread(target=_podar_cache, daemon=True).start()
+        if NUC.cfg.get("abrir_afterburner", True):  # temperatura del procesador: Afterburner minimizado, sin el cartel de permiso
+            threading.Thread(target=lambda: paths.log("afterburner", afterburner.abrir()), daemon=True).start()
         _con_windows(NUC.cfg.get("inicio_windows", True))
         threading.Thread(target=watch.vigilar, daemon=True, args=(lambda: [g for g in NUC.juegos if g.get("installed")], lambda: NUC.launchers,
                                                                  lambda: NUC.cfg, NUC.sumar_jugado,

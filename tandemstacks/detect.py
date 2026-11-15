@@ -157,6 +157,15 @@ def _riot_exe():
         return r"C:\Riot Games\Riot Client\RiotClientServices.exe"
 
 def xbox_presente():
+    """La app Xbox es de la Microsoft Store (sin .exe). La carpeta WindowsApps no deja listar su contenido sin
+    administrador, así que se mira el registro de paquetes del usuario (15/11/2026: salía "no está" teniéndola)."""
+    try:  # solo los nombres de las subclaves (son cientos de paquetes: no se leen sus valores)
+        with winreg.OpenKey(HKCU, r"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages") as k:
+            for i in range(winreg.QueryInfoKey(k)[0]):
+                if winreg.EnumKey(k, i).startswith("Microsoft.GamingApp_"):
+                    return True
+    except Exception:
+        pass
     try:
         return bool(reg_hijas(HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root")) or \
                bool(glob.glob(os.path.join(PF, "WindowsApps", "Microsoft.GamingApp_*")))

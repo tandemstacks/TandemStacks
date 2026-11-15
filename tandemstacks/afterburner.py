@@ -14,7 +14,11 @@ FIRMA = 0x4D41484D  # 'MAHM'
 SIN_DATO = 3.0e38   # Afterburner pone FLT_MAX cuando no tiene la medida
 TODOS = 0xFFFFFFFF  # "núcleo" del total del procesador
 # tipo de medida (MONITORING_SOURCE_ID_*) → nombre nuestro; (placa, total del procesador)
-TIPOS = {0x00: "gpuTemp", 0x61: "gpuW", 0x10: "gpuFan", 0x80: "cpuTemp", 0x100: "cpuW"}
+TIPOS = {0x00: "gpuTemp", 0x61: "gpuW", 0x10: "gpuFan", 0x11: "gpuFanRPM", 0x20: "gpuMHz", 0x22: "gpuMemMHz",
+         0x70: "limTemp", 0x71: "limPot", 0x72: "limVolt",  # 1 = la placa se está frenando por eso
+         0x80: "cpuTemp", 0x100: "cpuW", 0xA0: "cpuMHz"}
+TAREA = "MSIAfterburner"  # tarea programada que crea Afterburner con "Iniciar con Windows": lo abre con permiso de administrador sin preguntar
+SCHTASKS = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "schtasks.exe")
 WEB = "https://www.msi.com/Landing/afterburner/graphics-cards"  # página oficial para bajarlo
 
 _k = ctypes.windll.kernel32
@@ -25,7 +29,7 @@ _k.UnmapViewOfFile.argtypes = [ctypes.c_void_p]
 _k.CloseHandle.argtypes = [ctypes.c_void_p]
 
 def leer():
-    """{gpuTemp, gpuW, gpuFan, cpuTemp, cpuW} con lo que haya, o None si Afterburner no está abierto.
+    """{gpuTemp, gpuW, gpuFan, gpuFanRPM, gpuMHz, gpuMemMHz, limTemp, limPot, limVolt, cpuTemp, cpuW, cpuMHz} con lo que haya, o None si Afterburner no está abierto.
     Se abre con OpenFileMapping (no la crea si no existe) y se suelta enseguida: ~0,1 ms."""
     h = _k.OpenFileMappingW(0x0004, False, "MAHMSharedMemory")  # FILE_MAP_READ
     if not h:
@@ -46,7 +50,7 @@ def leer():
             if not clave or clave in out or abs(dato) >= SIN_DATO:
                 continue
             if clave.startswith("cpu"):
-                if tipo == 0x80 and num != TODOS: continue  # la del procesador entero, no la de cada núcleo
+                if tipo in (0x80, 0xA0) and num != TODOS: continue  # la del procesador entero, no la de cada núcleo
             elif num != 0:
                 continue  # solo la primera placa
             out[clave] = round(dato)
@@ -68,3 +72,26 @@ def instalado():
             return True
     except OSError:
         return False
+
+def _correr(args):
+    import subprocess
+    try:
+        return subprocess.run([SCHTASKS] + args, capture_output=True, timeout=10, creationflags=0x08000000).returncode  # sin ventana
+    except Exception:
+        return -1
+
+def tiene_tarea():
+    """¿Afterburner tiene activado "Iniciar con Windows"? (crea la tarea que lo abre sin el cartel de permiso)."""
+    return _correr(["/query", "/tn", TAREA]) == 0
+
+def abrir():
+    """Abre Afterburner minimizado al lado del reloj, solo si está instalado, cerrado y con su tarea.
+    Abrir el .exe directo mostraría el cartel de administrador de Windows: eso nunca.
+    Devuelve "abierto", "ya" (estaba abierto), "sin_tarea" o "no" (no instalado)."""
+    if leer() is not None:
+        return "ya"
+    if not instalado():
+        return "no"
+    if not tiene_tarea():
+        return "sin_tarea"
+    return "abierto" if _correr(["/run", "/tn", TAREA]) == 0 else "sin_tarea"

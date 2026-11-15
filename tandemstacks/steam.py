@@ -41,7 +41,13 @@ def _bibliotecas():
     vdf = os.path.join(sp, "steamapps", "libraryfolders.vdf")
     if os.path.exists(vdf):
         libs = [p.replace("\\\\", "\\") for p in re.findall(r'"path"\s*"([^"]+)"', open(vdf, encoding="utf-8", errors="ignore").read())] or libs
-    return libs
+    # Steam a veces anota la misma biblioteca dos veces (pasó al sumar F:\SteamLibrary): sin esto, cada juego y cada
+    # descarga de esa biblioteca salía repetida
+    vistas, unicas = set(), []
+    for p in libs:
+        k = os.path.normcase(os.path.normpath(p))
+        if k not in vistas: vistas.add(k); unicas.append(p)
+    return unicas
 
 def instalados():
     """{appid: {"name", "gb", "drive", "dir"}} leyendo los appmanifest de todas las bibliotecas."""

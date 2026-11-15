@@ -306,6 +306,46 @@ BNET_PAGOS = {  # clave del registro -> (id, código, nombre, appid Steam)
     "warcraft iii": ("bnet_w3", "W3", "Warcraft III: Reforged", None),
 }
 
+# Juegos de la cuenta (15/11/2026): Battle.net anota en su registro cada "programa" con licencia de la cuenta
+# ("programId=OSI programLevelInfo=|...|licenses:|id=53736|..."). Código del programa -> (id, nombre, appid Steam o None)
+BNET_CUENTA = {
+    "Pro": ("bnet_ow2", "Overwatch 2", "2357570"), "OSI": ("bnet_d2r", "Diablo II: Resurrected", None),
+    "WoW": ("bnet_wow", "World of Warcraft", None), "Fen": ("bnet_d4", "Diablo IV", "2344520"), "D3": ("bnet_d3", "Diablo III", None),
+    "W3": ("bnet_w3", "Warcraft III: Reforged", None), "S1": ("bnet_scr", "StarCraft", None), "S2": ("bnet_sc2", "StarCraft II", None),
+    "WTCG": ("bnet_hs", "Hearthstone", None), "Hero": ("bnet_hots", "Heroes of the Storm", None), "ANBS": ("bnet_dimm", "Diablo Immortal", None),
+    "GRY": ("bnet_rumble", "Warcraft Rumble", None), "AUKS": ("bnet_cod", "Call of Duty: Warzone", "1962663"),
+    "ODIN": ("bnet_mw2", "Call of Duty: Modern Warfare II", "1938090"), "VIPR": ("bnet_bo4", "Call of Duty: Black Ops 4", None),
+    "ZEUS": ("bnet_bocw", "Call of Duty: Black Ops Cold War", None), "LAZR": ("bnet_mw2cr", "Call of Duty: Modern Warfare 2 Campaign Remastered", None),
+    "FORE": ("bnet_vg", "Call of Duty: Vanguard", None), "WLBY": ("bnet_crash4", "Crash Bandicoot 4: It's About Time", "1378990"),
+    "RTRO": ("bnet_arcade", "Blizzard Arcade Collection", None),
+}
+_bnet_prog = (None, set())  # (firma del registro más nuevo, códigos con licencia)
+
+def bnet_cuenta():
+    """Códigos de los juegos que tiene la cuenta de Battle.net, sacados de su registro (sin contraseñas ni claves).
+    Se lee el registro más nuevo que tenga la lista; si no cambió, se usa lo ya leído."""
+    global _bnet_prog
+    logs = sorted(glob.glob(os.path.join(os.environ.get("LOCALAPPDATA", ""), "Battle.net", "Logs", "battle.net-*.log")),
+                  key=os.path.getmtime, reverse=True)
+    if not logs:
+        return set()
+    firma = (logs[0], os.path.getmtime(logs[0]))
+    if _bnet_prog[0] == firma:
+        return _bnet_prog[1]
+    progs = set()
+    for f in logs[:5]:
+        try:
+            with open(f, encoding="utf-8", errors="replace") as fh:
+                for linea in fh:
+                    m = re.search(r"programId=(\w+) programLevelInfo=.*?licenses:\|id=\d+", linea)
+                    if m: progs.add(m.group(1))
+        except OSError:
+            continue
+        if progs:
+            break
+    _bnet_prog = (firma, progs)
+    return progs
+
 _bnet_log = (None, [])  # (firma del log, descargas)
 
 def bnet_descargas():
@@ -369,6 +409,17 @@ def battlenet(exe):
                 out.append({"id": gid, "name": nombre, "store": "Battle.net", "installed": True, "dir": c, "drive": drive(c),
                             "sizeGB": tam_gb(c) if c and os.path.isdir(c) else 0, "dev": "Blizzard", "steam_hint": hint,
                             "cover_builtin": None if hint else gid + ".jpg", "launch": [exe, "--exec=launch " + cod] if exe and os.path.exists(exe) else None})
+    try:  # comprados y no instalados: los que la cuenta tiene según el registro de Battle.net
+        for cod in bnet_cuenta():
+            gid, nombre, hint = BNET_CUENTA.get(cod, (None, None, None))
+            if not gid or any(x["id"] == gid or x["id"].startswith(gid + "_") for x in out):
+                continue
+            out.append({"id": gid, "name": nombre, "store": "Battle.net", "installed": False, "dir": "", "steam_hint": hint,
+                        "dev": "Activision" if "Call of Duty" in nombre or "Crash" in nombre else "Blizzard",
+                        "cover_builtin": None if hint else (gid + ".jpg" if os.path.exists(os.path.join(paths.ASSETS, "covers", gid + ".jpg")) else None),
+                        "launch": ("battlenet://" + cod) if exe and os.path.exists(exe) else None})
+    except Exception as e:
+        paths.log("battle.net cuenta", e)
     return _wow_versiones(out, exe)
 
 # WoW: cada versión (Retail, Classic, Aniversario...) se instala aparte, en su carpeta dentro de la de WoW.

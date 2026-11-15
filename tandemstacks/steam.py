@@ -211,14 +211,51 @@ def biblioteca(api_key, steamid):
         paths.log("steam biblioteca:", e)
         return None
 
+def _apps_de_paquetes():
+    """Apps de las licencias de la cuenta, de appcache/packageinfo.vdf (Steam guarda ahí solo los paquetes que tenés).
+    Se saltean el paquete 0 (el de Steam) y los fines de semana gratis (extended.freeweekend). Formato binario de Steam:
+    encabezado de 8 bytes; por paquete: id (uint32, 0xFFFFFFFF = fin), sha1 (20), cambio (4), token (8) y sus datos en KeyValues binario."""
+    import struct
+    try:
+        b = open(os.path.join(steam_path(), "appcache", "packageinfo.vdf"), "rb").read()
+    except OSError:
+        return set()
+    def kv(i):
+        d = {}
+        while True:
+            t = b[i]; i += 1
+            if t == 8: return d, i
+            j = b.index(b"\0", i); k = b[i:j].decode("utf-8", "replace"); i = j + 1
+            if t == 0: v, i = kv(i)
+            elif t == 1: j = b.index(b"\0", i); v = b[i:j].decode("utf-8", "replace"); i = j + 1
+            elif t in (2, 3): v = struct.unpack_from("<i", b, i)[0]; i += 4
+            elif t == 7: v = struct.unpack_from("<Q", b, i)[0]; i += 8
+            else: raise ValueError("tipo %d" % t)
+            d[k] = v
+    apps, i = set(), 8
+    try:
+        tam_extra = 32 if (struct.unpack_from("<I", b, 0)[0] & 0xFF) >= 40 else 24  # desde la v40 viene el token
+        while True:
+            pid = struct.unpack_from("<I", b, i)[0]; i += 4
+            if pid == 0xFFFFFFFF: break
+            i += tam_extra
+            d, i = kv(i)
+            x = d.get(str(pid), d)
+            if pid == 0 or (x.get("extended") or {}).get("freeweekend"): continue
+            apps.update(str(v) for v in (x.get("appids") or {}).values())
+    except Exception as e:
+        paths.log("steam packageinfo", e)
+    return apps
+
 def biblioteca_local():
     """Sin clave: Steam guarda en appcache/librarycache una carpeta por cada cosa de tu biblioteca (juegos, DLC, bandas sonoras).
     Se pregunta a la tienda (IStoreBrowseService/GetItems, público, de a 100) cuáles son juegos; las respuestas quedan en caché
-    y solo se piden las nuevas. Puede faltar algún juego que Steam todavía no mostró en tu biblioteca."""
+    y solo se piden las nuevas. Se suma la lista de licencias (packageinfo.vdf) por si falta alguno."""
     try:
         ids = [d for d in os.listdir(os.path.join(steam_path(), "appcache", "librarycache")) if d.isdigit()]
     except OSError:
-        return None
+        ids = []
+    ids = sorted(set(ids) | _apps_de_paquetes())  # respaldo: juegos recién comprados que la biblioteca todavía no mostró
     if not ids:
         return None
     archivo = os.path.join(paths.CACHE, "steam_tipos.json")

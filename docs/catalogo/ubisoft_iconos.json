@@ -1,0 +1,41 @@
+{
+ "nota": "Íconos de Ubisoft Connect (data/<código>.ico) -> juego. Lo arma el dueño con lo que mandan los usuarios que lo permiten.",
+ "iconos": {
+  "2e12c86976b047eb31f24364b382a0a2": {
+   "n": "Assassin's Creed III"
+  },
+  "436885f573ff3b6c934cdd33bca9be22": {
+   "n": "Assassin's Creed Valhalla"
+  },
+  "912c28f69e6d44a0c9b106038aa98259": {
+   "n": "Far Cry 4"
+  },
+  "00842e79ba6c2bf42759a65da1e0cc59": {
+   "n": "Far Cry 3 Blood Dragon"
+  },
+  "1dfa256ba4370c1212f01a1251268216": {
+   "n": "Watch Dogs 2"
+  },
+  "15a8918b82e47c0da7e24b34d42d71c1": {
+   "n": "Tom Clancy's The Division 2"
+  },
+  "736e15bcd62e86efee7946230be731f6": {
+   "n": "Tom Clancy's Ghost Recon Breakpoint"
+  },
+  "8231e71808581ef4d3499fe96ecdf921": {
+   "n": "Trackmania"
+  },
+  "4214440db42e3ce9a5d557418c6a7327": {
+   "n": "Rayman Origins"
+  },
+  "b9e5651a4de5a78d2e5ba4f73ee4478b": {
+   "n": "Prince of Persia: The Sands of Time"
+  },
+  "b210fc1356a7938eb80daf2278b160b7": {
+   "n": "Beyond Good and Evil"
+  },
+  "3a22e1056f6c9dc902879d02ff4f1893": {
+   "n": "Tom Clancy's Splinter Cell"
+  }
+ }
+}

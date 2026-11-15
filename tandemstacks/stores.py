@@ -499,14 +499,17 @@ UBI_ICONOS = {  # ícono que baja Ubisoft Connect -> juego (se suman a medida qu
     "b210fc1356a7938eb80daf2278b160b7": "Beyond Good and Evil", "3a22e1056f6c9dc902879d02ff4f1893": "Tom Clancy's Splinter Cell",
 }
 def ubisoft():
-    out, iconos_inst = [], set()
+    from . import compartir
+    out, iconos_inst, pares = [], set(), {}
     for e in uninstall_entries():
         m = re.match(r"Uplay Install (\d+)", str(e.get("_key", "")))
         if not m or not e.get("DisplayName"):
             continue
         loc = str(e.get("InstallLocation", "")).strip('"')
         ico = re.search(r"([0-9a-f]{32})\.ico", str(e.get("DisplayIcon", "")).lower())  # los instalados suelen usar el mismo ícono
-        if ico: iconos_inst.add(ico.group(1))
+        if ico:
+            iconos_inst.add(ico.group(1))
+            pares[ico.group(1)] = {"n": str(e["DisplayName"]), "id": m.group(1)}  # par código → juego (ver compartir.py)
         out.append({"id": "ubi_" + m.group(1), "name": str(e["DisplayName"]), "store": "Ubisoft", "installed": bool(loc and os.path.isdir(loc)), "dir": loc,
                     "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1),
                     "uninstall": "uplay://uninstall/%s" % m.group(1)})
@@ -514,13 +517,20 @@ def ubisoft():
     # (data\<id>.ico junto a upc.exe) y el id de cada ícono es fijo. Sin el número de Ubisoft, se abre Ubisoft Connect.
     # Los íconos que todavía no están en la tabla salen como "sin identificar", para que cualquiera pueda avisar cuál es.
     carpeta = os.path.dirname(LAUNCHERS["Ubisoft"]["exe"]())
+    compartir.aprender(pares)
+    # quién es cada ícono: la tabla fija, la de todos (landing) y lo aprendido en esta PC
+    conocidos = {**{k: {"n": v} for k, v in UBI_ICONOS.items()}, **compartir.tabla(), **compartir.aprendidos()}
     vistos = {nrm(g["name"]) for g in out}
     for f in sorted(glob.glob(os.path.join(carpeta, "data", "*.ico"))):
         h = os.path.basename(f)[:-4].lower()
-        nombre = UBI_ICONOS.get(h)
+        c = conocidos.get(h) or {}
+        nombre, uid = c.get("n"), str(c.get("id") or "")
         if nombre and nrm(nombre) not in vistos:
             vistos.add(nrm(nombre))
-            out.append({"id": "ubi_" + nrm(nombre).replace(" ", "_"), "name": nombre, "store": "Ubisoft", "installed": False, "dir": "", "launch": "uplay://"})
+            g = {"id": "ubi_" + (uid if uid.isdigit() else nrm(nombre).replace(" ", "_")), "name": nombre, "store": "Ubisoft",
+                 "installed": False, "dir": "", "launch": "uplay://"}
+            if uid.isdigit(): g["launch"] = "uplay://launch/%s/0" % uid  # con el número, Ubisoft Connect abre ese juego para instalarlo
+            out.append(g)
         elif not nombre and h not in iconos_inst:
             out.append(_sin_identificar("Ubisoft", h, f, "uplay://"))
     return out

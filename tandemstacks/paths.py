@@ -48,6 +48,7 @@ DEFAULT = {
     "inicio_windows": True,   # abrir TandemStacks con Windows, minimizada
     "pulso": True,            # medir cada partida (FPS, tirones, placa, procesador, RAM, ping) y guardarla por juego
     "sin_accesos": True,      # mandar a la papelera los accesos del escritorio que dejan las tiendas al instalar un juego
+    "compartir_ubisoft": False,  # mandar pares ícono → juego de Ubisoft (solo con permiso; ver compartir.py)
     "abrir_afterburner": True,  # si MSI Afterburner está instalado con "Iniciar con Windows", abrirlo minimizado (temperatura del procesador)
     "limpiar": True,          # al cerrar un juego, borrar la basura segura (volcados de errores, logs, caché web grande)
     "idioma": "spanish",      # "spanish" o "english": idioma de la interfaz y de las fichas de Steam

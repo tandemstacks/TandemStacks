@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, relojes, afterburner, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, relojes, afterburner, compartir, VERSION
 from . import precios as precios_tiendas
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io", "Google Play"]
@@ -121,6 +121,7 @@ class Nucleo:
             stores.guardar_tamanos(self.juegos)
         if con_fichas:
             threading.Thread(target=self._fichas, daemon=True).start()
+        threading.Thread(target=compartir.tanda, args=(self.cfg,), daemon=True).start()  # íconos de Ubisoft entre todos
 
     def _aplicar_ficha(self, g, f):
         for k in ("desc", "genres", "anio", "dev", "reqGB", "revPct", "revN", "tipo"):
@@ -468,7 +469,7 @@ class Api:
         return c
 
     def guardar_config(self, c):
-        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "sin_accesos", "pulso", "inicio_windows", "abrir_afterburner", "idioma"):
+        for k in ("steam_api_key", "steam_id", "cerrar_launchers", "cerrar_otros", "limpiar", "sin_accesos", "pulso", "inicio_windows", "abrir_afterburner", "compartir_ubisoft", "idioma"):
             if k in c: NUC.cfg[k] = c[k]
         if "launchers" in c:  # {"Steam": "ruta"} -> solo las que el usuario escribió
             NUC.cfg["launchers"] = {n: {"exe": p} for n, p in c["launchers"].items() if p}

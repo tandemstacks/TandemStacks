@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual de TandemStacks</title>
+<meta name="description" content="Cómo usar TandemStacks paso a paso: ver todos tus juegos, jugar, saber cómo anda tu PC, entender por qué un juego anda mal y ahorrar recursos.">
+<meta property="og:title" content="Manual de TandemStacks">
+<meta property="og:image" content="captura.jpg">
+<link rel="icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* misma estética que la app y la web ("Plata industrial"): azul #006BB6, naranja #F58426 en botones, plata #BEC0C2 en líneas */
+:root{--acc:#006BB6;--acct:#005E9F;--btn:#F58426;--btnt:#1a1a1a;--ln:#BEC0C2;--bg:#E4E5E6;--card:#fff;--tx:#1a1a1a;--mu:#5c6064;--sh:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);--tip:#eaf3fa}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17171a;--card:#202024;--tx:#ececec;--mu:#BEC0C2;--acct:#6fb3e8;--ln:rgba(190,192,194,.22);--sh:0 1px 3px rgba(0,0,0,.5);--tip:#1d2a36}}
+:root[data-theme="dark"]{--bg:#17171a;--card:#202024;--tx:#ececec;--mu:#BEC0C2;--acct:#6fb3e8;--ln:rgba(190,192,194,.22);--sh:0 1px 3px rgba(0,0,0,.5);--tip:#1d2a36}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.6 Bahnschrift,'Barlow',system-ui,sans-serif;-webkit-font-smoothing:antialiased;border-top:4px solid var(--acc)}
+a{color:var(--acct)}
+h1,h2,h3{font-family:'Barlow Condensed',Bahnschrift,sans-serif;line-height:1.1;margin:0}
+header{background:var(--card);box-shadow:var(--sh)}
+.barra{max-width:1160px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tx);font:800 22px 'Barlow Condensed',Bahnschrift,sans-serif;letter-spacing:.5px;text-transform:uppercase}
+.marca img{width:34px;height:34px}.marca span{color:var(--acct)}
+.volver{font-size:15px;text-decoration:none;color:var(--mu)}.volver:hover{color:var(--tx)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:4px;background:var(--btn);color:var(--btnt);font:700 15px 'Barlow Condensed',Bahnschrift,sans-serif;letter-spacing:1px;text-transform:uppercase;text-decoration:none}
+.todo{max-width:1160px;margin:0 auto;padding:32px 16px 64px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;align-items:start}
+@media (max-width:860px){.todo{grid-template-columns:1fr;gap:20px}}
+.indice{position:sticky;top:16px;background:var(--card);border-radius:4px;box-shadow:var(--sh);padding:16px}
+@media (max-width:860px){.indice{position:static}}
+.indice b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--mu);margin-bottom:8px}
+.indice ol{margin:0;padding-left:20px;font-size:15px;line-height:1.9}
+.indice a{text-decoration:none;color:var(--tx)}.indice a:hover{color:var(--acct)}
+main{min-width:0}
+.intro h1{font-size:clamp(34px,5vw,52px);text-transform:uppercase;margin-bottom:10px}
+.intro p{color:var(--mu);max-width:680px;margin:0 0 8px}
+section{background:var(--card);border-radius:4px;box-shadow:var(--sh);padding:26px 28px;margin-top:22px;scroll-margin-top:16px}
+@media (max-width:600px){section{padding:20px 18px}}
+section h2{display:flex;align-items:center;gap:12px;font-size:30px;text-transform:uppercase;margin-bottom:12px}
+section h2::before{content:'';width:6px;align-self:stretch;background:var(--acc);border-radius:2px}
+section h3{font-size:21px;margin:22px 0 6px}
+section p,section li{max-width:72ch}
+ol.pasos{padding-left:22px}ol.pasos li{margin-bottom:6px}
+.tip{background:var(--tip);border-left:4px solid var(--acc);padding:12px 16px;border-radius:0 4px 4px 0;margin:14px 0;max-width:72ch}
+.tip b:first-child{color:var(--acct)}
+figure{margin:16px 0}figure img{width:100%;height:auto;border-radius:4px;box-shadow:0 0 0 1px var(--ln);display:block}
+figcaption{font-size:14px;color:var(--mu);margin-top:6px}
+details{border-top:1px solid var(--ln);padding:12px 0}details:last-of-type{border-bottom:1px solid var(--ln)}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}summary::after{content:'+';color:var(--acct);font-size:22px;line-height:1}
+details[open] summary::after{content:'–'}
+details p,details ol,details ul{margin:8px 0 0;color:var(--mu)}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--mu)}
+kbd{font:600 14px Bahnschrift,sans-serif;background:var(--bg);border-radius:3px;padding:1px 6px;box-shadow:inset 0 -1px 0 var(--ln)}
+footer{max-width:1160px;margin:0 auto;padding:0 16px 48px;color:var(--mu);font-size:14px}
+footer a{color:var(--mu)}
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <a class="marca" href="index.html"><img src="logo.png" alt="">Tandem<span>Stacks</span></a>
+    <a class="volver" href="index.html">← Volver a la web</a>
+  </div>
+</header>
+
+<div class="todo">
+  <nav class="indice" aria-label="Contenido del manual">
+    <b>Qué querés hacer</b>
+    <ol>
+      <li><a href="#empezar">Instalarla y empezar</a></li>
+      <li><a href="#juegos">Ver todos tus juegos</a></li>
+      <li><a href="#jugar">Jugar, instalar y borrar</a></li>
+      <li><a href="#pc">Ver cómo anda tu PC</a></li>
+      <li><a href="#pulso">Saber por qué un juego anda mal</a></li>
+      <li><a href="#ahorro">Que la PC no gaste de más</a></li>
+      <li><a href="#comprar">Buscar juegos nuevos y ofertas</a></li>
+      <li><a href="#ajustes">Cambiar cómo se ve</a></li>
+      <li><a href="#problemas">Si algo no anda</a></li>
+      <li><a href="#preguntas">Preguntas frecuentes</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="intro">
+      <h1>Manual de uso</h1>
+      <p>TandemStacks junta en una sola pantalla los juegos de tus 12 tiendas (Steam, Epic, GOG, EA, Xbox, Riot, Battle.net, Rockstar, Ubisoft, Amazon, itch.io y Google Play) y te ayuda a que anden mejor.</p>
+      <p>No te pide contraseñas, claves ni cuentas: usa lo que ya tenés instalado en tu PC.</p>
+    </div>
+
+    <section id="empezar">
+      <h2>Instalarla y empezar</h2>
+      <ol class="pasos">
+        <li>Bajá el instalador desde la <a href="index.html#como">web</a> y abrilo.</li>
+        <li>Si Windows muestra un cartel azul que dice "Windows protegió su PC", tocá <b>Más información</b> y después <b>Ejecutar de todas formas</b>. Aparece porque la app todavía no tiene firma digital; es gratis y de código abierto.</li>
+        <li>Seguí los pasos del instalador. Al terminar, TandemStacks se abre sola.</li>
+        <li>La primera vez se abre la <b>Configuración</b> con una bienvenida: ahí ves qué tiendas encontró. No hace falta tocar nada.</li>
+      </ol>
+      <div class="tip"><b>Bueno saber:</b> TandemStacks arranca sola cuando prendés la PC y queda chiquita, como ícono al lado del reloj de Windows. Así puede medir tus partidas y cerrar lo que no usás. Si no la querés al prender, sacalo en <b>⚙ → Configuración → Automático</b>.</div>
+      <h3>La ✕ no la cierra</h3>
+      <p>Tocar la <b>✕</b> esconde la ventana, pero TandemStacks sigue andando al lado del reloj. Para volver a verla, hacé clic en su ícono (las fichas apiladas). Para cerrarla del todo: <b>clic derecho en el ícono → Salir</b>.</p>
+      <p>Se actualiza sola: cuando sale una versión nueva, la instala al abrirse.</p>
+    </section>
+
+    <section id="juegos">
+      <h2>Ver todos tus juegos</h2>
+      <p>Tus juegos aparecen solos, en tres grupos:</p>
+      <table>
+        <tr><th>Grupo</th><th>Qué tiene</th></tr>
+        <tr><td><b>Instalados</b></td><td>Los que podés jugar ya.</td></tr>
+        <tr><td><b>No instalados</b></td><td>Los que tenés comprados (o gratis en tu cuenta) pero no están en la PC.</td></tr>
+        <tr><td><b>No comprados</b></td><td>Juegos de las tiendas que no tenés, con su precio. Ver <a href="#comprar">Buscar juegos nuevos</a>.</td></tr>
+      </table>
+      <figure><img src="captura.jpg" alt="Pantalla principal de TandemStacks con los relojes, los discos y los juegos instalados" loading="lazy"><figcaption>La pantalla principal: relojes arriba, tus discos y tus juegos.</figcaption></figure>
+      <h3>Encontrar un juego</h3>
+      <ul>
+        <li><b>Buscador:</b> cada grupo tiene el suyo, adentro. Escribí parte del nombre.</li>
+        <li><b>Tiendas:</b> tocá una o varias para ver solo esas. El número es cuántos juegos tenés ahí.</li>
+        <li><b>Orden y géneros:</b> a la derecha, para ordenar por nombre, tamaño o fecha, y elegir géneros.</li>
+        <li><b>Grilla o lista:</b> los dos botoncitos al lado del orden.</li>
+      </ul>
+      <p>Si tenés el mismo juego en dos tiendas, aparece en <b>una sola tarjeta</b> con los dos logos.</p>
+      <details><summary>¿Por qué no veo algunos juegos que tengo sin instalar?</summary>
+        <p>EA, Amazon y Google Play guardan la lista de tus juegos cifrada en tu PC. TandemStacks no puede leerla sin tu contraseña, y no la pide: de esas tiendas ves solo los instalados.</p>
+        <p>De Ubisoft y Rockstar aparecen los que sus launchers ya reconocieron en tu PC. De Steam, si falta alguno, abrí Steam y entrá una vez a tu Biblioteca.</p>
+      </details>
+      <details><summary>Una tienda aparece como "no está" y la tengo instalada</summary>
+        <p>Andá a <b>⚙ → Configuración → Tiendas</b> y pegá la ruta del programa de esa tienda (el archivo .exe) en su casillero. Después tocá <b>Guardar y escanear</b>.</p>
+      </details>
+    </section>
+
+    <section id="jugar">
+      <h2>Jugar, instalar y borrar</h2>
+      <h3>Jugar</h3>
+      <p>Tocá la portada de un juego instalado. Al pasar el mouse aparece el botón ▶. TandemStacks le pide a su tienda que lo abra.</p>
+      <h3>Ver la ficha</h3>
+      <p>Tocá la <b>i</b> chiquita de la tarjeta. La ficha tiene dos pestañas:</p>
+      <ul>
+        <li><b>Info:</b> descripción, géneros, año y reseñas, sacados de la web de su tienda.</li>
+        <li><b>Pulso:</b> cómo anduvo cada partida. Ver <a href="#pulso">Pulso</a>.</li>
+      </ul>
+      <figure><img src="vista-ficha.jpg" alt="Ficha de un juego con sus botones Jugar y Ver en la tienda" loading="lazy"><figcaption>La ficha de un juego.</figcaption></figure>
+      <h3>Instalar un juego que no tenés en la PC</h3>
+      <p>Abrí <b>No instalados</b> y tocá el juego: se abre su tienda en la pantalla para instalarlo. Mientras baja, arriba de todo ves una barra con el nombre y el porcentaje.</p>
+      <h3>Borrar (desinstalar) un juego</h3>
+      <p>En la ficha, tocá <b>Borrar</b>. Se abre su tienda en el lugar justo para desinstalarlo. Si la tienda no tiene un comando para eso, TandemStacks te muestra unos segundos qué botón tocar.</p>
+      <div class="tip"><b>Por qué no lo borra solo:</b> cada tienda pide su propia confirmación. Así nunca se borra nada sin que vos lo veas.</div>
+    </section>
+
+    <section id="pc">
+      <h2>Ver cómo anda tu PC</h2>
+      <p>Arriba de todo hay 6 relojes que se mueven solos mientras la ventana está a la vista:</p>
+      <table>
+        <tr><th>Reloj</th><th>Qué muestra</th></tr>
+        <tr><td><b>Procesador</b></td><td>Cuánto trabaja (igual que el Administrador de tareas de Windows).</td></tr>
+        <tr><td><b>RAM</b></td><td>Cuánta memoria se está usando de la que tenés.</td></tr>
+        <tr><td><b>Placa de video</b></td><td>Cuánto trabaja la placa y cuánta memoria de video usa.</td></tr>
+        <tr><td><b>Disco</b></td><td>Cuánto lee y escribe, y qué tan ocupado está.</td></tr>
+        <tr><td><b>Red</b></td><td>Cuánto bajás y subís de internet.</td></tr>
+        <tr><td><b>FPS</b></td><td>Con un juego abierto, los cuadros por segundo del juego. Sin juego, los de la pantalla (con el escritorio quieto son pocos: es normal).</td></tr>
+      </table>
+      <p>Tocá un reloj para verlo en grande: te dice qué es, cómo leerlo, cuándo preocuparte y qué programas lo están usando.</p>
+      <figure><img src="vista-relojes.jpg" alt="Ventana grande del reloj de la placa de video" loading="lazy"><figcaption>Un reloj en grande, con la explicación.</figcaption></figure>
+      <h3>¿Cuánto usa el juego?</h3>
+      <p>Con un juego abierto, cada reloj muestra una <b>línea blanca</b> y la línea <b>🎮 Juego</b>: es la parte que usa ese juego solo. La red no se puede separar por programa (Windows no la cuenta así).</p>
+      <details><summary>Quiero ver la temperatura del procesador</summary>
+        <p>Windows no deja leerla sin un programa especial. Si tenés <a href="https://www.msi.com/Landing/afterburner/graphics-cards" target="_blank" rel="noopener">MSI Afterburner</a> (gratis) abierto, TandemStacks muestra la temperatura del procesador, sus vatios y su velocidad, y te avisa si se está frenando por calor.</p>
+        <p>Para que se abra solo con Windows: en MSI Afterburner tocá el engranaje → pestaña General → marcá "Iniciar con Windows" y "Iniciar minimizado".</p>
+      </details>
+      <details><summary>¿Qué es normal?</summary>
+        <ul>
+          <li>Procesador o placa al 100 % <b>jugando</b>: normal, están haciendo su trabajo.</li>
+          <li>RAM por arriba del 90 % todo el tiempo: puede faltarte memoria; cerrá programas que no uses.</li>
+          <li>Disco "ocupado 100 %" con pocos MB/s: el disco está trabado (pasa mucho mientras una tienda baja un juego).</li>
+          <li>Procesador por arriba de 90 °C: se frena solo para no quemarse. Limpiá el polvo y revisá los ventiladores.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section id="pulso">
+      <h2>Saber por qué un juego anda mal</h2>
+      <p><b>Pulso</b> mide cada partida sola, sin que hagas nada: jugá con TandemStacks abierta (alcanza con el ícono al lado del reloj). Cuando cerrás el juego, te aparece un aviso con el resultado.</p>
+      <p>Para verlo después: abrí la ficha del juego (la <b>i</b>) y entrá a la pestaña <b>Pulso</b>.</p>
+      <figure><img src="vista-pulso.jpg" alt="Pestaña Pulso con las partidas de un juego" loading="lazy"><figcaption>Tus partidas, una al lado de la otra.</figcaption></figure>
+      <table>
+        <tr><th>Dato</th><th>Qué quiere decir</th></tr>
+        <tr><td><b>FPS</b></td><td>Cuántas imágenes por segundo dibujó el juego. Más es más fluido.</td></tr>
+        <tr><td><b>1 % más lento</b></td><td>Los FPS en los peores momentos. Si es muy bajo, se siente que "se traba".</td></tr>
+        <tr><td><b>Tirones por minuto</b></td><td>Cuántas veces la imagen se congeló un instante. Lo ideal es 0.</td></tr>
+        <tr><td><b>Cuadros parejos</b></td><td>Qué tan pareja fue la imagen. 100 % = perfecta.</td></tr>
+        <tr><td><b>Quién frena</b></td><td>Si no llegás a los FPS de tu monitor, te dice qué lo impide: la placa, el procesador o el propio juego.</td></tr>
+      </table>
+      <p>Cada partida se compara con la anterior: ▲ mejoró, ▼ empeoró, = casi igual. Tocá <b>¿Cómo se calcula?</b> para ver las reglas exactas.</p>
+      <div class="tip"><b>Tus datos son tuyos:</b> las partidas quedan solo en tu PC. No se mandan a TandemStacks ni a nadie.</div>
+      <details><summary>Pulso dice "sin FPS"</summary>
+        <p>Windows no dejó medir los cuadros. Suele arreglarse agregando tu usuario al grupo de Windows "Performance Log Users" y cerrando sesión. Si no sabés cómo, preguntá en el <a href="https://discord.gg/CKqByMZ2m" target="_blank" rel="noopener">Discord</a>.</p>
+      </details>
+    </section>
+
+    <section id="ahorro">
+      <h2>Que la PC no gaste de más</h2>
+      <p>TandemStacks hace esto solo (podés apagar cada cosa en <b>⚙ → Configuración → Automático</b>):</p>
+      <ul>
+        <li><b>Al abrir un juego</b>, al minuto cierra las tiendas que ese juego no usa.</li>
+        <li><b>Al terminar de jugar</b>, cierra las tiendas que quedaron abiertas. Nunca cierra una que esté bajando un juego.</li>
+        <li><b>Limpia la basura</b> que dejan los juegos: informes de errores, registros viejos y cachés grandes. Nunca toca partidas guardadas ni configuraciones.</li>
+        <li><b>Saca los accesos directos</b> que las tiendas dejan en el escritorio al instalar un juego (van a la papelera).</li>
+      </ul>
+      <p>Para cerrar todas las tiendas en el momento: <b>⚙ → Cerrar tiendas</b>, o clic derecho en el ícono al lado del reloj.</p>
+      <p>Para que las tiendas no arranquen con Windows: <b>⚙ → Configuración → Automático → Inicio de Windows</b>. No borra nada, y se puede volver atrás desde el Administrador de tareas.</p>
+      <p>En <b>Configuración → Pulso y ahorro</b> ves cuánto ahorró: tiendas cerradas, memoria y disco liberados.</p>
+    </section>
+
+    <section id="comprar">
+      <h2>Buscar juegos nuevos y ofertas</h2>
+      <p>Abrí <b>No comprados</b>: tiene miles de juegos de las tiendas que no tenés, con el precio en tu moneda.</p>
+      <ul>
+        <li>Prendé <b>Descuento</b> para ver solo los que están en oferta (Steam, GOG e itch.io).</li>
+        <li>Tocá un juego para abrirlo en su tienda. Si está en varias, elegís en cuál.</li>
+        <li>Los juegos para adultos con contenido sexual no aparecen en este catálogo.</li>
+      </ul>
+      <figure><img src="vista-paginas.jpg" alt="Grupo No comprados con portadas y precios" loading="lazy"><figcaption>No comprados, con precios.</figcaption></figure>
+    </section>
+
+    <section id="ajustes">
+      <h2>Cambiar cómo se ve</h2>
+      <p>Todo está en el <b>engranaje ⚙</b>, arriba a la derecha:</p>
+      <ul>
+        <li><b>Modo oscuro</b>.</li>
+        <li><b>Idioma:</b> español o inglés.</li>
+        <li><b>Desvincular una tienda:</b> tocá su nombre en la lista de tiendas → Desvincular. La esconde de TandemStacks sin tocar nada en tu PC.</li>
+        <li><b>Desinstalar TandemStacks</b>.</li>
+      </ul>
+      <h3>Nivel y medallas</h3>
+      <p>Arriba ves tu <b>nivel</b>: sube con las horas que jugás con TandemStacks abierta, en cualquier tienda. Hay una medalla cada 5 niveles; tocá el nivel para verlas todas.</p>
+    </section>
+
+    <section id="problemas">
+      <h2>Si algo no anda</h2>
+      <details><summary>No encuentra una tienda que tengo instalada</summary><p>⚙ → Configuración → Tiendas: pegá la ruta del .exe de esa tienda y tocá Guardar y escanear.</p></details>
+      <details><summary>Instalé o borré un juego y no cambió</summary><p>TandemStacks revisa cada pocos segundos. Si tarda, tocá ⚙ → Configuración → Volver a escanear.</p></details>
+      <details><summary>No veo la ventana pero la app está abierta</summary><p>Está escondida al lado del reloj de Windows (tocá la flechita ^ si no ves el ícono). Hacé clic en el ícono de las fichas apiladas.</p></details>
+      <details><summary>Una portada no carga</summary><p>Las portadas vienen de internet. Sin conexión ves el nombre del juego sobre un color; cuando vuelve la conexión, aparecen.</p></details>
+      <details><summary>Encontré un error</summary><p>Contalo en el canal #errores del <a href="https://discord.gg/CKqByMZ2m" target="_blank" rel="noopener">Discord</a> o escribí a <a href="mailto:tandemstacks@gmail.com">tandemstacks@gmail.com</a>. Si podés, sumá una captura.</p></details>
+    </section>
+
+    <section id="preguntas">
+      <h2>Preguntas frecuentes</h2>
+      <details><summary>¿Es gratis?</summary><p>Sí, gratis y de código abierto. No tiene publicidad ni compras adentro.</p></details>
+      <details><summary>¿Me pide contraseñas o datos de mis cuentas?</summary><p>No. No te pide contraseñas, claves ni cuentas: lee lo que cada tienda ya guarda en tu PC cuando tenés la sesión iniciada.</p></details>
+      <details><summary>¿Usa inteligencia artificial?</summary><p>No. Todo sale de archivos de tu PC, de Windows y de las webs oficiales de cada tienda. Los cálculos de Pulso son reglas fijas: los mismos números dan siempre el mismo resultado.</p></details>
+      <details><summary>¿Manda mis datos a algún lado?</summary><p>No. Tus partidas, tus juegos y tus mediciones quedan en tu PC. Solo se conecta a internet para bajar portadas, fichas, precios y versiones nuevas.</p></details>
+      <details><summary>¿Gasta mucho la PC?</summary><p>Muy poco: escondida, el visor se duerme y casi no usa nada. Con la ventana abierta usa más o menos lo mismo que una pestaña del navegador.</p></details>
+      <details><summary>¿Necesito internet?</summary><p>Para jugar y medir, no. Sin internet no se actualizan las portadas, las fichas ni los precios.</p></details>
+    </section>
+  </main>
+</div>
+
+<footer>
+  TandemStacks · gratis y de código abierto · <a href="index.html">Web</a> · <a href="https://github.com/tandemstacks/TandemStacks" target="_blank" rel="noopener">GitHub</a> · <a href="https://discord.gg/CKqByMZ2m" target="_blank" rel="noopener">Discord</a> · <a href="https://www.instagram.com/tandemstacks/" target="_blank" rel="noopener">Instagram</a>
+</footer>
+</body>
+</html>

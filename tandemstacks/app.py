@@ -932,7 +932,8 @@ def main():
     # mostraba la pantalla vieja hasta el próximo arranque
     import hashlib
     marca = os.path.join(paths.CACHE, "plantilla.txt")
-    huella = hashlib.md5(open(os.path.join(paths.ASSETS, "template.html"), "rb").read()).hexdigest()
+    huella = hashlib.md5(b"".join(open(os.path.join(paths.ASSETS, f), "rb").read()  # el logo va adentro de la página
+                                  for f in ("template.html", "logo.png"))).hexdigest()
     try: vieja = open(marca).read()
     except OSError: vieja = ""
     if not os.path.exists(paths.HTML) or vieja != huella:

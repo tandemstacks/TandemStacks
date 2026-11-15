@@ -732,13 +732,14 @@ function verMedallas(){
   document.body.appendChild(d);
 }
 // ✕ para cancelar una descarga desde la barra: Steam abre su desinstalación (corta y borra lo bajado); Epic abre su launcher
-const cancelDl=d=>{if(!d.id&&!d.tienda)return '';const i=String(d.id),t=d.tienda||(i.startsWith('epic_')?'Epic':i.startsWith('ubi_')?'Ubisoft':i.startsWith('bnet_')?'Battle.net':i.startsWith('gog_')?'GOG':'Steam');  // las demás tiendas: se abre su launcher
+const tiendaDl=d=>{const i=String(d.id||'');return d.tienda||(i.startsWith('epic_')?'Epic':i.startsWith('ubi_')?'Ubisoft':i.startsWith('bnet_')?'Battle.net':i.startsWith('gog_')?'GOG':'Steam');};
+const cancelDl=d=>{if(!d.id&&!d.tienda)return '';const t=tiendaDl(d);  // las demás tiendas: se abre su launcher
   const q=t==='Steam'&&d.id?`tipo=uninstall&appid=${encodeURIComponent(d.id)}`:'abrir='+encodeURIComponent(t);
   return `<button class="dlx" onclick="accion('${q}')" title="${esc(L.cancelarDl+' '+t+' · '+L.cancelarAyuda.replace('{t}',t))}" aria-label="${esc(L.cancelarDl+' '+t)}">✕</button>`;};
 function descargas(){
   const hd=(EST.descargas||[]).map(d=>d.tienda
     ?`<div class="dl"><span>${logo(d.tienda,sc(d.tienda),13)} <b>${esc(d.tienda)}</b> ${d.name?L.bajando+' <b>'+esc(d.name)+'</b>':L.bajandoVel}</span><div class="nbar ind"><i></i></div><span>${velo(d.vel)}</span>${cancelDl(d)}</div>`
-    :`<div class="dl"><span>${L.bajando} <b>${esc(d.name)}</b></span><div class="nbar"><i style="width:${d.pct}%"></i></div><span>${d.pausa?`<b title="${esc(L.pausa)}">⏸</b>`:`<b title="${esc(L.bajando)}">▶</b>`} ${pctN(d.pct)}%</span>${cancelDl(d)}</div>`).join('');  // ▶ bajando, ⏸ en pausa
+    :`<div class="dl"><span>${(t=>`${logo(t,sc(t),13)} <b>${esc(t)}</b> `)(tiendaDl(d))}${L.bajando} <b>${esc(d.name)}</b></span><div class="nbar"><i style="width:${d.pct}%"></i></div><span>${d.pausa?`<b title="${esc(L.pausa)}">⏸</b>`:`<b title="${esc(L.bajando)}">▶</b>`} ${pctN(d.pct)}%</span>${cancelDl(d)}</div>`).join('');  // ▶ bajando, ⏸ en pausa
   if($('#descargas')._h!==hd){$('#descargas').innerHTML=hd;$('#descargas')._h=hd;}  // solo si cambió algo
 }
 function todo(){agrupar();cabecera();discos();render();progreso();}

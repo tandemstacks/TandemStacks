@@ -125,15 +125,64 @@ def temp_cpu():
         pass
     return None
 
+def _procesos_juego(pid, est):
+    """Todos los procesos del juego (los de su carpeta, más el principal). Se buscan cada ~30 s: algunos juegos
+    abren procesos aparte para dibujar o para el audio."""
+    if est.get("n", 0) % 6 == 0 or "pids" not in est:
+        pids = {pid}
+        pref = os.path.normcase((est.get("dir") or "").rstrip("\\") + "\\")
+        if len(pref) > 3:
+            for p in psutil.process_iter(["exe"]):
+                exe = p.info.get("exe") or ""
+                if exe and os.path.normcase(exe).startswith(pref): pids.add(p.pid)
+        est["pids"] = pids
+    return est["pids"]
+
+def _juego_solo(pid, est, m):
+    """Lo que usa SOLO el juego (pedido del dueño 15/11/2026: los datos tienen que ser del juego, no de la PC).
+    Procesador total y su hilo más ocupado (un hilo al 100 % = un núcleo al tope: lo que frena en los juegos), RAM,
+    lectura de disco, placa y memoria de video. Lo de toda la PC queda en *_pc para comparar."""
+    pids, ahora = _procesos_juego(pid, est), time.time()
+    dt = ahora - est["tj"] if est.get("tj") else 0
+    cpu = ram = lee = 0.0
+    hilos, prev, nuevo = 0.0, est.get("hilos", {}), {}
+    for q in pids:
+        try:
+            pr = psutil.Process(q)
+            with pr.oneshot():
+                ct, io = pr.cpu_times(), pr.io_counters()
+                ram += pr.memory_info().rss
+                nuevo[q] = (ct.user + ct.system, io.read_bytes, pr.create_time(),
+                            {t.id: t.user_time + t.system_time for t in pr.threads()})
+            a = prev.get(q)
+            if a and a[2] == nuevo[q][2] and dt > 0:
+                cpu += (nuevo[q][0] - a[0]) / dt
+                lee += (nuevo[q][1] - a[1]) / dt
+                for tid, t in nuevo[q][3].items():
+                    if tid in a[3]: hilos = max(hilos, (t - a[3][tid]) / dt)
+        except Exception:
+            pass
+    est["hilos"], est["tj"] = nuevo, ahora
+    if dt > 0:
+        m["cpu"] = round(min(100, 100 * cpu / (psutil.cpu_count() or 1)), 1)
+        m["juego_cpu"] = m["cpu"]
+        m["cpu_nucleo_max"] = round(min(100, 100 * hilos), 1)
+        m["disco_mbs"] = round(max(0, lee) / 1048576, 1)
+    m["juego_ram_gb"] = ram / 1073741824
+    m["ram"] = round(100 * ram / psutil.virtual_memory().total, 1)
+    try:
+        from . import relojes
+        pj = relojes.placa_juego(pids)
+    except Exception:
+        pj = None
+    if pj:
+        if "gpu_uso" in m: m["gpu_uso_pc"] = m["gpu_uso"]
+        if "vram" in m: m["vram_pc"] = m["vram"]
+        m["gpu_uso"], m["vram"] = pj["gpu"], pj["vram_mb"]
+    m["solo_juego"] = True
+
 def muestrear(pid, est):
     m = nvsmi()
-    try:  # lectura de disco del juego (MB/s desde la muestra anterior)
-        io = psutil.Process(pid).io_counters().read_bytes
-        if est.get("io") is not None:
-            m["disco_mbs"] = round((io - est["io"]) / 1048576 / max(1, time.time() - est["t"]), 1)
-        est["io"], est["t"] = io, time.time()
-    except Exception:
-        pass
     ab = afterburner.leer()  # MSI Afterburner abierto: temperatura del procesador y, si no es NVIDIA, de la placa
     if ab:
         if "cpuTemp" in ab: m["cpu_temp"] = ab["cpuTemp"]
@@ -154,20 +203,13 @@ def muestrear(pid, est):
             m["ping_srv"], m["perdida_srv"] = ping(ip)
         m["ping_inet"], m["perdida_inet"] = ping("1.1.1.1")
     nucleos = psutil.cpu_percent(interval=None, percpu=True)
-    if nucleos:
-        m["cpu"], m["cpu_nucleo_max"] = round(sum(nucleos) / len(nucleos), 1), max(nucleos)
+    if nucleos:  # toda la PC, para comparar
+        m["cpu_pc"], m["cpu_nucleo_max_pc"] = round(sum(nucleos) / len(nucleos), 1), max(nucleos)
     vm = psutil.virtual_memory()
-    m["ram"], m["ram_libre_gb"] = vm.percent, round(vm.available / 1073741824, 2)
+    m["ram_pc"], m["ram_libre_gb"] = vm.percent, round(vm.available / 1073741824, 2)  # libre: ¿le alcanza la memoria al juego?
     try: m["swap"] = psutil.swap_memory().percent  # archivo de paginación: si sube, la RAM no alcanza y Windows usa el disco
     except Exception: pass
-    try:
-        pr = est.get("proc") or psutil.Process(pid)
-        if "proc" not in est:
-            est["proc"] = pr; pr.cpu_percent(None)  # la primera lectura solo arranca la cuenta
-        else:
-            m["juego_cpu"] = round(pr.cpu_percent(None) / (psutil.cpu_count() or 1), 1)
-        m["juego_ram_gb"] = pr.memory_info().rss / 1073741824
-    except Exception: pass
+    _juego_solo(pid, est, m)
     try:  # red de toda la PC (bajada y subida en MB/s desde la muestra anterior)
         n, ahora = psutil.net_io_counters(), time.time()
         if est.get("red"):
@@ -285,7 +327,7 @@ def evaluar(s, previas):
     if fps:
         if fps >= obj * 0.9:
             s["frena"] = "nada"
-            if gpu is not None and gpu < 75 and (s.get("vramMaxPct") or 0) < 90:
+            if gpu is not None and gpu < 75 and (s.get("vramPcMaxPct", s.get("vramMaxPct")) or 0) < 90:
                 s["frena"] = "sobra"
                 consejos.append("Llegás a %d FPS (objetivo %d) con la placa al %d %%: le sobra. Podés subir gráficos (texturas, sombras o resolución) mientras no bajes de %d FPS" % (fps, obj, gpu, round(obj * 0.9)))
         else:
@@ -296,12 +338,13 @@ def evaluar(s, previas):
                 causas.append(falta + ": frena la placa (%s). Bajar calidad o resolución, o activar DLSS/FSR" % cual)
             elif cpu1 >= 90 or (po is not None and po <= 60):
                 s["frena"] = "procesador"
-                causas.append(falta + ": frena el procesador (un núcleo al %d %%, la placa al %d %%). Bajar distancia de visión, multitudes o física" % (cpu1, gpu or 0))
+                causas.append(falta + ": frena el procesador (" + ("el hilo principal del juego" if s.get("soloJuego") else "un núcleo") + " al %d %%, la placa al %d %%). Bajar distancia de visión, multitudes o física" % (cpu1, gpu or 0))
             else:
                 s["frena"] = "juego"
                 causas.append(falta + ": ni la placa (%d %%) ni el procesador están al tope; puede ser el propio juego o un límite de FPS" % (gpu or 0))
-    if (s.get("vramMaxPct") or 0) >= 95:
-        causas.append("Memoria de video llena (%s %%): bajar las texturas un punto" % s["vramMaxPct"])
+    vlleno = s.get("vramPcMaxPct", s.get("vramMaxPct")) or 0  # la placa entera (desde el 15/11/2026 vramMaxPct es solo del juego)
+    if vlleno >= 95:
+        causas.append("Memoria de video llena (%s %%): bajar las texturas un punto" % vlleno)
     if (s.get("ramMax") or 0) >= 90:
         causas.append("RAM casi llena (%s %%): cerrar programas de fondo" % s["ramMax"])
     if (s.get("swapMax") or 0) >= 80 or (s.get("ramLibreMinGB") or 99) < 1:
@@ -410,11 +453,15 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
     if "fps" not in s and not pm_ok:
         s["sinFps"] = True  # PresentMon no tuvo permiso (falta el grupo "Performance Log Users")
     col = lambda k: [m[k] for m in muestras if m.get(k) is not None]
-    for k, nom in (("gpu_uso", "gpuUso"), ("gpu_temp", "gpuTemp"), ("gpu_w", "gpuW"), ("cpu", "cpuUso"), ("cpu_nucleo_max", "cpuNucleoMax"), ("ram", "ram")):
+    for k, nom in (("gpu_uso", "gpuUso"), ("gpu_temp", "gpuTemp"), ("gpu_w", "gpuW"), ("cpu", "cpuUso"), ("cpu_nucleo_max", "cpuNucleoMax"), ("ram", "ram"),
+                   ("gpu_uso_pc", "gpuPc"), ("cpu_pc", "cpuPc"), ("cpu_nucleo_max_pc", "cpuNucleoMaxPc"), ("ram_pc", "ramPc")):
         v = col(k)
         if v: s[nom], s[nom + "Max"] = round(statistics.mean(v), 1), round(max(v), 1)
     vr, tot = col("vram"), col("vram_total")
     if vr and tot: s["vramMaxGB"], s["vramMaxPct"] = round(max(vr) / 1024, 1), round(100 * max(vr) / tot[0])
+    vp = col("vram_pc")  # la placa entera: si se llena, al juego le falta lugar aunque no sea todo suyo
+    if vp and tot: s["vramPcMaxPct"] = round(100 * max(vp) / tot[0])
+    if col("solo_juego"): s["soloJuego"] = True  # desde el 15/11/2026: procesador, RAM, disco, placa y VRAM son solo del juego
     fr = col("frenos")
     if fr:
         s["frenoCalorPct"] = round(100 * sum(1 for x in fr if x & CALOR) / len(fr))
@@ -457,7 +504,8 @@ def _tirones_con(momentos, muestras, inicio):
         marcas = []
         if (m.get("disco_mbs") or 0) >= max(60, disco_normal * 3): marcas.append("disco")
         if (m.get("cpu_nucleo_max") or 0) >= 95: marcas.append("procesador")
-        if m.get("vram") and m.get("vram_total") and m["vram"] / m["vram_total"] >= 0.95: marcas.append("vram")
+        vr = m.get("vram_pc", m.get("vram"))
+        if vr and m.get("vram_total") and vr / m["vram_total"] >= 0.95: marcas.append("vram")
         if (m.get("ram_libre_gb") or 99) < 1: marcas.append("ram")
         if (m.get("red_baja") or 0) >= 2: marcas.append("descarga")
         if (m.get("frenos") or 0) & (CALOR | ENERGIA): marcas.append("freno")
@@ -643,7 +691,7 @@ def medir(g, al_terminar=None):
             try: pm = lanzar_pm(True)
             except OSError as e: _log("presentmon", e)
         solo_juego = pm is not None
-        inicio, muestras, cpu0, est = time.time(), [], tiempos_cpu(), {}
+        inicio, muestras, cpu0, est = time.time(), [], tiempos_cpu(), {"dir": g["dir"]}
         version, drv = version_juego(g), driver()
         psutil.cpu_percent(interval=None, percpu=True)
         while psutil.pid_exists(pid):

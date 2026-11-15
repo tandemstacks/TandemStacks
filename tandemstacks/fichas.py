@@ -262,16 +262,43 @@ def _url_tienda(g):
 TIENDA_URL = re.compile(r"https://(store\.ubisoft\.com|www\.ea\.com|store\.rockstargames\.com|www\.rockstargames\.com|"
                         r"us\.shop\.battle\.net|[a-z0-9-]+\.itch\.io|itch\.io)/")
 
+def _url_idioma(url, idioma):
+    """La página en el idioma de la app (15/11/2026: antes se leía siempre la inglesa). Español latino donde la tienda lo tiene."""
+    if idioma == "english":
+        return url
+    url = re.sub(r"^https://store\.ubisoft\.com/[a-z]{2,5}/", "https://store.ubisoft.com/latam/", url)
+    url = re.sub(r"^https://www\.ea\.com/(?:[a-z]{2}(?:-[a-z]{2})?/)?games/", "https://www.ea.com/es-mx/games/", url)
+    return url  # Rockstar elige el idioma por el encabezado Accept-Language (ya va en español)
+
+# Rockstar: su web principal tiene la ficha traducida (la de la tienda viene en inglés). Código del juego -> página
+ROCK_SITIO = {"gta5": "V", "gta5_enhanced": "V", "rdr2": "reddeadredemption2", "mp3": "maxpayne3", "lanoire": "lanoire", "gta4": "IV",
+              "gtasa": "sanandreas", "gtavc": "vicecity", "bully": "bully", "rdr": "reddeadredemption", "gtatrilogy": "gtatrilogy"}
+
+def _ubisoft_buscar(g, idioma):
+    """Ubisoft: si el juego no está en el catálogo de TandemStacks, se busca por nombre en el buscador público de su tienda."""
+    q = urllib.parse.quote(re.sub(r"[™®©]", "", g["name"]))
+    h = _pagina("https://store.ubisoft.com/latam/search?q=" + q, idioma)
+    n = _norm(g["name"])
+    for slug, pid in re.findall(r'href="https://store\.ubisoft\.com/[a-z-]+/([a-z0-9-]+)/([0-9a-f]{24})\.html', h):
+        if _norm(slug).startswith(n) or n.startswith(_norm(slug)):
+            return "https://store.ubisoft.com/us/%s/%s.html" % (slug, pid)
+    return ""
+
 def pagina_tienda(g, idioma):
-    nombre = "%s/%s.json" % (idioma, g["id"])
+    nombre = "%s/%s_t3.json" % (idioma, g["id"])  # _t2: las guardadas antes estaban en inglés
     d = _leer(nombre, 30 * DIA)
     if d is None:
         d = {}
         try:
             url = _url_tienda(g)
+            if not url and g.get("store") == "Ubisoft":
+                url = _ubisoft_buscar(g, idioma)
+            sitio = ROCK_SITIO.get(str(g.get("id", ""))[5:]) if g.get("store") == "Rockstar" else None
+            if sitio:
+                url = "https://www.rockstargames.com/%sgames/%s" % ("" if idioma == "english" else "es/", sitio)
             if url:
                 d = {"url": url}
-                h = _pagina(url, idioma)
+                h = _pagina(_url_idioma(url, idioma), idioma)
                 desc = _meta(h, "og:description") or _meta(h, "description")
                 if desc and _norm(desc) != _norm(g["name"]): d["desc"] = desc[:500]
         except Exception as e:

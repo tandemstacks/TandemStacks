@@ -182,10 +182,17 @@ $out | ConvertTo-Json -Compress'''
         lista = []
     out = []
     excluir = ("xbox", "gaming", "game bar", "gamingservices", "solitaire collection", "minecraft launcher", "minecraft education")
+    try: cuenta = xbox_cuenta()
+    except Exception as e:
+        paths.log("xbox cuenta:", e); cuenta = []
+    # juegos de la cuenta (la Store los marca como juego): instalados aunque su paquete no lo diga (Angry Birds 2, 15/11/2026)
+    de_cuenta = {g["family"].lower(): g for g in cuenta if g.get("family")}
     for p in lista:
         nombre = str(p.get("Name", ""))
-        es = p.get("Full") in paquetes or (p.get("Juego") and "Microsoft." not in p.get("Full", "")[:11]) or "minecraft" in nombre.lower()
-        if not es or any(x in nombre.lower() for x in excluir) or not nombre:
+        cg = de_cuenta.get(str(p.get("Family", "")).lower())
+        if cg and (not nombre or nombre.lower() == str(p.get("Family", "")).split(".")[-1].split("_")[0].lower()): nombre = cg["name"]
+        es = cg or p.get("Full") in paquetes or (p.get("Juego") and "Microsoft." not in p.get("Full", "")[:11]) or "minecraft" in nombre.lower()
+        if not es or (not cg and any(x in nombre.lower() for x in excluir)) or not nombre:
             continue
         loc = p.get("Dir", "")
         out.append({"id": "xbox_" + re.sub(r"[^A-Za-z0-9]", "", p.get("Family", nombre))[:40], "name": nombre, "store": "Xbox", "installed": True,
@@ -193,10 +200,12 @@ $out | ConvertTo-Json -Compress'''
                     "uninstall": "ms-settings:appsfeatures-app?%s" % p.get("Family"),  # la página del juego en Aplicaciones de Windows (ahí se desinstala lo de Xbox)
                     "family": p.get("Family", "")})
     familias = {g["family"].lower() for g in out if g.get("family")}
-    try:
-        out += [g for g in xbox_cuenta() if g.get("family", "").lower() not in familias]
-    except Exception as e:
-        paths.log("xbox cuenta:", e)
+    for g in out:  # portada y número de la Store para los instalados que también están en la cuenta
+        cg = de_cuenta.get(g.get("family", "").lower())
+        if cg:
+            for k in ("xbox_pid", "cover_url"):
+                if cg.get(k) and not g.get(k): g[k] = cg[k]
+    out += [g for g in cuenta if g.get("family", "").lower() not in familias]
     return out
 
 def xbox_cuenta():

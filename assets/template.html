@@ -83,7 +83,7 @@ main{padding:16px 22px 60px}
 .gbig{display:block;width:100%;height:220px;background:var(--bg);border-radius:4px;margin-top:8px}.gbig .gl{stroke:var(--ln);stroke-width:1}.gbig .gt{fill:var(--mu);font-size:12px}
 .gej{display:flex;justify-content:space-between;color:var(--mu);font-size:12px;margin:3px 2px 10px}.gs{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;margin:4px 0;font-size:13px;color:var(--mu)}.gs b{color:var(--tx)}
 .gx{display:flex;flex-wrap:wrap;gap:6px 18px;font-weight:600;font-size:14px}.gx span{white-space:nowrap}.gx span.gl{white-space:normal;flex-basis:100%;font-weight:400;color:var(--mu)}.gtx p{margin:8px 0}.tabla{border-collapse:collapse;width:100%;font-size:13px}.tabla td{padding:4px 6px;border-bottom:1px solid var(--ln)}.tabla td:last-child{text-align:right;font-weight:700}.gnota{display:block;margin-top:12px;color:var(--mu)}
-.it.msi{cursor:default}.it .msiE{margin-left:auto}.it button.msiE{padding:4px 10px;font-size:12px}.it.cerrarT .lgs{margin-left:auto;display:inline-flex;gap:4px;align-items:center;padding-left:10px}.it.cerrarT small{color:var(--mu)}
+.it.msi{cursor:default}.it .msiE{margin-left:auto}.it button.msiE{padding:4px 10px;font-size:12px}.it.cerrarT .lgs{margin-left:auto;display:inline-flex;align-items:center;padding-left:10px}.pila{display:inline-flex;align-items:center}.pila i{position:relative;width:26px;height:26px;border-radius:50%;background:var(--card);box-shadow:0 0 0 2px var(--panel),0 1px 3px rgba(0,0,0,.25);display:inline-flex;align-items:center;justify-content:center;margin-left:-18px}.pila i:first-child{margin-left:0}.pila i.gris{filter:grayscale(1);opacity:.45}.pila b{margin-left:6px;font-size:12px;color:var(--mu)}.it.cerrarT small{color:var(--mu)}
 .vivo .bar{height:10px;background:var(--bg);border-radius:4px;overflow:hidden}.vivo .bar i{display:block;height:100%;background:var(--acc);transition:width .6s}
 .discos{background:var(--panel);border-radius:4px;box-shadow:var(--sh);margin-bottom:18px}
 .discos summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
@@ -411,9 +411,14 @@ function noti(txt,seg){
   clearTimeout(notiT); if(seg) notiT=setTimeout(notiFuera,seg*1000);
 }
 function notiFuera(){const n=$('#noti');if(!n)return;n.classList.remove('ver');clearTimeout(notiT);notiT=setTimeout(()=>n.remove(),300);}  // se saca de la página al irse
+// logos apilados: cada uno tapa el 70 % del anterior (el último queda entero arriba); con más de 4, se ven 3, el cuarto en gris (sigue) y "+N"
+function pilaLogos(a,max=4){
+  const ver=a.length>max?a.slice(0,max):a, resto=a.length-(max-1);
+  return `<span class="pila" title="${esc(a.join(', '))}">${ver.map((t,i)=>`<i class="${a.length>max&&i===max-1?'gris':''}" style="z-index:${i+1}">${logo(t,sc(t),16)}</i>`).join('')}${a.length>max?`<b>+${resto}</b>`:''}</span>`;
+}
 function itemCerrar(){  // ítem "Cerrar tiendas" del menú de la rueda, con los logos de las abiertas
   const a=EST.abiertas||[];
-  return `${ico('cierraApps')} <span>${L.cerrarT}${a.length?` (${a.length})`:''}</span><span class="lgs">${a.length?a.map(s=>logo(s,sc(s),14)).join(''):`<small>${L.ningunaAbierta}</small>`}</span>`;
+  return `${ico('cierraApps')} <span>${L.cerrarT}${a.length?` (${a.length})`:''}</span><span class="lgs">${a.length?pilaLogos(a):`<small>${L.ningunaAbierta}</small>`}</span>`;
 }
 function cerrarTiendas(){
   if(!(EST.abiertas||[]).length) return;

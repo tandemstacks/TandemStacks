@@ -12,7 +12,7 @@ PresentMon necesita que el usuario esté en el grupo de Windows "Performance Log
 si no, no hay FPS pero se mide todo lo demás."""
 import io, os, re, csv, json, glob, time, ctypes, datetime, statistics, subprocess, threading, collections, urllib.request
 import psutil
-from . import paths
+from . import paths, afterburner
 
 CARPETA = os.path.join(os.path.dirname(paths.CONFIG), "pulso")
 TMP = os.path.join(paths.CACHE, "pulso")
@@ -134,7 +134,11 @@ def muestrear(pid, est):
         est["io"], est["t"] = io, time.time()
     except Exception:
         pass
-    if est.get("lhm", True):  # si LibreHardwareMonitor no contestó la primera vez, no se insiste
+    ab = afterburner.leer()  # MSI Afterburner abierto: temperatura del procesador y, si no es NVIDIA, de la placa
+    if ab:
+        if "cpuTemp" in ab: m["cpu_temp"] = ab["cpuTemp"]
+        if "gpu_temp" not in m and "gpuTemp" in ab: m["gpu_temp"], m["gpu_w"] = ab["gpuTemp"], ab.get("gpuW", 0)
+    if "cpu_temp" not in m and est.get("lhm", True):  # si LibreHardwareMonitor no contestó la primera vez, no se insiste
         t = temp_cpu()
         if t is None: est["lhm"] = False
         else: m["cpu_temp"] = t

@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, relojes, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, relojes, afterburner, VERSION
 from . import precios as precios_tiendas
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io", "Google Play"]
@@ -308,6 +308,10 @@ class Nucleo:
             else:
                 subprocess.Popen([destino] + args, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
             time.sleep(1)
+            try:
+                if Main.bandeja is not None: Main.bandeja.Visible = False  # que no quede un ícono fantasma
+            except Exception:
+                pass
             try:
                 pulso.apagar()
             except Exception:
@@ -717,6 +721,7 @@ _DESINS = ((detect.HKLM, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
            (detect.HKCU, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
 
 _aviso_candado = threading.Lock()
+_ab = [None]   # ¿MSI Afterburner instalado? (None: sin mirar)
 _gpu = [None]  # None: sin probar · True: hay NVIDIA · False: no hay (no se vuelve a llamar a nvidia-smi)
 _procs_top = {}  # pid: proceso, para medir el procesador de cada programa contra la consulta anterior
 
@@ -771,6 +776,16 @@ def _en_vivo():
                 if not out.get("vramTotal") and v.get("vram_total"): out["vramTotal"] = round(v["vram_total"] / 1024)
             elif _gpu[0] is None:
                 _gpu[0] = False
+        # MSI Afterburner abierto (gratis, cualquier placa): temperatura del procesador, y de la placa si no es NVIDIA
+        ab = afterburner.leer()
+        if ab:
+            out["ab"] = "ok"
+            for k in ("cpuTemp", "cpuW"):
+                if k in ab: out[k] = ab[k]
+            if "gpuTemp" not in out and "gpuTemp" in ab: out["gpuTemp"], out["gpuW"] = ab["gpuTemp"], ab.get("gpuW")
+        else:
+            if _ab[0] is None: _ab[0] = afterburner.instalado()  # una vez: dice "abrilo" o "bajalo"
+            out["ab"] = "cerrado" if _ab[0] else "no"
         return out
     except Exception as e:
         paths.log("relojes", e)
@@ -868,13 +883,16 @@ def _minimizada(ventana, si):
         f = ventana.native
         def hacer():
             w = f.webview
+            c = w.CoreWebView2  # puede no estar listo todavía (recién abierta): ahí solo se esconde o muestra
             if si:
                 w.Visible = False
-                w.CoreWebView2.MemoryUsageTargetLevel = Nivel.Low
-                w.CoreWebView2.TrySuspendAsync()
+                if c is not None:
+                    c.MemoryUsageTargetLevel = Nivel.Low
+                    c.TrySuspendAsync()
             else:
-                w.CoreWebView2.Resume()
-                w.CoreWebView2.MemoryUsageTargetLevel = Nivel.Normal
+                if c is not None:
+                    c.Resume()
+                    c.MemoryUsageTargetLevel = Nivel.Normal
                 w.Visible = True
         f.Invoke(Action(hacer))
     except Exception as e:
@@ -891,6 +909,93 @@ def _poner_icono(ventana, icono):
     except Exception:
         pass
 
+MOSTRAR = r"Local\TandemStacks_mostrar"  # la segunda copia lo prende para que la primera muestre su ventana (aunque esté escondida)
+
+def _esconder(v):
+    """La ✕ (o el arranque con Windows) no cierra: esconde la ventana y deja el ícono al lado del reloj.
+    Así sigue vigilando juegos, midiendo con Pulso y cerrando launchers, con el visor dormido."""
+    try:
+        if Main.est is not None: _guardar_ventana(v, Main.est)
+        v.hide()
+        _minimizada(v, True)
+        aviso = os.path.join(paths.DATA, "bandeja_aviso.txt")
+        if Main.bandeja is not None and not os.path.exists(aviso) and "--inicio" not in sys.argv:
+            ing = NUC.cfg.get("idioma") == "english"
+            from System import Action
+            Main.bandeja_form.Invoke(Action(lambda: Main.bandeja.ShowBalloonTip(
+                6000, "TandemStacks",
+                "Still running here. Right click to quit." if ing else "Sigue andando acá. Clic derecho para salir.",
+                Main.ToolTipIcon.Info)))
+            open(aviso, "w").write("ok")
+    except Exception as e:
+        paths.log("esconder", e)
+
+def _mostrar(v):
+    try:
+        v.show()
+        v.restore()
+        _minimizada(v, False)
+        from System import Action
+        f = v.native
+        f.Invoke(Action(lambda: (f.Activate(), setattr(f, "TopMost", True), setattr(f, "TopMost", False))))
+    except Exception as e:
+        paths.log("mostrar", e)
+
+def _salir(v):
+    Main.saliendo = True
+    try:
+        if Main.bandeja is not None: Main.bandeja.Visible = False
+    except Exception: pass
+    if Main.est is not None: _guardar_ventana(v, Main.est)
+    threading.Thread(target=v.destroy, daemon=True).start()
+
+def _bandeja(v, icono):
+    """Ícono al lado del reloj con su menú: Abrir, Cerrar tiendas y Salir. La ✕ de la ventana pasa a esconderla;
+    al apagar o cerrar sesión Windows sí la cierra (no se frena el apagado)."""
+    try:
+        import clr
+        clr.AddReference("System.Windows.Forms"); clr.AddReference("System.Drawing")
+        from System import Action, EventHandler
+        from System.Drawing import Icon
+        from System.Windows.Forms import NotifyIcon, ContextMenuStrip, CloseReason, MouseButtons, ToolTipIcon
+        f = v.native
+        ing = NUC.cfg.get("idioma") == "english"
+        def cerrar_tiendas(*a):
+            threading.Thread(target=Api().cerrar_tiendas, daemon=True).start()
+        def crear():
+            n = NotifyIcon()
+            n.Icon = Icon(icono); n.Text = "TandemStacks"
+            m = ContextMenuStrip()
+            m.Items.Add("Open" if ing else "Abrir", None, EventHandler(lambda s, e: threading.Thread(target=_mostrar, args=(v,), daemon=True).start()))
+            m.Items.Add("Close stores" if ing else "Cerrar tiendas", None, EventHandler(lambda s, e: cerrar_tiendas()))
+            m.Items.Add("Quit" if ing else "Salir", None, EventHandler(lambda s, e: _salir(v)))
+            n.ContextMenuStrip = m
+            def clic(s, e):
+                if e.Button == MouseButtons.Left: threading.Thread(target=_mostrar, args=(v,), daemon=True).start()
+            n.MouseClick += clic
+            n.Visible = True
+            Main.bandeja, Main.bandeja_form, Main.ToolTipIcon = n, f, ToolTipIcon
+            def al_cerrar(s, e):  # corre después del de pywebview: decide si la ✕ cierra o esconde
+                if e.CloseReason == CloseReason.UserClosing and not Main.saliendo:
+                    e.Cancel = True
+                    threading.Thread(target=_esconder, args=(v,), daemon=True).start()
+                else:
+                    e.Cancel = False
+                    n.Visible = False
+            f.FormClosing += al_cerrar
+        f.Invoke(Action(crear))
+    except Exception as e:
+        paths.log("bandeja", e)
+
+def _esperar_mostrar(v):
+    """Si alguien abre TandemStacks de nuevo (acceso directo, menú Inicio), la copia que ya anda muestra su ventana."""
+    k32 = ctypes.windll.kernel32
+    k32.CreateEventW.restype = ctypes.c_void_p
+    h = k32.CreateEventW(None, False, False, MOSTRAR)
+    while h and not Main.saliendo:
+        if k32.WaitForSingleObject(ctypes.c_void_p(h), 1000) == 0:
+            _mostrar(v)
+
 def _ya_abierta():
     """Una sola TandemStacks por usuario: si ya hay una, se trae su ventana al frente y esta se cierra.
     Dos copias vigilarían juegos, cerrarían launchers y escribirían el nivel cada una por su lado."""
@@ -898,6 +1003,12 @@ def _ya_abierta():
     Main._mutex = k32.CreateMutexW(None, False, r"Local\TandemStacks_una_sola")
     if k32.GetLastError() != 183:  # ERROR_ALREADY_EXISTS
         return False
+    if "--inicio" not in sys.argv:  # la otra copia muestra su ventana, aunque esté escondida al lado del reloj
+        k32.OpenEventW.restype = ctypes.c_void_p
+        ev = k32.OpenEventW(0x0002, False, MOSTRAR)  # EVENT_MODIFY_STATE
+        if ev:
+            k32.SetEvent(ctypes.c_void_p(ev)); k32.CloseHandle(ctypes.c_void_p(ev))
+            return True
     hallada = []
     @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
     def ver(h, _):
@@ -918,6 +1029,11 @@ def _ya_abierta():
 
 class Main:
     _mutex = None
+    est = None            # tamaño y lugar de la ventana normal
+    bandeja = None        # el ícono al lado del reloj
+    bandeja_form = None
+    ToolTipIcon = None
+    saliendo = False      # True solo con "Salir" del ícono: ahí la ✕ ya no esconde
 
 def main():
     if _ya_abierta():
@@ -948,6 +1064,7 @@ def main():
     v = webview.create_window("TandemStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
                               min_size=(820, 520), background_color="#f2f2ef", minimized=con_windows, maximized=maxi and not con_windows)
     est = {"max": maxi, "normal": {"w": ancho, "h": alto, "x": x, "y": y} if previa else None}
+    Main.est = est
     def _normal():  # anota el tamaño de la ventana normal (al maximizar ya no se puede leer)
         try:
             u = ctypes.windll.user32; h = u.FindWindowW(None, v.title)
@@ -959,7 +1076,9 @@ def main():
     v.events.restored += lambda: est.update(max=False)
     v.events.closing += lambda: _guardar_ventana(v, est)
     v.events.shown += lambda: _poner_icono(v, icono)
-    if con_windows: v.events.shown += lambda: _minimizada(v, True)
+    v.events.shown += lambda: _bandeja(v, icono)
+    v.events.shown += lambda: threading.Thread(target=_esperar_mostrar, args=(v,), daemon=True).start()
+    if con_windows: v.events.shown += lambda: _esconder(v)  # con Windows arranca solo con el ícono al lado del reloj
     v.events.minimized += lambda: _minimizada(v, True)
     v.events.restored += lambda: _minimizada(v, False)
     v.events.maximized += lambda: _minimizada(v, False)  # una ventana maximizada vuelve por acá al sacarla de la barra

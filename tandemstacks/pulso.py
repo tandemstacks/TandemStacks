@@ -654,6 +654,29 @@ def fps_escritorio():
         return None
     lec = _esc["lector"]
     return lec.fps() if lec and time.time() - lec.t0 > 4 else None
+CRUDO = os.path.join(TMP, "crudo")
+MARCA_CRUDO = os.path.join(TMP, "guardar_crudo.txt")
+def _guardar_crudo(csv_fps, pm_txt, muestras, s, inicio, pid, exe):
+    """Prueba de que los números son reales (15/11/2026): si existe la marca guardar_crudo.txt, la próxima partida deja
+    sus datos crudos (cuadros de PresentMon, muestras cada 5 s y el resumen) en cache/pulso/crudo/<fecha>_<juego>, para
+    recalcularlos aparte con scripts/verificar_pulso.py. Se guarda UNA partida y la marca se borra (los CSV pesan)."""
+    if not os.path.exists(MARCA_CRUDO): return
+    try:
+        import shutil
+        nombre = re.sub(r"[^\w-]+", "_", "%s_%s" % (time.strftime("%Y%m%d-%H%M", time.localtime(inicio)), s.get("juego") or "juego"))
+        dest = os.path.join(CRUDO, nombre)
+        os.makedirs(dest, exist_ok=True)
+        for f in (csv_fps, pm_txt):
+            if os.path.exists(f): shutil.copy2(f, dest)
+        with open(os.path.join(dest, "muestras.json"), "w", encoding="utf-8") as f:
+            json.dump({"inicio": inicio, "pid": pid, "exe": exe, "muestras": muestras}, f, default=str)
+        with open(os.path.join(dest, "resumen.json"), "w", encoding="utf-8") as f:
+            json.dump(s, f, ensure_ascii=False, indent=1)
+        os.remove(MARCA_CRUDO)
+        _log("datos crudos guardados en", dest)
+    except Exception as e:
+        _log("crudo", e)
+
 def medir(g, al_terminar=None):
     """Hilo de una partida: espera el proceso principal (hasta 3 min), mide hasta que se cierra y guarda el resumen."""
     try:
@@ -747,6 +770,7 @@ def medir(g, al_terminar=None):
             if al_terminar:
                 try: al_terminar(g, s)
                 except Exception as e: _log("aviso", e)
+            _guardar_crudo(csv_fps, pm_txt, muestras, s, inicio, pid, exe)
         for f in (csv_fps, pm_txt):
             try: os.remove(f)
             except OSError: pass

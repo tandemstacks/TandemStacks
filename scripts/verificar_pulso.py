@@ -11,7 +11,12 @@ import os, sys, csv, json, glob, statistics, argparse
 TMP = os.path.join(os.environ["LOCALAPPDATA"], "TandemStacks", "cache", "pulso")
 CRUDO, MARCA = os.path.join(TMP, "crudo"), os.path.join(TMP, "guardar_crudo.txt")
 
-def cuadros(carpeta, pid, exe):
+def tramos_afk(muestras, inicio):
+    """Ratos AFK (2 min o más sin tocar nada), en segundos desde el inicio: [(desde, hasta)]."""
+    return [(m["t"] - m["inactivo"] - inicio, m["t"] - inicio) for m in muestras
+            if isinstance(m.get("inactivo"), (int, float)) and m["inactivo"] >= 120 and m.get("t")]
+
+def cuadros(carpeta, pid, exe, afk=()):
     """Tiempos de cada cuadro del juego (ms), leídos con DictReader (otro camino que el de la app)."""
     arch = glob.glob(os.path.join(carpeta, "fps_*.csv"))
     if not arch: sys.exit("No está el CSV de PresentMon en " + carpeta)
@@ -23,6 +28,9 @@ def cuadros(carpeta, pid, exe):
                 continue
             try: v = float(r.get("msbetweenpresents") or r.get("frametime") or "")
             except ValueError: continue
+            try: mo = float(r.get("timeinseconds") or 0)
+            except ValueError: mo = 0
+            if any(a <= mo <= b for a, b in afk): continue
             if 0 < v < 30000:
                 ms.append(v)
                 try: gpu.append(min(1.0, float(r["msgpuactive"]) / v))
@@ -61,9 +69,11 @@ def main():
     if not carpeta: sys.exit("Todavía no hay partidas guardadas en crudo. Corré primero con --preparar y jugá.")
     m = json.load(open(os.path.join(carpeta, "muestras.json"), encoding="utf-8"))
     app = json.load(open(os.path.join(carpeta, "resumen.json"), encoding="utf-8"))
-    ms, gpu = cuadros(carpeta, m["pid"], m["exe"])
+    afk = tramos_afk(m["muestras"], m["inicio"])
+    ms, gpu = cuadros(carpeta, m["pid"], m["exe"], afk)
     if len(ms) < 100: sys.exit("Muy pocos cuadros en el CSV (%d): PresentMon no grabó el juego." % len(ms))
-    yo = calcular(ms, gpu, m["muestras"])
+    jugando = [x for x in m["muestras"] if not any(a <= x.get("t", 0) - m["inicio"] <= b for a, b in afk)] or m["muestras"]
+    yo = calcular(ms, gpu, jugando)
     print("Partida:", app.get("juego"), app.get("fecha"), "| carpeta:", carpeta)
     print("%-15s %10s %10s  %s" % ("dato", "app", "recalc.", ""))
     malos = 0

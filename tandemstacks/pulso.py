@@ -181,8 +181,46 @@ def _juego_solo(pid, est, m):
         m["gpu_uso"], m["vram"] = pj["gpu"], pj["vram_mb"]
     m["solo_juego"] = True
 
+AFK_SEG = 120  # sin tocar teclado, mouse ni joystick por 2 minutos = AFK (16/11/2026)
+
+class _LII(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+class _XIS(ctypes.Structure):  # XINPUT_STATE: solo importa el número de paquete (cambia con cada toque del joystick)
+    _fields_ = [("paquete", ctypes.c_uint), ("resto", ctypes.c_byte * 12)]
+_xinput = None
+
+def inactivo(est):
+    """Segundos sin tocar nada. Teclado y mouse por GetLastInputInfo (no ve los joysticks); joysticks de Xbox (XInput)
+    por su número de paquete, que cambia al tocarlos. Una consulta por muestra: casi no cuesta."""
+    global _xinput
+    seg = None
+    try:
+        li = _LII(); li.cbSize = ctypes.sizeof(li)
+        if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(li)):
+            seg = ((ctypes.windll.kernel32.GetTickCount() - li.dwTime) & 0xFFFFFFFF) / 1000
+    except Exception:
+        pass
+    try:
+        if _xinput is None:
+            try: _xinput = ctypes.windll.xinput1_4
+            except OSError: _xinput = False
+        if _xinput:
+            paq, st = est.setdefault("xpaq", {}), _XIS()
+            for i in range(4):
+                if _xinput.XInputGetState(i, ctypes.byref(st)) == 0:
+                    if paq.get(i) != st.paquete:
+                        paq[i] = st.paquete
+                        est["xtoque"] = time.time()
+        if est.get("xtoque") and seg is not None:
+            seg = min(seg, time.time() - est["xtoque"])
+    except Exception:
+        pass
+    return seg
+
 def muestrear(pid, est):
     m = nvsmi()
+    q = inactivo(est)
+    if q is not None: m["inactivo"] = round(q)
     ab = afterburner.leer()  # MSI Afterburner abierto: temperatura del procesador y, si no es NVIDIA, de la placa
     if ab:
         if "cpuTemp" in ab: m["cpu_temp"] = ab["cpuTemp"]
@@ -278,6 +316,22 @@ def evaluar(s, previas):
     """Compara la partida contra el objetivo y contra lo normal de ESE juego: estado, causas (problemas) y consejos."""
     causas, consejos, rojo = [], [], False
     fps, low, tir = s.get("fps"), s.get("fps1low"), s.get("tironesMin") or 0
+    # Tirones del arranque (16/11/2026): si casi todos fueron en los primeros 90 s (carga y sombreadores, normal), lo que
+    # cuenta es cómo siguió después. Partidas cortas: se avisa que los números exageran.
+    inicio = (s.get("tironesInicioPct") or 0) >= 60 and tir > 5
+    if inicio:
+        if s.get("tironesMinDespues") is not None:
+            consejos.append("Al arrancar hubo %d tirones: es la carga y el armado de sombreadores, normal en los primeros 90 segundos. Después siguió con %s por minuto%s"
+                            % (round((s.get("tirones") or 0) * s["tironesInicioPct"] / 100), s["tironesMinDespues"],
+                               " (bien: menos de 5 no se notan)" if s["tironesMinDespues"] <= 5 else ""))
+            tir = s["tironesMinDespues"]
+        else:
+            consejos.append("Casi todos los tirones fueron al arrancar (%d %%): es la carga y el armado de sombreadores. La partida fue muy corta para ver cómo sigue después" % s["tironesInicioPct"])
+            tir = 0
+    if s.get("afkMin"):
+        consejos.append("Estuviste %s min sin tocar nada (AFK): ese rato no cuenta en los FPS ni en los tirones" % s["afkMin"])
+    if s.get("fiable") is False and s.get("minutosJugados") is not None:
+        consejos.append("Partida corta (%s min jugados): los números pueden exagerar y no se usan para comparar. Desde 2 minutos ya son confiables" % s["minutosJugados"])
     obj, hz = objetivo_fps(s), s.get("hz")
     s["objetivo"] = obj
     fps_prev = [p["fps"] for p in previas if p.get("fps") and p.get("fiable", True)]  # solo partidas fiables
@@ -305,8 +359,9 @@ def evaluar(s, previas):
         causas.append("El procesador llegó a %d °C: puede estar frenándose por calor" % s["cpuTempMax"])
     # trabas
     if tir > 5:
-        causas.append("%s tirones por minuto (cuadros de más de 50 ms; más de 5 se notan)" % tir)
-    if low is not None and low < 30:
+        causas.append(("Después del arranque siguió con %s tirones por minuto" if inicio else "%s tirones por minuto") % tir
+                      + " (cuadros de más de 50 ms; más de 5 se notan)")
+    if low is not None and low < 30 and not (inicio and tir <= 5):  # si los lentos fueron solo del arranque, no es traba al jugar
         causas.append("El 1 %% más lento baja a %s FPS: por debajo de 30 se notan trabas" % low)
     tc = s.get("tironesCon") or {}
     if tir > 5:
@@ -319,8 +374,6 @@ def evaluar(s, previas):
         for k, txt in sorted(porque.items(), key=lambda x: -tc.get(x[0], 0)):
             if tc.get(k, 0) >= 30:
                 causas.append("El %d %% de los tirones pasó con %s" % (tc[k], txt))
-        if s.get("tironesInicioPct", 0) >= 60:
-            causas.append("Casi todos los tirones fueron al empezar (%d %%): el juego armaba sombreadores, después se normaliza" % s["tironesInicioPct"])
         if s.get("discoMBsMax", 0) >= 100 and "disco" not in tc:
             causas.append("El juego leyó hasta %d MB/s del disco: los tirones pueden ser de carga" % s["discoMBsMax"])
     # fluidez y quién frena
@@ -367,7 +420,7 @@ def evaluar(s, previas):
         causas.append("Internet perdió %s %% de paquetes: el lag es de la conexión, no de la PC" % s["perdidaInternet"])
     elif s.get("pingInternetMax", 0) >= 150:
         causas.append("Picos de ping de %d ms (lag de la conexión)" % s["pingInternetMax"])
-    if 5 <= s.get("perdidaServidor", 0) < 95 and s.get("perdidaInternet", 0) < 5:  # ~100 % = el servidor no contesta pings (los bloquea), no es pérdida
+    if s.get("perdidaFiltrada") and 5 <= s.get("perdidaServidor", 0) < 95 and s.get("perdidaInternet", 0) < 5:  # ~100 % = el servidor no contesta pings (los bloquea), no es pérdida
         causas.append("El servidor del juego perdió %s %% de paquetes (problema del servidor, no tuyo)" % s["perdidaServidor"])
     if (s.get("redBaja") or 0) >= 1 and tir > 3:
         causas.append("Durante la partida se bajaban %s MB/s de internet en promedio: pausar descargas mientras jugás" % s["redBaja"])
@@ -389,6 +442,17 @@ def reevaluar(ps):
 def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, drv, pm_ok, pid=None):
     dur = fin - inicio
     tiempos, momentos, ocupada, modos, sync = [], [], [], {}, {}
+    # AFK (16/11/2026): ratos de 2 min o más sin tocar teclado, mouse ni joystick. Esos cuadros no cuentan (en el menú o
+    # quieto el juego suele topear los FPS y ensuciaba todo: Fortnite 7,8 h clavado en 30). Tramos en segundos desde inicio.
+    afk = []
+    for mu in muestras:
+        q = mu.get("inactivo")
+        if q is not None and q >= AFK_SEG and mu.get("t"):
+            a, b = mu["t"] - q - inicio, mu["t"] - inicio
+            if afk and a <= afk[-1][1] + MUESTRA * 2: afk[-1][1] = max(afk[-1][1], b)
+            else: afk.append([a, b])
+    en_afk = lambda x: any(a <= x <= b for a, b in afk)
+    afk_fuera = 0
     try:
         with open(csv_fps, newline="", encoding="utf-8-sig", errors="ignore") as f:  # -sig: PresentMon empieza con BOM y "Application" no se reconocía
             lector = csv.reader(f)
@@ -409,8 +473,12 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
                 try:
                     v = float(r[i_v])
                     if not 0 < v < 30000: continue
+                    mo = float(r[i_t]) if i_t >= 0 and r[i_t] else 0.0  # cuándo se dibujó cada cuadro
+                    if afk and en_afk(mo):
+                        afk_fuera += 1
+                        continue
                     tiempos.append(v)
-                    momentos.append(float(r[i_t]) if i_t >= 0 and r[i_t] else 0.0)  # cuándo se dibujó cada cuadro
+                    momentos.append(mo)
                     if i_gpu >= 0 and r[i_gpu]: ocupada.append(min(1.0, float(r[i_gpu]) / v))  # parte del cuadro con la placa trabajando
                     if i_modo >= 0: modos[r[i_modo]] = modos.get(r[i_modo], 0) + 1
                     if i_sync >= 0: sync[r[i_sync]] = sync.get(r[i_sync], 0) + 1
@@ -420,6 +488,7 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
         pass
     s = {"fecha": datetime.datetime.fromtimestamp(inicio).strftime("%Y-%m-%d %H:%M"), "juego": g.get("name"), "exe": os.path.basename(exe),
          "minutos": round(dur / 60, 1), "cerroConError": error, "fondo": fondo_cpu, "driver": drv, "version": version}
+    if afk: s["afkMin"] = round(sum(b - a for a, b in afk) / 60, 1)  # minutos AFK que no entraron en los cálculos
     # Cálculo (reglas fijas):
     # - Cuadros de 2 s o más = pausa (pantalla de carga, menú, Alt+Tab): se cuentan aparte y NO entran en los FPS.
     # - FPS = cuadros / segundos jugados (no el promedio de los FPS de cada instante, que exagera).
@@ -453,12 +522,18 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
         if sync: s["vsync"] = max(sync, key=sync.get) not in ("", "0")
         if momentos:  # tirones de la primera minuto y medio (sombreadores que se arman al entrar)
             s["tironesInicioPct"] = round(100 * sum(1 for x in momentos if x < 90) / len(momentos))
+            # tirones después del arranque (los primeros 90 s son carga y sombreadores): lo que se nota jugando (16/11/2026)
+            t0 = min(m for _, m in pares) if pares else 0
+            despues = sum(1 for x in momentos if x - t0 >= 90)
+            jug_despues = sum(x for x, m in pares if m - t0 >= 90) / 60000
+            if jug_despues >= 1: s["tironesMinDespues"] = round(despues / jug_despues, 1)
             s["tironesCon"] = _tirones_con(momentos, muestras, inicio)
     else:
         momentos = []
     if "fps" not in s and not pm_ok:
         s["sinFps"] = True  # PresentMon no tuvo permiso (falta el grupo "Performance Log Users")
-    col = lambda k: [m[k] for m in muestras if m.get(k) is not None]
+    jugando = [m for m in muestras if not (afk and m.get("t") and en_afk(m["t"] - inicio))] or muestras  # sin el rato AFK entero
+    col = lambda k: [m[k] for m in jugando if m.get(k) is not None]
     for k, nom in (("gpu_uso", "gpuUso"), ("gpu_temp", "gpuTemp"), ("gpu_w", "gpuW"), ("cpu", "cpuUso"), ("cpu_nucleo_max", "cpuNucleoMax"), ("ram", "ram"),
                    ("gpu_uso_pc", "gpuPc"), ("cpu_pc", "cpuPc"), ("cpu_nucleo_max_pc", "cpuNucleoMaxPc"), ("ram_pc", "ramPc")):
         v = col(k)
@@ -490,6 +565,7 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
         v = col(k)
         if k == "perdida_srv":  # 100 % = esa IP no contesta pings (la bloquea, o el juego cambió de servidor): no es pérdida.
             v = [x for x in v if x < 100]  # Antes se promediaba y salía "el servidor perdió 33-55 %" sin pérdida real (16/11/2026)
+            s["perdidaFiltrada"] = True  # las partidas viejas (sin esta marca) no muestran la pérdida del servidor
         if v: s[nom] = round(statistics.mean(v), 1)
     for k, nom in (("juego_cpu", "juegoCpu"), ("red_baja", "redBaja"), ("red_sube", "redSube"), ("swap", "swap")):
         v = col(k)

@@ -281,8 +281,12 @@ def tiempos_cpu():
 def fondo(antes, despues, pid_juego, seg):
     """Programas que más procesador gastaron durante la partida (sin contar el juego)."""
     uso = {}
+    try:  # la propia TandemStacks y su ventana (msedgewebview2) no son "programas de fondo" del usuario (16/11/2026)
+        propios = {os.getpid()} | {p.pid for p in psutil.Process(os.getpid()).children(recursive=True)}
+    except Exception:
+        propios = {os.getpid()}
     for pid, (nom, t1) in despues.items():
-        if pid == pid_juego or pid not in antes or not nom or nom.lower() in ("system idle process", "system"):
+        if pid == pid_juego or pid in propios or pid not in antes or not nom or nom.lower() in ("system idle process", "system"):
             continue
         uso[nom] = uso.get(nom, 0) + max(0, t1 - antes[pid][1])
     nucleos = psutil.cpu_count() or 1
@@ -306,7 +310,8 @@ def cierre_con_error(exe, inicio):
 #               FPS clavados (≥ 97 % de cuadros parejos, típico ≈ promedio) sin núcleo al tope → un límite de FPS ("tope");
 #               un núcleo del procesador ≥ 90 % (o placa ocupada ≤ 60 % con el núcleo ≥ 60 %) → el procesador; si no, el propio juego.
 # Sobra placa:  si se llega al objetivo y la placa trabaja < 75 % (y la memoria de video no está llena) → consejo de subir gráficos.
-# Semáforo:     rojo = se cerró con error, frenos por calor o FPS 30 % abajo de lo normal; amarillo = algún problema; verde = ninguno.
+# Semáforo:     rojo = se cerró con error, frenos por calor o FPS 30 % abajo de lo normal; amarillo = algún problema; verde = ninguno;
+#               gris = partida corta (menos de 2 min o 3000 cuadros) sin problemas graves: no se diagnostica.
 #               Los consejos (subir gráficos, limitar FPS…) no cambian el color.
 def objetivo_fps(s):
     hz = s.get("hz")
@@ -351,37 +356,54 @@ def evaluar(s, previas):
             causas.append("Coincide con una actualización del juego")
     if s.get("cerroConError"):
         rojo = True; causas.append("El juego se cerró con error (quedó registrado en Windows)")
-    if s.get("frenoCalorPct", 0) >= 10:
-        rojo = True; causas.append("La placa se frenó por calor el %d %% del tiempo: revisar polvo y ventilación" % s["frenoCalorPct"])
-    if s.get("gpuTempMax", 0) > 83:
-        causas.append("La placa llegó a %d °C (más de 83 °C)" % s["gpuTempMax"])
+    # Precisión (16/11/2026, revisando todas las partidas guardadas):
+    # - Partida corta (no fiable): solo los números y el aviso; sin diagnóstico (con 30 s de menú salía "le sobra placa
+    #   al 1 %" o "el 100 % de los tirones fue con el procesador al tope").
+    # - Freno por calor solo si la placa pasó los 80 °C (Sifu marcaba freno por calor a 61 °C: nvidia-smi también lo
+    #   avisa por otras cosas). El freno por energía es normal en NVIDIA con carga: no es un problema.
+    # - "El X % de los tirones pasó con…" solo si eso pasaba bastante más en los tirones que en el resto de la partida.
+    corta = s.get("fiable") is False
+    tmax = s.get("gpuTempMax", 0)
+    if s.get("frenoCalorPct", 0) >= 10 and tmax >= 80:
+        rojo = True; causas.append("La placa se frenó por calor el %d %% del tiempo (llegó a %d °C): revisar polvo y ventilación" % (s["frenoCalorPct"], round(tmax)))
+    elif round(tmax) > 83:
+        causas.append("La placa llegó a %d °C: es mucho (lo sano es hasta 83 °C). Revisar polvo y ventilación" % round(tmax))
     if s.get("cpuTempMax", 0) >= 90:
-        causas.append("El procesador llegó a %d °C: puede estar frenándose por calor" % s["cpuTempMax"])
+        causas.append("El procesador llegó a %d °C: puede estar frenándose por calor" % round(s["cpuTempMax"]))
+    if corta:
+        tir, low = 0, None  # en una partida corta los tirones y el 1 % bajo exageran: no se diagnostican
     # trabas
     if tir > 5:
         causas.append(("Después del arranque siguió con %s tirones por minuto" if inicio else "%s tirones por minuto") % tir
                       + " (cuadros de más de 50 ms; más de 5 se notan)")
-    if low is not None and low < 30 and not (inicio and tir <= 5):  # si los lentos fueron solo del arranque, no es traba al jugar
+    # 1 % bajo: < 30 FPS y además muy por debajo del cuadro típico (con un tope de 30 FPS, 26 no es una traba)
+    if low is not None and low < 30 and low < 0.8 * (s.get("fpsTipico") or 999) and not (inicio and tir <= 5):
         causas.append("El 1 %% más lento baja a %s FPS: por debajo de 30 se notan trabas" % low)
-    tc = s.get("tironesCon") or {}
+    tc, base = s.get("tironesCon") or {}, s.get("tironesBase")
     if tir > 5:
         porque = {"disco": "el disco cargando (texturas o sombreadores): si el juego está en un disco rígido, pasarlo a un SSD",
                   "procesador": "el procesador al tope: bajar distancia de visión, multitudes o física",
                   "vram": "la memoria de video llena: bajar las texturas un punto",
                   "ram": "la RAM casi llena: cerrar programas de fondo",
                   "descarga": "algo bajando de internet: pausar descargas mientras jugás",
-                  "freno": "la placa frenándose por calor o energía"}
+                  "freno": "la placa frenándose por calor: revisar polvo y ventilación"}
         for k, txt in sorted(porque.items(), key=lambda x: -tc.get(x[0], 0)):
-            if tc.get(k, 0) >= 30:
-                causas.append("El %d %% de los tirones pasó con %s" % (tc[k], txt))
+            if tc.get(k, 0) < 30: continue
+            if base is not None:  # ¿pasaba más en los tirones que en el resto? (si el procesador está al tope el 80 % del
+                b = base.get(k, 0)  # tiempo, que el 80 % de los tirones coincida no dice nada)
+                if tc[k] < b * 1.5 + 10: continue
+                causas.append("El %d %% de los tirones pasó con %s (en el resto de la partida, solo el %d %% del tiempo)" % (tc[k], txt, b))
+                continue
+            if k == "freno" and (s.get("frenoCalorPct", 0) < 10 or tmax < 80): continue  # partidas viejas: era casi siempre energía
+            causas.append("El %d %% de los tirones pasó con %s" % (tc[k], txt))
         if s.get("discoMBsMax", 0) >= 100 and "disco" not in tc:
             causas.append("El juego leyó hasta %d MB/s del disco: los tirones pueden ser de carga" % s["discoMBsMax"])
     # fluidez y quién frena
     gpu, po, cpu1 = s.get("gpuUso"), s.get("placaOcupada"), s.get("cpuNucleoMax") or 0
-    if fps:
+    if fps and not corta:
         if fps >= obj * 0.9:
             s["frena"] = "nada"
-            if gpu is not None and gpu < 75 and (s.get("vramPcMaxPct", s.get("vramMaxPct")) or 0) < 90:
+            if gpu is not None and gpu < 75 and (po is None or po < 75) and (s.get("vramPcMaxPct", s.get("vramMaxPct")) or 0) < 90:
                 s["frena"] = "sobra"
                 consejos.append("Llegás a %d FPS (objetivo %d) con la placa al %d %%: le sobra. Podés subir gráficos (texturas, sombras o resolución) mientras no bajes de %d FPS" % (fps, obj, gpu, round(obj * 0.9)))
         else:
@@ -389,7 +411,10 @@ def evaluar(s, previas):
             if (gpu or 0) >= 95 or (po or 0) >= 90:
                 s["frena"] = "placa"
                 cual = ("al %d %%" % gpu) if (gpu or 0) >= 95 else ("trabajó el %d %% de cada cuadro" % po)  # el dato que la delató
-                causas.append(falta + ": frena la placa (%s). Bajar calidad o resolución, o activar DLSS/FSR" % cual)
+                if cpu1 >= 90:  # los dos al límite: decir uno solo es medio dato
+                    causas.append(falta + ": frenan la placa (%s) y el procesador (hilo principal al %d %%) a la vez. Bajar resolución o activar DLSS/FSR ayuda a la placa; distancia de visión y multitudes, al procesador" % (cual, cpu1))
+                else:
+                    causas.append(falta + ": frena la placa (%s). Bajar calidad o resolución, o activar DLSS/FSR" % cual)
             elif (s.get("parejos") or 0) >= 97 and s.get("fpsTipico") and abs(s["fpsTipico"] - fps) <= fps * 0.05 and cpu1 < 90:
                 # FPS clavados (casi todos los cuadros iguales) sin nada al tope = un tope de FPS (del juego, del menú, de
                 # NVIDIA o de ahorro de energía), no el procesador. Pasó con Fortnite: 30 FPS fijos, hilo al 18 % (16/11/2026)
@@ -411,7 +436,8 @@ def evaluar(s, previas):
     # pantalla
     if s.get("vsync") and hz and fps and fps < hz * 0.9 and tir > 3:
         causas.append("V-Sync activado sin llegar a los %d Hz del monitor: los cuadros se esperan y se traban. Apagarlo en el juego (con G-SYNC queda suave igual)" % hz)
-    if "composed" in (s.get("modoPantalla") or "").lower() and (tir > 3 or (fps and fps < obj * 0.9)):
+    modo = (s.get("modoPantalla") or "").lower()  # "Independent Flip" = la imagen va directo a la pantalla, igual que en
+    if "composed" in modo and "independent" not in modo and (tir > 3 or (fps and fps < obj * 0.9)):  # pantalla completa
         consejos.append("El juego está en modo ventana o sin bordes: en Pantalla completa suele andar un poco más fluido")
     if hz and fps and fps > hz * 1.5 and not s.get("vsync"):
         consejos.append("Hacés %d FPS con un monitor de %d Hz: limitar a %d FPS baja calor y consumo sin que se note" % (fps, hz, hz))
@@ -419,7 +445,10 @@ def evaluar(s, previas):
     if s.get("perdidaInternet", 0) >= 5:
         causas.append("Internet perdió %s %% de paquetes: el lag es de la conexión, no de la PC" % s["perdidaInternet"])
     elif s.get("pingInternetMax", 0) >= 150:
-        causas.append("Picos de ping de %d ms (lag de la conexión)" % s["pingInternetMax"])
+        if (s.get("pingInternet") or 0) < 60:  # promedio bajo: fue un momento, no lag de toda la partida
+            consejos.append("Hubo un pico de ping de %d ms, pero el promedio fue %d ms: fue un momento, no lag de toda la partida" % (s["pingInternetMax"], s.get("pingInternet") or 0))
+        else:
+            causas.append("Ping alto: %d ms de promedio y picos de %d ms (lag de la conexión)" % (s["pingInternet"], s["pingInternetMax"]))
     if s.get("perdidaFiltrada") and 5 <= s.get("perdidaServidor", 0) < 95 and s.get("perdidaInternet", 0) < 5:  # ~100 % = el servidor no contesta pings (los bloquea), no es pérdida
         causas.append("El servidor del juego perdió %s %% de paquetes (problema del servidor, no tuyo)" % s["perdidaServidor"])
     if (s.get("redBaja") or 0) >= 1 and tir > 3:
@@ -427,7 +456,8 @@ def evaluar(s, previas):
     pesados = [f for f in s.get("fondo", []) if f["cpu"] >= 3]
     if pesados and causas:
         causas.append("De fondo gastaban procesador: " + ", ".join("%s (%s %%)" % (f["programa"], f["cpu"]) for f in pesados))
-    s["estado"] = "rojo" if rojo else ("amarillo" if causas else "verde")
+    # gris = partida corta sin problemas graves: no se evaluó, así que tampoco es "todo bien"
+    s["estado"] = "rojo" if rojo else ("amarillo" if causas else ("gris" if corta else "verde"))
     s["causas"], s["consejos"] = causas, consejos
     return s
 
@@ -527,7 +557,7 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
             despues = sum(1 for x in momentos if x - t0 >= 90)
             jug_despues = sum(x for x, m in pares if m - t0 >= 90) / 60000
             if jug_despues >= 1: s["tironesMinDespues"] = round(despues / jug_despues, 1)
-            s["tironesCon"] = _tirones_con(momentos, muestras, inicio)
+            s["tironesCon"], s["tironesBase"] = _tirones_con(momentos, [mu for mu in muestras if not (afk and mu.get("t") and en_afk(mu["t"] - inicio))], inicio)
     else:
         momentos = []
     if "fps" not in s and not pm_ok:
@@ -577,24 +607,31 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
     return evaluar(s, historial(g["id"]))
 
 def _tirones_con(momentos, muestras, inicio):
-    """Para cada tirón, qué pasaba en la muestra más cercana (cada 5 s). Devuelve % de tirones con cada cosa."""
-    if not muestras: return {}
+    """Para cada tirón, qué pasaba en la muestra más cercana (cada 5 s). Devuelve (% de tirones con cada cosa,
+    % de muestras de toda la partida con cada cosa): lo segundo es la base para saber si de verdad coincide con los tirones."""
+    if not muestras: return {}, {}
     disco_normal = statistics.median([m.get("disco_mbs") or 0 for m in muestras]) or 1
+    def marcas(m):
+        r = []
+        if (m.get("disco_mbs") or 0) >= max(60, disco_normal * 3): r.append("disco")
+        if (m.get("cpu_nucleo_max") or 0) >= 95: r.append("procesador")
+        vr = m.get("vram_pc", m.get("vram"))
+        if vr and m.get("vram_total") and vr / m["vram_total"] >= 0.95: r.append("vram")
+        if (m.get("ram_libre_gb") or 99) < 1: r.append("ram")
+        if (m.get("red_baja") or 0) >= 2: r.append("descarga")
+        if (m.get("frenos") or 0) & CALOR and (m.get("gpu_temp") or 0) >= 80: r.append("freno")  # solo calor de verdad
+        return r
     cuenta, n = {}, 0
     for t in momentos:
         m = min(muestras, key=lambda x: abs(x.get("t", 0) - (inicio + t)))
         if abs(m.get("t", 0) - (inicio + t)) > 8: continue
         n += 1
-        marcas = []
-        if (m.get("disco_mbs") or 0) >= max(60, disco_normal * 3): marcas.append("disco")
-        if (m.get("cpu_nucleo_max") or 0) >= 95: marcas.append("procesador")
-        vr = m.get("vram_pc", m.get("vram"))
-        if vr and m.get("vram_total") and vr / m["vram_total"] >= 0.95: marcas.append("vram")
-        if (m.get("ram_libre_gb") or 99) < 1: marcas.append("ram")
-        if (m.get("red_baja") or 0) >= 2: marcas.append("descarga")
-        if (m.get("frenos") or 0) & (CALOR | ENERGIA): marcas.append("freno")
-        for x in marcas: cuenta[x] = cuenta.get(x, 0) + 1
-    return {k: round(100 * v / n) for k, v in cuenta.items()} if n else {}
+        for x in marcas(m): cuenta[x] = cuenta.get(x, 0) + 1
+    base = {}
+    for m in muestras:
+        for x in marcas(m): base[x] = base.get(x, 0) + 1
+    return ({k: round(100 * v / n) for k, v in cuenta.items()} if n else {},
+            {k: round(100 * v / len(muestras)) for k, v in base.items()})
 
 # ---------- una partida ----------
 def _proceso_principal(carpeta):

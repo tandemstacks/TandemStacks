@@ -508,7 +508,7 @@ let avisoT=0;
 function avisoJuego(a){
   if(!a||a.t===avisoT) return; avisoT=a.t;
   let d=$('#avisoJuego'); if(!d){d=document.createElement('div');d.id='avisoJuego';document.body.appendChild(d);}
-  const col={verde:'var(--ok)',amarillo:'var(--warn)',rojo:'var(--bad)'}[a.estado];
+  const col={verde:'var(--ok)',amarillo:'var(--warn)',rojo:'var(--bad)'}[a.estado]||'var(--mu)';
   const mb=x=>x>=1024?(x/1024).toFixed(1)+' GB':Math.round(x)+' MB';
   d.innerHTML=`<button class="x" aria-label="Cerrar">×</button><b>${L.avTerminaste}${a.juego?`: ${esc(a.juego)}`:''}</b>`
     +(a.estado?`<div style="display:flex;gap:7px;align-items:center;margin-top:4px"><span class="sem" style="background:${col}"></span>${a.fps?L.avFps.replace('{n}',a.fps).replace('{a}',a.fpsAntes||'—'):''}</div>`:'')

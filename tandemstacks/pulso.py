@@ -265,7 +265,8 @@ def cierre_con_error(exe, inicio):
 # Fluidez:      llega si los FPS promedio son ≥ 90 % del objetivo.
 # Trabas:       hay problema si hay más de 5 tirones por minuto (cuadros de más de 50 ms) o si el 1 % más lento baja de 30 FPS.
 # Quién frena:  solo cuando NO se llega al objetivo. Placa al tope (≥ 95 % o ocupada ≥ 90 % de cada cuadro) → la placa;
-#               un núcleo del procesador ≥ 90 % o placa ocupada ≤ 60 % → el procesador; si no, el propio juego (motor o límite de FPS).
+#               FPS clavados (≥ 97 % de cuadros parejos, típico ≈ promedio) sin núcleo al tope → un límite de FPS ("tope");
+#               un núcleo del procesador ≥ 90 % (o placa ocupada ≤ 60 % con el núcleo ≥ 60 %) → el procesador; si no, el propio juego.
 # Sobra placa:  si se llega al objetivo y la placa trabaja < 75 % (y la memoria de video no está llena) → consejo de subir gráficos.
 # Semáforo:     rojo = se cerró con error, frenos por calor o FPS 30 % abajo de lo normal; amarillo = algún problema; verde = ninguno.
 #               Los consejos (subir gráficos, limitar FPS…) no cambian el color.
@@ -336,7 +337,12 @@ def evaluar(s, previas):
                 s["frena"] = "placa"
                 cual = ("al %d %%" % gpu) if (gpu or 0) >= 95 else ("trabajó el %d %% de cada cuadro" % po)  # el dato que la delató
                 causas.append(falta + ": frena la placa (%s). Bajar calidad o resolución, o activar DLSS/FSR" % cual)
-            elif cpu1 >= 90 or (po is not None and po <= 60):
+            elif (s.get("parejos") or 0) >= 97 and s.get("fpsTipico") and abs(s["fpsTipico"] - fps) <= fps * 0.05 and cpu1 < 90:
+                # FPS clavados (casi todos los cuadros iguales) sin nada al tope = un tope de FPS (del juego, del menú, de
+                # NVIDIA o de ahorro de energía), no el procesador. Pasó con Fortnite: 30 FPS fijos, hilo al 18 % (16/11/2026)
+                s["frena"] = "tope"
+                causas.append(falta + ": los FPS están clavados en %d, así que hay un límite de FPS puesto (en el juego, en NVIDIA o por ahorro de energía). Revisá el límite de FPS en las opciones del juego" % round(s["fpsTipico"]))
+            elif cpu1 >= 90 or (po is not None and po <= 60 and cpu1 >= 60):
                 s["frena"] = "procesador"
                 causas.append(falta + ": frena el procesador (" + ("el hilo principal del juego" if s.get("soloJuego") else "un núcleo") + " al %d %%, la placa al %d %%). Bajar distancia de visión, multitudes o física" % (cpu1, gpu or 0))
             else:
@@ -482,6 +488,8 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
         if v: s[nom], s[nom + "Max"] = round(statistics.mean(v)), max(v)
     for k, nom in (("perdida_srv", "perdidaServidor"), ("perdida_inet", "perdidaInternet")):
         v = col(k)
+        if k == "perdida_srv":  # 100 % = esa IP no contesta pings (la bloquea, o el juego cambió de servidor): no es pérdida.
+            v = [x for x in v if x < 100]  # Antes se promediaba y salía "el servidor perdió 33-55 %" sin pérdida real (16/11/2026)
         if v: s[nom] = round(statistics.mean(v), 1)
     for k, nom in (("juego_cpu", "juegoCpu"), ("red_baja", "redBaja"), ("red_sube", "redSube"), ("swap", "swap")):
         v = col(k)

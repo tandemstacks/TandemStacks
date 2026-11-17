@@ -587,15 +587,22 @@ function noComprados(base){
 // la fila de filtros de un grupo: tiendas con su cantidad, orden y géneros. tiendasDe/generosDe dicen de qué es cada cosa
 function filtrosGrupo(k,base,tiendasDe,generosDe,ordenes){
   const f=FIL[k], cuenta={}, gcnt={};
-  base.forEach(x=>{tiendasDe(x).forEach(s=>cuenta[s]=(cuenta[s]||0)+1);(generosDe(x)||[]).forEach(g=>gcnt[g]=(gcnt[g]||0)+1);});
+  // cada número respeta el OTRO filtro (17/11/2026): con Steam marcada, "Estrategia 9" contaba todas las tiendas y se veían 2.
+  // Los géneros cuentan solo las tiendas marcadas; las tiendas, solo los géneros marcados.
+  base.forEach(x=>{
+    const ts=tiendasDe(x), gs=generosDe(x)||[];
+    const okT=!f.t.size||ts.some(s=>f.t.has(s)), okG=!f.gens.size||[...f.gens].some(g=>gs.includes(g));
+    if(okG) ts.forEach(s=>cuenta[s]=(cuenta[s]||0)+1);
+    if(okT) gs.forEach(g=>gcnt[g]=(gcnt[g]||0)+1);
+  });
   // siempre las tiendas vinculadas a TandemStacks, aunque en este grupo tengan 0 juegos
-  const tiendas=TODAS.filter(s=>cuenta[s]||f.t.has(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera)), topG=Object.keys(gcnt).sort((a,b)=>gcnt[b]-gcnt[a]).slice(0,30);
+  const tiendas=TODAS.filter(s=>cuenta[s]||f.t.has(s)||T.some(x=>x.n===s&&x.ok&&!x.fuera)), topG=[...new Set([...f.gens,...Object.keys(gcnt).sort((a,b)=>gcnt[b]-gcnt[a]).slice(0,30)])];  // los marcados siempre, aunque den 0
   // sin ninguna tienda marcada se ven todas; se marca una, varias o todas
   const chips=tiendas.map(s=>`<span class="chip ${f.t.has(s)?'on':''}" data-gt="${k}" data-t="${esc(s)}">${logo(s,sc(s),12)} ${esc(s)} <span style="opacity:.55">${cuenta[s]||0}</span></span>`).join('');
   const sel=`<select data-orden="${k}">${ordenes.map(([v,t])=>`<option value="${v}"${f.orden===v?' selected':''}>${t}</option>`).join('')}</select>`;
   const gen=topG.length?`<details class="dd der gdd" data-gen="${k}"${genAbierto===k?' open':''}><summary class="chip${f.gens.size?' on':''}">${f.gens.size?`${L.generos}: ${[...f.gens].slice(0,2).map(esc).join(', ')}${f.gens.size>2?' +'+(f.gens.size-2):''}`:L.generos} ▾</summary><div class="menu">`
     +`<label class="todos"><input type="checkbox" data-g="__todos" ${f.gens.size?'':'checked'}> ${L.todos}</label>`
-    +topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${f.gens.has(x)?'checked':''}> ${esc(x)}<small>${gcnt[x]}</small></label>`).join('')+`</div></details>`:'';
+    +topG.map(x=>`<label><input type="checkbox" data-g="${esc(x)}" ${f.gens.has(x)?'checked':''}> ${esc(x)}<small>${gcnt[x]||0}</small></label>`).join('')+`</div></details>`:'';
   return `<div class="gfil"><div class="chips">${chips}</div><div class="ordgen">${controlesVista(k)}${sel}${gen}</div></div>`;
 }
 // tocar un juego no comprado: si está en una sola tienda se abre ahí; si está en varias, elegís en cuál

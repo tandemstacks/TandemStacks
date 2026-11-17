@@ -50,6 +50,7 @@ class Nucleo:
                 if aid not in inst and steam.NO_JUEGO.search(nombre or ""):
                     continue
                 g = {"id": aid, "appid": aid, "name": nombre, "store": "Steam", "installed": False, "launch": "steam://run/" + aid}
+                if steam.GENEROS.get(aid): g["genres"] = steam.GENEROS[aid]  # la ficha, si se baja, los reemplaza
                 if aid in inst:
                     g.update(installed=True, sizeGB=inst[aid]["gb"], drive=inst[aid]["drive"], dir=inst[aid]["dir"])
                 juegos.append(g); vistos.add(aid)

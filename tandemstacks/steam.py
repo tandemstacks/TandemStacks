@@ -267,9 +267,11 @@ def biblioteca_local():
     archivo = os.path.join(paths.CACHE, "steam_tipos.json")
     try: tipos = json.load(open(archivo, encoding="utf-8"))
     except Exception: tipos = {}
-    faltan = [a for a in ids if a not in tipos]
+    # también los juegos ya conocidos sin géneros (caché de antes del 17/11/2026: solo tipo y nombre)
+    faltan = [a for a in ids if a not in tipos or (tipos[a][0] == 0 and len(tipos[a]) < 3)]
     for i in range(0, len(faltan), 100):
-        req = {"ids": [{"appid": int(a)} for a in faltan[i:i + 100]], "context": {"language": "spanish", "country_code": "US"}, "data_request": {}}
+        req = {"ids": [{"appid": int(a)} for a in faltan[i:i + 100]], "context": {"language": "spanish", "country_code": "US"},
+               "data_request": {"include_tag_count": 20}}  # etiquetas: de ahí salen los géneros sin bajar la ficha de cada juego
         try:
             j = http_json("https://api.steampowered.com/IStoreBrowseService/GetItems/v1?input_json=" + urllib.parse.quote(json.dumps(req)), 20)
         except Exception as e:
@@ -278,12 +280,22 @@ def biblioteca_local():
         vino = {str(it.get("appid") or it.get("id")): it for it in j.get("response", {}).get("store_items", [])}
         for a in faltan[i:i + 100]:
             it = vino.get(a) or {}
-            tipos[a] = [it.get("type"), it.get("name", "")]  # 0 = juego; lo demás (DLC, música, sin datos) no
+            gen = [GENERO_TAG[t] for t in (it.get("tagids") or []) if t in GENERO_TAG][:5]
+            tipos[a] = [it.get("type"), it.get("name", ""), gen]  # 0 = juego; lo demás (DLC, música, sin datos) no
     try:
         with open(archivo + ".tmp", "w", encoding="utf-8") as f: json.dump(tipos, f)
         os.replace(archivo + ".tmp", archivo)
     except OSError: pass
+    GENEROS.clear()
+    GENEROS.update({a: tipos[a][2] for a in ids if a in tipos and len(tipos[a]) > 2 and tipos[a][2]})
     return [(a, tipos[a][1], 0, 0) for a in ids if a in tipos and tipos[a][0] == 0 and tipos[a][1]]
+
+# Géneros de Steam por etiqueta (17/11/2026): la ficha (appdetails) se baja solo de los instalados, así que los no
+# instalados no tenían género y el filtro mostraba 2 de estrategia teniendo muchos más. GetItems trae las etiquetas de
+# a 100 juegos; de ellas se toman solo las que son géneros de Steam, con el mismo nombre que da la ficha.
+GENERO_TAG = {19: "Acción", 21: "Aventura", 9: "Estrategia", 122: "Rol", 599: "Simuladores", 701: "Deportes", 699: "Carreras",
+              597: "Casual", 492: "Indie", 128: "Multijugador masivo", 113: "Free to Play", 493: "Acceso anticipado"}
+GENEROS = {}  # appid → géneros, para los juegos de la biblioteca sin ficha
 
 # ---------- fichas ----------
 def _cache(appid, idioma="spanish"):

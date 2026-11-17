@@ -183,6 +183,10 @@ class Nucleo:
         try: partes.append("epic|%s" % os.path.getmtime(os.path.join(stores.EPIC_DATA, "Catalog", "catcache.bin")))  # juegos nuevos en la cuenta
         except OSError: pass
         partes.append("xbox|" + _subclaves(detect.HKLM, r"SOFTWARE\Microsoft\GamingServices\PackageRepository\Root"))
+        # juegos de la Microsoft Store (sin la app Xbox): sus paquetes están en otra clave. Sin esto, desinstalar uno
+        # desde Windows no se notaba y la tarjeta quedaba en "Desinstalando…" para siempre (Pool Billiard, 17/11/2026)
+        try: partes.append("xbox2|%s" % (stores._xbox_firma(),))
+        except Exception: pass
         try: partes.append("riot|" + "|".join(sorted(os.listdir(r"C:\Riot Games"))))
         except OSError: pass
         for ruta in (r"SOFTWARE\WOW6432Node\Blizzard Entertainment", r"SOFTWARE\WOW6432Node\Rockstar Games"):
@@ -713,7 +717,15 @@ def _desinstalando():
             n = _contar(d["dir"]); d["tm"] = ahora
             if d["n0"] is None: d["n0"] = n
             elif n < d["n0"]: d["ya"], d["tya"] = True, ahora
-        if d["ya"]: out.append(i)
+        if d["ya"]:
+            out.append(i)
+            # red de seguridad: la carpeta ya se vació hace 30 s y el escaneo lo sigue viendo instalado (alguna tienda
+            # cuyo cambio no se nota en la huella): se fuerza un escaneo, una sola vez por juego
+            if ahora - d.get("tya", ahora) > 30 and not d.get("reesc"):
+                d["reesc"] = True
+                threading.Thread(target=NUC.escanear, kwargs={"con_fichas": False}, daemon=True).start()
+            elif ahora - d.get("tya", ahora) > 120 and not os.path.isdir(d["dir"] or ""):
+                _desins.pop(i, None); out.remove(i)  # ni el escaneo forzado lo sacó: no se deja la tarjeta trabada
     return out
 
 def _desinstalador(g):

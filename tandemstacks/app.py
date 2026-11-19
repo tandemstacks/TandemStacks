@@ -679,7 +679,12 @@ class Api:
                     time.sleep(6)  # la ventana aparece antes de que Epic atienda links
                     os.startfile(d)
                 threading.Thread(target=reintentar, daemon=True).start()
-            else: os.startfile(d)
+            else:
+                try: os.startfile(d)
+                except OSError as e:  # 19/11/2026: "Instalar en Xbox" (link de la Store) no abría nada desde la app
+                    paths.log("lanzar", g.get("name"), d, e)
+                    subprocess.Popen(["explorer.exe", d])
+            paths.log("lanzar:", g.get("name"), d[:90] if isinstance(d, str) else d[0])
             return g["store"]  # la página espera a que abra su launcher
         return False
 

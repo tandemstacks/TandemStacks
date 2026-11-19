@@ -252,10 +252,17 @@ class Nucleo:
                 except Exception as e:
                     paths.log("accesos", e)
             try:
+                t0 = time.time()
                 ahora = self.huella()
+                if time.time() - t0 > 5: paths.log("huella lenta: %.0f s" % (time.time() - t0))
                 if ahora != antes:
+                    # diagnóstico (19/11/2026): Tyrian 2000 se instaló en GOG y no apareció hasta reabrir la app
+                    cambio = [l for l in ahora.splitlines() if l not in set(antes.splitlines())][:3]
+                    paths.log("cambio detectado, reescaneo:", "; ".join(c[:80] for c in cambio))
                     antes = ahora
+                    t0 = time.time()
                     self.escanear()
+                    paths.log("reescaneo listo en %.0f s" % (time.time() - t0))
             except Exception:
                 import traceback; paths.log("vigilar", traceback.format_exc())
 

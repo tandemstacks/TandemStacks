@@ -661,6 +661,17 @@ class Api:
             if not g: return False
             d = g["launch"]
             if isinstance(d, list): subprocess.Popen(d, cwd=os.path.dirname(d[0]))
+            elif g["store"] == "Epic" and not g.get("installed") and not _launcher_abierto("Epic"):
+                # Epic cerrado: su link arranca Epic pero el pedido de instalar se pierde y queda en la tienda (probado
+                # 19/11/2026 con Freshly Frosted). Se abre Epic, se espera a que esté listo y se manda el link de nuevo.
+                os.startfile(d)
+                def reintentar():
+                    for _ in range(45):
+                        time.sleep(1)
+                        if _launcher_abierto("Epic", ventana=True): break
+                    time.sleep(6)  # la ventana aparece antes de que Epic atienda links
+                    os.startfile(d)
+                threading.Thread(target=reintentar, daemon=True).start()
             else: os.startfile(d)
             return g["store"]  # la página espera a que abra su launcher
         return False
@@ -698,6 +709,28 @@ def _contar(d):
     for _, _, fs in os.walk(d):
         n += len(fs)
     return n
+
+def _launcher_abierto(tienda, ventana=False):
+    """¿Está andando el launcher? Con ventana=True, además que tenga su ventana principal (ya cargó)."""
+    import psutil
+    nombres = set(NUC.launchers.get(tienda, {}).get("procs") or [])
+    for p in psutil.process_iter(["name", "pid"]):
+        if (p.info["name"] or "").lower() in nombres:
+            if not ventana: return True
+            try:
+                import ctypes
+                from ctypes import wintypes
+                hay = []
+                def cb(h, _):
+                    pid = wintypes.DWORD(); ctypes.windll.user32.GetWindowThreadProcessId(h, ctypes.byref(pid))
+                    if pid.value == p.info["pid"] and ctypes.windll.user32.IsWindowVisible(h) and ctypes.windll.user32.GetWindowTextLengthW(h):
+                        hay.append(h); return False
+                    return True
+                ctypes.windll.user32.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)(cb), 0)
+                if hay: return True
+            except Exception:
+                return True
+    return False
 
 def _desinstalando():
     """Ids de juegos que se están desinstalando: se les tocó Desinstalar y su carpeta se está vaciando o ya no está.

@@ -661,10 +661,15 @@ class Api:
             u = g.get("uninstall") if g else None
             if g and not u: u = _desinstalador(g)  # el que el juego dejó en "Programas instalados" de Windows
             if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]) or None)
+            elif u and g["store"] == "Ubisoft" and not _launcher_abierto("Ubisoft"):
+                # Ubisoft cerrado: uplay://uninstall abre Ubisoft Connect pero la pregunta de desinstalar no aparece
+                # (probado 20/11/2026 con Far Cry 3 Blood Dragon; con Ubisoft abierto sí). Igual que Epic al instalar.
+                _link_con_tienda_cerrada("Ubisoft", u)
             elif u: os.startfile(u)
             elif g and NUC.launchers.get(g["store"], {}).get("ok"):  # sin comando propio (Google Play): se desinstala desde la biblioteca de su tienda
                 os.startfile(NUC.launchers[g["store"]]["abrir"]); u = True
             else: os.startfile("ms-settings:appsfeatures")
+            paths.log("desinstalar:", g.get("name") if g else des, u if isinstance(u, str) else "")
             return g["store"] if u and g else True
         if que in NUC.launchers:
             os.startfile(NUC.launchers[que]["abrir"]); return que
@@ -676,14 +681,7 @@ class Api:
             elif g["store"] == "Epic" and not g.get("installed") and not _launcher_abierto("Epic"):
                 # Epic cerrado: su link arranca Epic pero el pedido de instalar se pierde y queda en la tienda (probado
                 # 19/11/2026 con Freshly Frosted). Se abre Epic, se espera a que esté listo y se manda el link de nuevo.
-                os.startfile(d)
-                def reintentar():
-                    for _ in range(45):
-                        time.sleep(1)
-                        if _launcher_abierto("Epic", ventana=True): break
-                    time.sleep(6)  # la ventana aparece antes de que Epic atienda links
-                    os.startfile(d)
-                threading.Thread(target=reintentar, daemon=True).start()
+                _link_con_tienda_cerrada("Epic", d)
             else:
                 try: os.startfile(d)
                 except OSError as e:  # 19/11/2026: "Instalar en Xbox" (link de la Store) no abría nada desde la app
@@ -726,6 +724,18 @@ def _contar(d):
     for _, _, fs in os.walk(d):
         n += len(fs)
     return n
+
+def _link_con_tienda_cerrada(tienda, d):
+    """Con la tienda cerrada su link solo la arranca y el pedido se pierde: se abre, se espera a que tenga su ventana y
+    se manda el link otra vez."""
+    os.startfile(d)
+    def reintentar():
+        for _ in range(45):
+            time.sleep(1)
+            if _launcher_abierto(tienda, ventana=True): break
+        time.sleep(6)  # la ventana aparece antes de que la tienda atienda links
+        os.startfile(d)
+    threading.Thread(target=reintentar, daemon=True).start()
 
 def _launcher_abierto(tienda, ventana=False):
     """¿Está andando el launcher? Con ventana=True, además que tenga su ventana principal (ya cargó)."""

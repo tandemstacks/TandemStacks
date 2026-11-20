@@ -84,6 +84,10 @@ def abiertos(launchers):
 
 _escrito = {}  # launcher: (bytes escritos, cuándo), para calcular la velocidad entre dos consultas
 MIN_DESCARGA = 1048576  # 1 MB/s: menos que eso es el launcher guardando lo suyo, no una descarga
+# Partes web de los launchers (la página que muestran: portada, videos). Escriben su caché a más de 10 MB/s y no
+# bajan juegos: no cuentan como descarga (20/11/2026: UplayWebCore hacía creer que Ubisoft bajaba y no se cerraba).
+WEB = {"steamwebhelper.exe", "epicwebhelper.exe", "uplaywebcore.exe", "battle.net helper.exe",
+       "galaxyclient helper.exe", "gog galaxy notifications renderer.exe"}
 
 def descargando(launchers):
     """Velocidad a la que cada launcher escribe en el disco ({tienda: bytes/s}), solo si parece una descarga.
@@ -92,6 +96,7 @@ def descargando(launchers):
     for pr, n, e in _procs():
         for l, d in launchers.items():
             if _es_de(n, e, d):
+                if n in WEB: total.setdefault(l, 0); continue
                 try: total[l] = total.get(l, 0) + pr.io_counters().write_bytes
                 except Exception: pass
     out = {}
@@ -158,7 +163,9 @@ def _bajando(l, victimas):
     def escrito():
         t = 0
         for pr in victimas:
-            try: t += pr.io_counters().write_bytes
+            try:
+                if (pr.name() or "").lower() in WEB: continue
+                t += pr.io_counters().write_bytes
             except Exception: pass
         return t
     a = escrito(); time.sleep(2)

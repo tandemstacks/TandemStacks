@@ -488,9 +488,9 @@ def rockstar():
                 continue
             # por la clave o por la carpeta: Max Payne 3 se anota como "MP3MTL" en F:\Rockstar Games\Max Payne 3 (20/11/2026)
             if _mismo(nrm(k), nrm(nombre)) or _mismo(nrm(os.path.basename(carpeta.rstrip("\\/"))), nrm(nombre)):
-                g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta))
-                exe = glob.glob(os.path.join(carpeta, "Play*.exe"))
-                if exe: g["launch"] = exe[0]
+                exe = glob.glob(os.path.join(carpeta, "Play*.exe")) or glob.glob(os.path.join(carpeta, "*.exe"))
+                if not exe: break  # al desinstalar, Rockstar deja la carpeta vacía y la clave del registro (Max Payne 3, 20/11/2026)
+                g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta), launch=exe[0])
                 break
         out.append(g)
     lanzar = LAUNCHERS["Rockstar"]["abrir"](LAUNCHERS["Rockstar"]["exe"]()) if "abrir" in LAUNCHERS["Rockstar"] else None

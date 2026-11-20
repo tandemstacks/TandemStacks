@@ -744,14 +744,19 @@ def sacar_accesos(juegos, desde):
     Solo el escritorio: el menú Inicio no se toca (Google Play lo necesita para que TandemStacks vea sus juegos)."""
     sacados = []
     carpetas = [c for c in (_escritorio(), _escritorio_comun()) if os.path.isdir(c)]
+    dirs = [g["dir"].lower().replace("/", "\\").rstrip("\\") + "\\" for g in juegos if g.get("installed") and g.get("dir")]
     cambio = False
     for c in carpetas:
         m = os.path.getmtime(c)
         if _esc_visto.get(c) != m:
             _esc_visto[c] = m; cambio = True
+    # también si apareció un juego instalado nuevo (19/11/2026: Battle.net crea el acceso de StarCraft mientras baja,
+    # cuando todavía no se sabe su carpeta, y después el escritorio no cambia más: quedaba para siempre)
+    firma = hash(tuple(sorted(dirs)))
+    if _esc_visto.get("_dirs") != firma:
+        _esc_visto["_dirs"] = firma; cambio = True
     if not cambio:
         return sacados
-    dirs = [g["dir"].lower().replace("/", "\\").rstrip("\\") + "\\" for g in juegos if g.get("installed") and g.get("dir")]
     for c in carpetas:
         for f in glob.glob(os.path.join(c, "*.lnk")) + glob.glob(os.path.join(c, "*.url")):
             try:
@@ -762,7 +767,8 @@ def sacar_accesos(juegos, desde):
             # el texto UTF-16 del .lnk puede empezar en un byte impar: se lee de las dos formas (19/11/2026: el acceso de
             # Legends of Runeterra que dejó Riot no se reconocía y quedaba en el escritorio)
             t = (b.decode("utf-16-le", "ignore") + "\n" + b[1:].decode("utf-16-le", "ignore") + "\n" + b.decode("latin-1")).lower()
-            if any(x in t for x in LINKS_JUEGO) or any(d in t for d in dirs):
+            # la carpeta del juego puede venir sin barra final (carpeta de trabajo del acceso): se acepta seguida de "\", fin o nulo
+            if any(x in t for x in LINKS_JUEGO) or any(re.search(re.escape(d.rstrip("\\")) + r"(\\|\x00|$)", t) for d in dirs):
                 if _papelera(f):
                     sacados.append(os.path.basename(f))
                 else:

@@ -522,6 +522,8 @@ def ubisoft():
         out.append({"id": "ubi_" + m.group(1), "name": str(e["DisplayName"]), "store": "Ubisoft", "installed": bool(loc and os.path.isdir(loc)), "dir": loc,
                     "drive": drive(loc), "sizeGB": tam_gb(loc) if loc and os.path.isdir(loc) else 0, "launch": "uplay://launch/%s/0" % m.group(1),
                     "uninstall": "uplay://uninstall/%s" % m.group(1)})
+    # Número de Ubisoft de cada ícono, verificado abriendo uplay://launch/<número>/0 (19/11/2026). Con el número,
+    # "Instalar" abre ese juego en Ubisoft Connect; sin él, solo abre el Inicio. Sumar a medida que se verifiquen.
     # Juegos de la cuenta no instalados: la lista está cifrada, pero el launcher baja el ícono de cada juego que tenés
     # (data\<id>.ico junto a upc.exe) y el id de cada ícono es fijo. Sin el número de Ubisoft, se abre Ubisoft Connect.
     # Los íconos que todavía no están en la tabla salen como "sin identificar", para que cualquiera pueda avisar cuál es.
@@ -533,7 +535,7 @@ def ubisoft():
     for f in sorted(glob.glob(os.path.join(carpeta, "data", "*.ico"))):
         h = os.path.basename(f)[:-4].lower()
         c = conocidos.get(h) or {}
-        nombre, uid = c.get("n"), str(c.get("id") or "")
+        nombre, uid = c.get("n"), str(c.get("id") or UBI_NUMEROS.get(h, ""))
         if nombre and nrm(nombre) not in vistos:
             vistos.add(nrm(nombre))
             g = {"id": "ubi_" + (uid if uid.isdigit() else nrm(nombre).replace(" ", "_")), "name": nombre, "store": "Ubisoft",
@@ -723,6 +725,8 @@ def google_play():
 
 # ---------------- accesos directos que dejan las tiendas ----------------
 # links de las tiendas para abrir un juego, y lo que llevan los accesos de Riot y Battle.net
+UBI_NUMEROS = {"00842e79ba6c2bf42759a65da1e0cc59": "205"}  # Far Cry 3 Blood Dragon (ver arriba, en ubisoft())
+
 LINKS_JUEGO = ("steam://rungameid/", "steam://run/", "com.epicgames.launcher://apps/", "goggalaxy://", "uplay://launch/",
                "amazon-games://play/", "googleplaygames://launch/", "itch://caves/", "--launch-product=", "--exec=", "battlenet://")
 _esc_visto = {}  # carpeta: fecha, para no mirar el escritorio si no cambió

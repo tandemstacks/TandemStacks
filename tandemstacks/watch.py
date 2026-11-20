@@ -87,7 +87,7 @@ MIN_DESCARGA = 1048576  # 1 MB/s: menos que eso es el launcher guardando lo suyo
 # Partes web de los launchers (la página que muestran: portada, videos). Escriben su caché a más de 10 MB/s y no
 # bajan juegos: no cuentan como descarga (20/11/2026: UplayWebCore hacía creer que Ubisoft bajaba y no se cerraba).
 WEB = {"steamwebhelper.exe", "epicwebhelper.exe", "uplaywebcore.exe", "battle.net helper.exe",
-       "galaxyclient helper.exe", "gog galaxy notifications renderer.exe"}
+       "galaxyclient helper.exe", "gog galaxy notifications renderer.exe", "socialclubhelper.exe"}
 ARRANQUE = 60  # segundos: lo que escribe un proceso de tienda recién abierto es su arranque, no una descarga
 
 def descargando(launchers):

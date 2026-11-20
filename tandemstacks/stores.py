@@ -486,7 +486,8 @@ def rockstar():
             carpeta = str(v.get("InstallFolder") or "")
             if k in ("Launcher", "Steam", "Epic") or not carpeta or not os.path.isdir(carpeta) or re.search(r"steamapps|epic games", carpeta, re.I):
                 continue
-            if _mismo(nrm(k), nrm(nombre)):
+            # por la clave o por la carpeta: Max Payne 3 se anota como "MP3MTL" en F:\Rockstar Games\Max Payne 3 (20/11/2026)
+            if _mismo(nrm(k), nrm(nombre)) or _mismo(nrm(os.path.basename(carpeta.rstrip("\\/"))), nrm(nombre)):
                 g.update(installed=True, dir=carpeta, drive=drive(carpeta), sizeGB=tam_gb(carpeta))
                 exe = glob.glob(os.path.join(carpeta, "Play*.exe"))
                 if exe: g["launch"] = exe[0]

@@ -759,7 +759,9 @@ def sacar_accesos(juegos, desde):
                 with open(f, "rb") as h: b = h.read()
             except OSError:
                 continue
-            t = (b.decode("utf-16-le", "ignore") + "\n" + b.decode("latin-1")).lower()
+            # el texto UTF-16 del .lnk puede empezar en un byte impar: se lee de las dos formas (19/11/2026: el acceso de
+            # Legends of Runeterra que dejó Riot no se reconocía y quedaba en el escritorio)
+            t = (b.decode("utf-16-le", "ignore") + "\n" + b[1:].decode("utf-16-le", "ignore") + "\n" + b.decode("latin-1")).lower()
             if any(x in t for x in LINKS_JUEGO) or any(d in t for d in dirs):
                 if _papelera(f):
                     sacados.append(os.path.basename(f))

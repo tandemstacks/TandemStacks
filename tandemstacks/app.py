@@ -660,7 +660,10 @@ class Api:
             _anotar_desinstalar(g)
             u = g.get("uninstall") if g else None
             if g and not u: u = _desinstalador(g)  # el que el juego dejó en "Programas instalados" de Windows
-            if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]) or None)
+            if isinstance(u, list):
+                # por el Explorador (ShellExecute): si el desinstalador pide administrador, Windows muestra su cartel.
+                # Con Popen fallaba con WinError 740 (20/11/2026: Cleanup.exe de EA con skate. → "No se pudo")
+                os.startfile(u[0], "open", subprocess.list2cmdline(u[1:]), os.path.dirname(u[0]) or None)
             elif u and g["store"] in ("Ubisoft", "Epic") and not _launcher_abierto(g["store"]):
                 # Tienda cerrada (20/11/2026): Ubisoft abría pero no mostraba la pregunta de desinstalar (Far Cry 3 Blood
                 # Dragon) y Epic ni arrancaba con el link de su Biblioteca (Freshly Frosted). Igual que Epic al instalar.

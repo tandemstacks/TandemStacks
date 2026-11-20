@@ -661,10 +661,10 @@ class Api:
             u = g.get("uninstall") if g else None
             if g and not u: u = _desinstalador(g)  # el que el juego dejó en "Programas instalados" de Windows
             if isinstance(u, list): subprocess.Popen(u, cwd=os.path.dirname(u[0]) or None)
-            elif u and g["store"] == "Ubisoft" and not _launcher_abierto("Ubisoft"):
-                # Ubisoft cerrado: uplay://uninstall abre Ubisoft Connect pero la pregunta de desinstalar no aparece
-                # (probado 20/11/2026 con Far Cry 3 Blood Dragon; con Ubisoft abierto sí). Igual que Epic al instalar.
-                _link_con_tienda_cerrada("Ubisoft", u)
+            elif u and g["store"] in ("Ubisoft", "Epic") and not _launcher_abierto(g["store"]):
+                # Tienda cerrada (20/11/2026): Ubisoft abría pero no mostraba la pregunta de desinstalar (Far Cry 3 Blood
+                # Dragon) y Epic ni arrancaba con el link de su Biblioteca (Freshly Frosted). Igual que Epic al instalar.
+                _link_con_tienda_cerrada(g["store"], u)
             elif u: os.startfile(u)
             elif g and NUC.launchers.get(g["store"], {}).get("ok"):  # sin comando propio (Google Play): se desinstala desde la biblioteca de su tienda
                 os.startfile(NUC.launchers[g["store"]]["abrir"]); u = True
@@ -727,8 +727,11 @@ def _contar(d):
 
 def _link_con_tienda_cerrada(tienda, d):
     """Con la tienda cerrada su link solo la arranca y el pedido se pierde: se abre, se espera a que tenga su ventana y
-    se manda el link otra vez."""
-    os.startfile(d)
+    se manda el link otra vez. Se arranca con su exe: el link solo a veces ni la abre (20/11/2026: Epic cerrado no
+    arrancaba con com.epicgames.launcher://store/library)."""
+    exe = NUC.launchers.get(tienda, {}).get("exe")
+    if exe and os.path.isfile(exe): subprocess.Popen([exe], cwd=os.path.dirname(exe))
+    else: os.startfile(d)
     def reintentar():
         for _ in range(45):
             time.sleep(1)

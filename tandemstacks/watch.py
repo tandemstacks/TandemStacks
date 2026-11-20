@@ -3,7 +3,7 @@
 - al abrir un juego se cierran los launchers que ese juego no usa, para que tenga más memoria;
 - al terminar se cierran todos los launchers abiertos y se borra la basura segura (volcados de errores, logs viejos, caché web grande).
 Si queda otro juego andando no se toca nada, para no cortarlo. Lo que se libera se anota en ahorro.json (el medidor)."""
-import os, time, json, glob, shutil, threading, subprocess, winreg
+import os, re, time, json, glob, shutil, threading, subprocess, winreg
 import psutil
 from . import paths, pulso
 
@@ -82,12 +82,13 @@ def abiertos(launchers):
                 vivos.add(l)
     return vivos
 
-_escrito = {}  # launcher: (bytes escritos, cuándo), para calcular la velocidad entre dos consultas
+_escrito = {}  # launcher: ({pid: bytes escritos}, cuándo), para calcular la velocidad entre dos consultas
 MIN_DESCARGA = 1048576  # 1 MB/s: menos que eso es el launcher guardando lo suyo, no una descarga
 # Partes web de los launchers (la página que muestran: portada, videos). Escriben su caché a más de 10 MB/s y no
 # bajan juegos: no cuentan como descarga (20/11/2026: UplayWebCore hacía creer que Ubisoft bajaba y no se cerraba).
 WEB = {"steamwebhelper.exe", "epicwebhelper.exe", "uplaywebcore.exe", "battle.net helper.exe",
        "galaxyclient helper.exe", "gog galaxy notifications renderer.exe"}
+ARRANQUE = 60  # segundos: lo que escribe un proceso de tienda recién abierto es su arranque, no una descarga
 
 def descargando(launchers):
     """Velocidad a la que cada launcher escribe en el disco ({tienda: bytes/s}), solo si parece una descarga.
@@ -96,17 +97,40 @@ def descargando(launchers):
     for pr, n, e in _procs():
         for l, d in launchers.items():
             if _es_de(n, e, d):
-                if n in WEB: total.setdefault(l, 0); continue
-                try: total[l] = total.get(l, 0) + pr.io_counters().write_bytes
+                # Partes web y procesos recién arrancados (al abrir, la tienda escribe su caché; el emulador de Google
+                # Play escribe ~17 MB/s al arrancar: 20/11/2026 salía "Google Play está bajando" sin bajar nada).
+                t = total.setdefault(l, {})
+                if n in WEB or ahora - (pr.info.get("create_time") or 0) < ARRANQUE: continue
+                try: t[pr.pid] = pr.io_counters().write_bytes
                 except Exception: pass
     out = {}
-    for l, b in total.items():
+    for l, pids in total.items():
         antes = _escrito.get(l)
         if antes and ahora > antes[1]:
-            v = (b - antes[0]) / (ahora - antes[1])
+            # proceso por proceso: uno que recién entra a la cuenta (o se cerró) no suma de golpe todo lo que escribió
+            b = sum(v - antes[0][p] for p, v in pids.items() if p in antes[0])
+            v = b / (ahora - antes[1])
             if v >= MIN_DESCARGA: out[l] = round(v)
-        _escrito[l] = (b, ahora)
+        _escrito[l] = (pids, ahora)
     for l in [l for l in _escrito if l not in total]: _escrito.pop(l)  # launchers que se cerraron
+    return out
+
+def _ventanas(pids):
+    """[(pid, título)] de las ventanas visibles con título de esos procesos."""
+    if not pids: return []
+    import ctypes
+    from ctypes import wintypes
+    u, out = ctypes.windll.user32, []
+    def cb(h, _):
+        pid = wintypes.DWORD(); u.GetWindowThreadProcessId(h, ctypes.byref(pid))
+        if pid.value in pids and u.IsWindowVisible(h):
+            n = u.GetWindowTextLengthW(h)
+            if n:
+                b = ctypes.create_unicode_buffer(n + 1); u.GetWindowTextW(h, b, n + 1)
+                out.append((pid.value, b.value))
+        return True
+    try: u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)(cb), 0)
+    except Exception: pass
     return out
 
 def en_curso(juegos):
@@ -121,6 +145,14 @@ def en_curso(juegos):
             out[(g or {}).get("dir") or "steam:" + aid] = {"tienda": "Steam", "desde": None, "exes": set(), "g": g}
     except OSError:
         pass
+    gp = [g for g in juegos if g.get("store") == "Google Play" and g.get("name")]
+    if gp:  # Google Play: el juego corre dentro del emulador (crosvm.exe), cuya ventana se llama "<juego> - <cuenta>"
+        for pid, titulo in _ventanas({pr.pid for pr, n, e in _procs() if n == "crosvm.exe" and "play games" in e}):
+            t = re.sub(r"[\W_]", "", titulo.lower())  # el nombre sale del acceso directo, sin los signos que Windows no deja
+            g = next((g for g in gp if t.startswith(re.sub(r"[\W_]", "", g["name"].lower()))), None)
+            if g:
+                j = out.setdefault("gplay:" + g["id"], {"tienda": "Google Play", "desde": None, "exes": set(), "g": g})
+                j.setdefault("pids", set()).add(pid)
     prefijos = {g["dir"].lower().replace("/", "\\").rstrip("\\") + "\\": g for g in juegos if g.get("dir")}
     if not prefijos:
         return out
@@ -164,7 +196,7 @@ def _bajando(l, victimas):
         t = 0
         for pr in victimas:
             try:
-                if (pr.name() or "").lower() in WEB: continue
+                if (pr.name() or "").lower() in WEB or time.time() - pr.create_time() < ARRANQUE: continue
                 t += pr.io_counters().write_bytes
             except Exception: pass
         return t

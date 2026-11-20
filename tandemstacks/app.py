@@ -190,6 +190,11 @@ class Nucleo:
         except Exception: pass
         try: partes.append("riot|" + "|".join(sorted(os.listdir(r"C:\Riot Games"))))
         except OSError: pass
+        # Riot en otro disco (19/11/2026: Legends of Runeterra en F: no aparecía hasta reabrir): cada juego anota su carpeta
+        # en ProgramData\Riot Games\Metadata\<juego>\<juego>.product_settings.yaml; si cambia la fecha, se reescanea
+        for y in sorted(glob.glob(os.path.join(os.environ.get("PROGRAMDATA", r"C:\ProgramData"), "Riot Games", "Metadata", "*", "*.product_settings.yaml"))):
+            try: partes.append("riot2|%s|%s" % (y, os.path.getmtime(y)))
+            except OSError: pass
         for ruta in (r"SOFTWARE\WOW6432Node\Blizzard Entertainment", r"SOFTWARE\WOW6432Node\Rockstar Games"):
             partes.append(ruta + "|" + _subclaves(detect.HKLM, ruta))
         partes.append(stores.huella_bases())

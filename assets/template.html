@@ -868,15 +868,23 @@ function accion(q){const fin=ok=>{
   abriendo(api('accion',q)).then(fin);}
 window.accion=accion;
 function botonesDe(it,conTienda){
-  const a=it.appid,b=[],de=conTienda?` (${it.store})`:'';
+  // Con dos versiones en la misma tienda (GTA V Legacy y Enhanced en Steam), el botón dice cuál es: lo que cambia del nombre
+  let ver='';
+  const mismas=conTienda&&actual?actual.items.filter(x=>x.store===it.store):[];
+  if(mismas.length>1){
+    const pal=mismas.map(x=>String(x.name||'').split(/\s+/));let n=0;
+    while(pal.every(p=>p[n]!==undefined&&p[n].toLowerCase()===pal[0][n].toLowerCase()))n++;
+    ver=' · '+esc(pal[mismas.indexOf(it)].slice(n).join(' ')||it.name);
+  }
+  const a=it.appid,b=[],de=conTienda?` (${it.store}${ver})`:'';
   const lg=t=>`<span class="lgb">${logo(t,'currentColor',15)}</span>`;  // logo de la tienda en el botón (al elegir desde dónde instalar)
   if(it.store==='Steam'&&a){
     if(it.installed){b.push(`<button class="btn ok" onclick="accion('tipo=run&appid=${a}')">▶ ${L.jugar}${de}</button>`);b.push(`<button class="btn del" onclick="accion('tipo=uninstall&appid=${a}')" title="${esc(L.desinstalar+' · '+L.notaFicha)}" aria-label="${L.desinstalar}">🗑</button>`);}
-    else b.push(`<button class="btn pri" onclick="accion('tipo=install&appid=${a}')">${conTienda?lg('Steam')+' Steam':'⬇ '+L.instalar}</button>`);
+    else b.push(`<button class="btn pri" onclick="accion('tipo=install&appid=${a}')">${conTienda?lg('Steam')+' Steam'+ver:'⬇ '+L.instalar}</button>`);
   } else {
     const k=it.store;
     if(it.installed&&it.lanzable) b.push(`<button class="btn ok" onclick="accion('lanzar=${encodeURIComponent(it.id)}')">▶ ${L.jugar}${de}</button>`);
-    b.push(`<button class="btn ${it.installed?'':'pri'}" onclick="accion('${!it.installed&&it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(k)}')">${it.installed?L.abrir+' '+k:(conTienda?lg(k)+' '+k:'⬇ '+L.instalarEn+' '+k)}</button>`);
+    b.push(`<button class="btn ${it.installed?'':'pri'}" onclick="accion('${!it.installed&&it.lanzable?'lanzar='+encodeURIComponent(it.id):'abrir='+encodeURIComponent(k)}')">${it.installed?L.abrir+' '+k:(conTienda?lg(k)+' '+k+ver:'⬇ '+L.instalarEn+' '+k)}</button>`);
     if(it.installed) b.push(`<button class="btn del" onclick="accion('desinstalar=${encodeURIComponent(it.id)}')" title="${esc((it.desinst?L.desinstalar:L.desinstalarWin)+' · '+L.notaFicha)}" aria-label="${L.desinstalar}">🗑</button>`);
   }
   return b;

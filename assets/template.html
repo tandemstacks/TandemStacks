@@ -434,12 +434,11 @@ function cerrarTiendas(){
   });
 }
 // relojes en vivo: cada uno es una gráfica de los últimos 5 min; al tocarlo se abre la ventana grande con más datos
-// j: la serie con la parte del juego (línea del color del texto); solo se dibuja con un juego abierto
 const VIVO={
-  cpu:{t:()=>L.pCpuM,s:[['cpu','var(--acc)']],j:'jcpu',max:()=>100,u:'%'},
-  ram:{t:()=>'RAM',s:[['ram','var(--acc)']],j:'jram',max:()=>100,u:'%'},
-  gpu:{t:()=>L.vGpu,s:[['gpu','var(--acc)'],['vramPct','var(--mu)']],j:'jgpu',max:()=>100,u:'%'},
-  disco:{t:()=>L.vDisco,s:[['dlee','var(--acc)'],['descr','var(--mu)']],j:'jdisco',max:()=>Math.max(10485760,pico(HV.dlee),pico(HV.descr))*1.1,u:'B'},
+  cpu:{t:()=>L.pCpuM,s:[['cpu','var(--acc)']],max:()=>100,u:'%'},
+  ram:{t:()=>'RAM',s:[['ram','var(--acc)']],max:()=>100,u:'%'},
+  gpu:{t:()=>L.vGpu,s:[['gpu','var(--acc)'],['vramPct','var(--mu)']],max:()=>100,u:'%'},
+  disco:{t:()=>L.vDisco,s:[['dlee','var(--acc)'],['descr','var(--mu)']],max:()=>Math.max(10485760,pico(HV.dlee),pico(HV.descr))*1.1,u:'B'},
   red:{t:()=>L.red,s:[['baja','var(--acc)'],['sube','var(--mu)']],max:()=>Math.max(102400,pico(HV.baja),pico(HV.sube))*1.1,u:'B'},
   fps:{t:()=>'FPS',s:[['fps','var(--acc)']],max:()=>Math.max(60,(EST.pc&&EST.pc.hz)||0,pico(HV.fps))*1.1,u:'fps'}
 };
@@ -453,9 +452,9 @@ function enVivo(p){
   const fps=p.fps||0;
   const val={...p,fps,jcpu:J?J.cpu:0,jram:J?J.ram:0,jgpu:J?(J.gpu||0):0,jdisco:J?J.dlee+J.descr:0};
   for(const k in HV){HV[k].push(val[k]||0);if(HV[k].length>HN)HV[k].shift();}
-  const jl=(k,txt)=>J?`<div class="jg">🎮 ${esc(L.vJuego)} <b>${txt}</b></div>`:'';  // la parte del juego, debajo del título
-  const caja=(k,pk,txt,series,jtxt)=>{if(J&&VIVO[k].j)series=series.concat([[HV[VIVO[k].j],'var(--tx)']]);
-    return `<div class="vv" onclick="verGraf('${k}')" title="${esc(L.verMas)}"><div class="lbl"><span>${VIVO[k].t()} <small>${pk}</small></span><b>${txt}</b></div>${jl(k,jtxt)}${graf(series,VIVO[k].max())}</div>`;};
+  // solo la máquina en tiempo real: el juego no se marca aparte (pedido del dueño 22/11/2026)
+  const caja=(k,pk,txt,series)=>{
+    return `<div class="vv" onclick="verGraf('${k}')" title="${esc(L.verMas)}"><div class="lbl"><span>${VIVO[k].t()} <small>${pk}</small></span><b>${txt}</b></div>${graf(series,VIVO[k].max())}</div>`;};
   const tc=t=>t>=90?'var(--bad)':t>=80?'var(--warn)':'inherit', tmp=t=>t!=null?` · <span style="color:${tc(t)}">${t} °C</span>`:'';
   let h=caja('cpu',`${L.pico} ${pico(HV.cpu)} %${tmp(p.cpuTemp)}`,p.cpu+' %',[[HV.cpu,colV(p.cpu)]],J&&J.cpu+' %')
     +caja('ram',`${L.pico} ${pico(HV.ram)} %`,`${p.ram} % · ${p.ramGB} / ${p.ramTotal} GB`,[[HV.ram,colV(p.ram)]],J&&`${J.ram} % · ${J.ramGB} GB`);
@@ -484,16 +483,16 @@ function pintarGraf(){
   const V=VIVO[k], X=L.vAyuda[k], max=V.max(), W=600, H=200, p=EST.pc||{};
   const yv=v=>(H-Math.min(1,v/max)*(H-8)).toFixed(1), xv=(i,n)=>((i+HN-n)*W/(HN-1)).toFixed(1);
   const lineas=[25,50,75,100].map(q=>{const y=H-(q/100)*(H-8);return `<line x1="0" x2="${W}" y1="${y}" y2="${y}" class="gl"/><text x="4" y="${q===100?y+13:y-3}" class="gt">${fmtV(max*q/100,V.u)}</text>`;}).join('');
-  const J=p.juego, S=J&&V.j?V.s.concat([[V.j,'var(--tx)']]):V.s, nombres=J&&V.j?X.lineas.concat([L.vJuegoLinea+(J.nombre?' ('+J.nombre+')':'')]):X.lineas;
+  const J=p.juego, S=V.s, nombres=X.lineas;
   const series=S.map(([key,col])=>{const a=HV[key]||[];if(!a.length)return '';const pts=a.map((v,i)=>xv(i,a.length)+','+yv(v)).join(' ');
     return `<polygon points="${xv(0,a.length)},${H} ${pts} ${W},${H}" fill="${col}" opacity=".15"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5"/>`;}).join('');
   const stats=S.map(([key,col],i)=>{const a=HV[key]||[];return `<div class="gs"><b style="color:${col==='var(--mu)'?'var(--mu)':col==='var(--tx)'?'var(--tx)':'var(--acct)'}">● ${esc(nombres[i])}</b>
     <span>${L.ahora} <b>${fmtV(a[a.length-1]||0,V.u)}</b></span><span>${L.promedio} <b>${fmtV(prom(a),V.u)}</b></span><span>${L.pico} <b>${fmtV(pico(a),V.u)}</b></span><span>${L.minimo} <b>${fmtV(a.length?Math.min(...a):0,V.u)}</b></span></div>`;}).join('');
-  const extra=k==='gpu'&&p.gpu!=null?`<div class="gx">${p.gpuTemp!=null?`<span>🌡 ${p.gpuTemp} °C</span><span>⚡ ${p.gpuW} W</span>`:''}<span>VRAM ${p.vram} / ${p.vramTotal||'?'} GB</span>${J?`<span>🎮 VRAM ${J.vram||0} GB</span>`:''}</div>`
+  const extra=k==='gpu'&&p.gpu!=null?`<div class="gx">${p.gpuTemp!=null?`<span>🌡 ${p.gpuTemp} °C</span><span>⚡ ${p.gpuW} W</span>`:''}<span>VRAM ${p.vram} / ${p.vramTotal||'?'} GB</span></div>`
     :k==='cpu'?`<div class="gx">${p.cpuTemp!=null?`<span style="color:${p.cpuTemp>=90?'var(--bad)':'inherit'}">🌡 ${p.cpuTemp} °C</span>${p.cpuW!=null?`<span>⚡ ${p.cpuW} W</span>`:''}${p.cpuMHz!=null?`<span>⏱ ${p.cpuMHz} MHz</span>`:''}${p.cpuTemp>=90?`<span class="gl">${esc(L.abCaliente)}${p.cpuMHz?' '+esc(L.abFreno.replace('{mhz}',p.cpuMHz)):''}</span>`:''}`
       :p.ab==='cerrado'?`<span class="gl">${esc(L.abAbrir)}</span>`:p.ab==='sin_tarea'?`<span class="gl">${esc(L.abAbrir)} ${esc(L.abPasos)}</span>`:p.ab==='no'?`<span class="gl">${esc(L.abBajar)} <a href="#" onclick="api('abrir_url','https://www.msi.com/Landing/afterburner/graphics-cards');return false">${esc(L.abLink)}</a></span>`:''}</div>`
-    :k==='ram'?`<div class="gx"><span>${p.ramGB} / ${p.ramTotal} GB</span>${J?`<span>🎮 ${J.ramGB} GB</span>`:''}</div>`:k==='disco'?`<div class="gx"><span>${L.ocupado}: ${p.dOcup} %</span></div>`
-    :k==='fps'?`<div class="gx">${J?`<span>🎮 ${esc(J.nombre||'')}</span>`:`<span>${L.vPantalla}</span>`}</div>`:'';
+    :k==='ram'?`<div class="gx"><span>${p.ramGB} / ${p.ramTotal} GB</span></div>`:k==='disco'?`<div class="gx"><span>${L.ocupado}: ${p.dOcup} %</span></div>`
+    :k==='fps'?`<div class="gx">${J?'':`<span>${L.vPantalla}</span>`}</div>`:'';
   const prev=$('#grafTop')?$('#grafTop').innerHTML:`<small>${L.midiendo}</small>`;
   c.innerHTML=`<h3>${V.t()}</h3>${extra}
     <svg class="gbig" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${lineas}${series}</svg>

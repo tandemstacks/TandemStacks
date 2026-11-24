@@ -366,10 +366,10 @@ def bnet_descargas():
         return []
     f = max(logs, key=os.path.getmtime)
     firma = (f, os.path.getsize(f), os.path.getmtime(f))
+    if time.time() - firma[2] > 120:  # el agente escribe seguido mientras baja: log quieto = nada bajando
+        _bnet_log = (firma, []); return []  # se mira antes que lo guardado: si no, una descarga cortada quedaba para siempre
     if _bnet_log[0] == firma:
         return _bnet_log[1]
-    if time.time() - firma[2] > 120:  # el agente escribe seguido mientras baja: log quieto = nada bajando
-        _bnet_log = (firma, []); return []
     try:
         with open(f, "rb") as h:
             h.seek(max(0, firma[1] - 300000)); txt = h.read().decode("utf-8", "ignore")
@@ -914,16 +914,21 @@ def gog_descargas(abierto=True):
         _gog_dl = (firma, trabajos)
     out = []
     if not _gog_dl[1]:
-        _gog_base.clear(); return out
+        _gog_base.clear(); _gog_pct.clear(); return out
     escrito = _gog_escrito()
     for nombre, pid, prefijo, total in _gog_dl[1]:
         base = _gog_base.setdefault(pid, escrito)  # lo que GOG ya había escrito cuando apareció el trabajo
+        if escrito < base:  # Galaxy se reinició (su cuenta de bytes volvió a cero): se sigue desde lo que ya se mostró
+            hecho = _gog_pct.get(pid, 0) * total / 100 if total else 0
+            base = _gog_base[pid] = escrito - hecho
         pct = max(0, min(99, int((escrito - base) * 100 / total))) if total else 0
+        _gog_pct[pid] = pct
         out.append({"name": str(nombre or pid), "pct": pct, "pausa": not abierto, "id": "gog_%s" % pid})
-    for p in [p for p in _gog_base if p not in {t[1] for t in _gog_dl[1]}]: _gog_base.pop(p)
+    for p in [p for p in _gog_base if p not in {t[1] for t in _gog_dl[1]}]: _gog_base.pop(p); _gog_pct.pop(p, None)
     return out
 
 _gog_base = {}  # productId: bytes escritos por GOG al empezar
+_gog_pct = {}   # productId: último % mostrado (para seguir desde ahí si Galaxy se reinicia)
 
 def _gog_escrito():
     """Bytes que escribieron en el disco los procesos de GOG Galaxy. Mientras baja, Galaxy no deja los archivos en la carpeta

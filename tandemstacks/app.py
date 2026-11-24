@@ -733,8 +733,9 @@ def _link_con_tienda_cerrada(tienda, d):
     se manda el link otra vez. Se arranca con su exe: el link solo a veces ni la abre (20/11/2026: Epic cerrado no
     arrancaba con com.epicgames.launcher://store/library)."""
     exe = NUC.launchers.get(tienda, {}).get("exe")
-    if exe and os.path.isfile(exe): subprocess.Popen([exe], cwd=os.path.dirname(exe))
-    else: os.startfile(d)
+    if not (exe and os.path.isfile(exe)):
+        os.startfile(d); return  # sin exe conocido: el link solo (reenviarlo lo mandaba dos veces)
+    subprocess.Popen([exe], cwd=os.path.dirname(exe))
     def reintentar():
         for _ in range(45):
             time.sleep(1)
@@ -780,10 +781,18 @@ def _desinstalando():
             continue
         if ahora - d["t"] > 900 and not d["ya"]:
             _desins.pop(i); continue  # canceló en la tienda
-        if not d["ya"] and ahora - d["tm"] > 6:  # contar archivos cuesta: como mucho cada 6 s
-            n = _contar(d["dir"]); d["tm"] = ahora
-            if d["n0"] is None: d["n0"] = n
-            elif n < d["n0"]: d["ya"], d["tya"] = True, ahora
+        if not d["ya"] and ahora - d["tm"] > 6 and not d.get("contando"):
+            # contar archivos cuesta (juegos grandes: segundos): en un hilo aparte, de a uno y 6 s después del anterior,
+            # así la página no se traba esperando (revisión del 24/11/2026)
+            d["contando"] = True
+            def contar(d=d):
+                try:
+                    n = _contar(d["dir"])
+                    if d["n0"] is None: d["n0"] = n
+                    elif n < d["n0"]: d["ya"], d["tya"] = True, time.time()
+                finally:
+                    d["tm"], d["contando"] = time.time(), False
+            threading.Thread(target=contar, daemon=True).start()
         if d["ya"]:
             out.append(i)
             # red de seguridad: la carpeta ya se vació hace 30 s y el escaneo lo sigue viendo instalado (alguna tienda

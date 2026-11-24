@@ -429,8 +429,9 @@ def evaluar(s, previas):
     vlleno = s.get("vramPcMaxPct", s.get("vramMaxPct")) or 0  # la placa entera (desde el 15/11/2026 vramMaxPct es solo del juego)
     if vlleno >= 95:
         causas.append("Memoria de video llena (%s %%): bajar las texturas un punto" % vlleno)
-    if (s.get("ramMax") or 0) >= 90:
-        causas.append("RAM casi llena (%s %%): cerrar programas de fondo" % s["ramMax"])
+    rlleno = s.get("ramPcMax", s.get("ramMax")) or 0  # toda la PC (desde el 15/11/2026 ramMax es solo del juego)
+    if rlleno >= 90:
+        causas.append("RAM casi llena (%s %%): cerrar programas de fondo" % rlleno)
     if (s.get("swapMax") or 0) >= 80 or (s.get("ramLibreMinGB") or 99) < 1:
         causas.append("La memoria no alcanzó (quedó %s GB libre): Windows usó el disco como RAM" % s.get("ramLibreMinGB"))
     # pantalla
@@ -469,7 +470,7 @@ def reevaluar(ps):
         out.append(evaluar(t, ps[:i]))
     return out
 
-def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, drv, pm_ok, pid=None):
+def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, drv, pm_ok, pid=None, desfase=0.0):
     dur = fin - inicio
     tiempos, momentos, ocupada, modos, sync = [], [], [], {}, {}
     # AFK (16/11/2026): ratos de 2 min o más sin tocar teclado, mouse ni joystick. Esos cuadros no cuentan (en el menú o
@@ -503,7 +504,7 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
                 try:
                     v = float(r[i_v])
                     if not 0 < v < 30000: continue
-                    mo = float(r[i_t]) if i_t >= 0 and r[i_t] else 0.0  # cuándo se dibujó cada cuadro
+                    mo = (float(r[i_t]) if i_t >= 0 and r[i_t] else 0.0) + desfase  # cuándo se dibujó cada cuadro (desde el inicio)
                     if afk and en_afk(mo):
                         afk_fuera += 1
                         continue
@@ -836,6 +837,7 @@ def medir(g, al_terminar=None):
             except OSError as e: _log("presentmon", e)
         solo_juego = pm is not None
         inicio, muestras, cpu0, est = time.time(), [], tiempos_cpu(), {"dir": g["dir"]}
+        desfase = 0.0  # segundos entre el inicio de la partida y el arranque del PresentMon que grabó el CSV
         version, drv = version_juego(g), driver()
         psutil.cpu_percent(interval=None, percpu=True)
         while psutil.pid_exists(pid):
@@ -858,6 +860,9 @@ def medir(g, al_terminar=None):
                     _esperar_lector(pid)  # que termine de escribir antes de que el nuevo abra el mismo archivo
                     try: pm = lanzar_pm(False)
                     except OSError as e: _log("presentmon", e); pm = None
+                    # el PresentMon nuevo cuenta sus segundos desde cero: para que AFK y "primeros 90 s" coincidan con la
+                    # partida, sus tiempos se corren lo que pasó desde el inicio (revisión del 24/11/2026)
+                    desfase = time.time() - inicio
         fin = time.time()
         pm_ok = False
         if pm:
@@ -877,7 +882,7 @@ def medir(g, al_terminar=None):
                 except OSError: pass
         if fin - inicio >= MIN_SEG:
             s = resumir(csv_fps, muestras, g, exe, inicio, fin, fondo(cpu0, tiempos_cpu(), pid, fin - inicio),
-                        cierre_con_error(exe, inicio), version, drv, pm_ok, pid)
+                        cierre_con_error(exe, inicio), version, drv, pm_ok, pid, desfase)
             try:  # si TandemStacks ajustó NVIDIA para este juego, queda anotado en la partida (para comparar antes/después)
                 from . import nvidia
                 a = nvidia.aplicado(g["id"])

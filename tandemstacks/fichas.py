@@ -241,6 +241,21 @@ def google_play(g, idioma):
 def _norm(n):
     return re.sub(r"[^a-z0-9]", "", re.sub(r"[™®©]", "", (n or "").lower()))
 
+# Palabras que solo cambian la edición: "Anno 1800 Deluxe Edition" es Anno 1800, pero "Far Cry" no es "Far Cry 3 Blood Dragon"
+# (24/11/2026: antes bastaba con que un nombre empezara con el otro y la ficha podía traer otro juego)
+EDICION = {"deluxe", "gold", "ultimate", "edition", "standard", "complete", "definitive", "goty", "game", "of", "the", "year",
+           "premium", "special", "collectors", "collector", "digital", "pc", "bundle", "pack", "anniversary"}
+
+def _palabras(n):
+    return re.findall(r"[a-z0-9]+", re.sub(r"[™®©']", "", (n or "").lower()))
+
+def _misma_edicion(a, b):
+    """¿Son el mismo juego, salvo palabras de edición al final?"""
+    pa, pb = _palabras(a), _palabras(b)
+    if not pa or not pb: return False
+    corto, largo = (pa, pb) if len(pa) <= len(pb) else (pb, pa)
+    return largo[:len(corto)] == corto and all(x in EDICION for x in largo[len(corto):])
+
 def _url_tienda(g):
     """Link de la página del juego en su tienda, buscado por nombre en el catálogo (se lee una vez por juego y se guarda)."""
     from . import steam
@@ -254,7 +269,7 @@ def _url_tienda(g):
     n, tienda = _norm(g["name"]), g["store"]
     cands = [j for j in cat.get("juegos", []) if isinstance((j.get("st") or {}).get(tienda), str)]
     j = next((j for j in cands if _norm(j.get("t")) == n), None) \
-        or next((j for j in cands if _norm(j.get("t")).startswith(n) or n.startswith(_norm(j.get("t")) or "-")), None)
+        or next((j for j in cands if _misma_edicion(j.get("t"), g["name"])), None)
     url = j["st"][tienda] if j else ""
     # solo páginas de las tiendas (si el catálogo viniera adulterado, no se lee ninguna otra dirección ni archivos locales)
     return url if TIENDA_URL.match(url) else ""
@@ -278,9 +293,8 @@ def _ubisoft_buscar(g, idioma):
     """Ubisoft: si el juego no está en el catálogo de TandemStacks, se busca por nombre en el buscador público de su tienda."""
     q = urllib.parse.quote(re.sub(r"[™®©]", "", g["name"]))
     h = _pagina("https://store.ubisoft.com/latam/search?q=" + q, idioma)
-    n = _norm(g["name"])
     for slug, pid in re.findall(r'href="https://store\.ubisoft\.com/[a-z-]+/([a-z0-9-]+)/([0-9a-f]{24})\.html', h):
-        if _norm(slug).startswith(n) or n.startswith(_norm(slug)):
+        if _misma_edicion(slug.replace("-", " "), g["name"]):
             return "https://store.ubisoft.com/us/%s/%s.html" % (slug, pid)
     return ""
 

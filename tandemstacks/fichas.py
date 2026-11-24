@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Datos de la ficha que salen de la tienda de cada juego y se piden SOLO al abrir la ficha (nunca en segundo plano).
 Con caché en disco (por idioma). Si la tienda no da un dato, no se muestra. Única excepción: si Epic no tiene descripción, va la de Steam, aclarado en la ficha.
-   Steam: logros del usuario, de los archivos de Steam (appcache/stats). Si no están, Web API con la clave (caché 6 h).
+   Steam: solo la descripción de la tienda, si no vino con el escaneo (sin horas ni logros desde el 12/11/2026).
    Epic: página de la tienda por slug (store-content); solo vale si su namespace es el del catálogo local. Caché 30 días.
    Xbox: displaycatalog de Microsoft por ProductId (descripción, estudio, categorías, clasificación, puntuación). Caché 30 días."""
-import os, re, html, json, time, struct, threading, unicodedata, urllib.parse, urllib.request
+import os, re, html, json, time, threading, unicodedata, urllib.parse, urllib.request
 from . import paths
-from .steam import http_json, steam_path, buscar_appid, ficha as steam_ficha
+from .steam import http_json, buscar_appid, ficha as steam_ficha
 
 CARPETA = os.path.join(paths.CACHE, "fichas")
 _lock = threading.Lock()
@@ -33,64 +33,6 @@ def _guardar(nombre, d):
 
 def _limpio(d):
     return {k: v for k, v in d.items() if not k.startswith("_") and v not in (None, "", [])}
-
-# ---------- Steam: logros ----------
-def _kv(b, i=0):
-    """KeyValues binario de Steam -> dict."""
-    d = {}
-    while i < len(b):
-        t = b[i]; i += 1
-        if t in (8, 11):
-            return d, i
-        j = b.index(0, i); k = b[i:j].decode("utf-8", "ignore"); i = j + 1
-        if t == 0: v, i = _kv(b, i)
-        elif t == 1: j = b.index(0, i); v = b[i:j].decode("utf-8", "ignore"); i = j + 1
-        elif t in (2, 4, 6): v = struct.unpack_from("<i", b, i)[0]; i += 4
-        elif t == 3: v = struct.unpack_from("<f", b, i)[0]; i += 4
-        elif t == 7: v = struct.unpack_from("<Q", b, i)[0]; i += 8
-        else: raise ValueError("tipo %s" % t)
-        d[k] = v
-    return d, i
-
-def _logros_locales(appid, steamid):
-    """Steam guarda el esquema de logros y lo logrado (bits) en appcache/stats. {} si el juego no se abrió en esta PC."""
-    base = os.path.join(steam_path(), "appcache", "stats")
-    try:
-        esq = _kv(open(os.path.join(base, "UserGameStatsSchema_%s.bin" % appid), "rb").read())[0]
-        usr = _kv(open(os.path.join(base, "UserGameStats_%s_%s.bin" % (int(steamid) - 76561197960265728, appid)), "rb").read())[0]
-    except Exception:
-        return {}
-    stats = (next(iter(esq.values()), {}) or {}).get("stats") or {}
-    usr = usr.get("cache") or {}
-    hechos = total = 0
-    for sid, st in stats.items():
-        if isinstance(st, dict) and str(st.get("type", "")).upper() == "ACHIEVEMENTS" and isinstance(st.get("bits"), dict):
-            bits = (usr.get(sid) or {}).get("data", 0) & 0xFFFFFFFF
-            total += len(st["bits"])
-            hechos += sum(1 for k in st["bits"] if k.isdigit() and bits >> int(k) & 1)
-    return {"logros": hechos, "logrosT": total} if total else {}
-
-def steam_logros(appid, key, steamid):
-    if not steamid or not appid:
-        return {}
-    d = _logros_locales(appid, steamid)
-    if d or not key:
-        return d
-    nombre = "logros/%s.json" % appid
-    d = _leer(nombre, 6 * 3600)
-    if d is None:
-        d = {}
-        try:
-            j = http_json("https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?" + urllib.parse.urlencode(
-                {"key": key, "steamid": steamid, "appid": appid}), 15)
-            ach = (j.get("playerstats") or {}).get("achievements") or []
-            if ach:
-                d = {"logros": sum(1 for a in ach if a.get("achieved")), "logrosT": len(ach)}
-        except Exception as e:  # 400 = el juego no tiene logros o el perfil es privado: se recuerda igual
-            if "400" not in str(e) and "403" not in str(e):
-                paths.log("logros", appid, e); return {}
-        _guardar(nombre, d)
-    return _limpio(d)
 
 # ---------- Epic ----------
 EPIC_TAG = {"ACTION": "Acción", "ADVENTURE": "Aventura", "CO_OP": "Cooperativo", "MULTIPLAYER": "Multijugador", "SINGLE_PLAYER": "Un jugador",

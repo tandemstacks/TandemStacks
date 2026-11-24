@@ -109,9 +109,13 @@ def _anotar_ultimos(out):
     u = _ultimos()
     nuevo = {d["id"]: max(d["pct"], u.get(d["id"], 0)) for d in out}  # solo los que siguen pendientes: lo terminado o cancelado se olvida
     if nuevo != u:
+        # al disco solo si cambió el % entero o la lista (antes se reescribía cada 4 s mientras bajaba)
+        en_disco = {k: int(v) for k, v in u.items()} != {k: int(v) for k, v in nuevo.items()}
         _ULTIMO.clear(); _ULTIMO.update(nuevo)
-        try: json.dump(nuevo, open(os.path.join(paths.CACHE, "steam_descargas.json"), "w", encoding="utf-8"))
-        except OSError: pass
+        if en_disco:
+            try:
+                with open(os.path.join(paths.CACHE, "steam_descargas.json"), "w", encoding="utf-8") as f: json.dump(nuevo, f)
+            except OSError: pass
 
 def descargas():
     """Lo que Steam está bajando: [{"name", "pct", "id", "pausa"}].
@@ -169,38 +173,6 @@ def huella_instalados():
             # solo si está instalado o no (StateFlags 4): el tamaño y el avance cambian durante una actualización y no hace falta reescanear
             partes.append("%s|%d" % (f, bool(_manif(f).get("flags", 0) & 4)))
     return "\n".join(partes)
-
-def _vdf(t):
-    """VDF de texto de Steam -> dicts anidados (claves en minúscula)."""
-    raiz = actual = {}; pila = []; clave = None
-    for m in re.finditer(r'"((?:[^"\\]|\\.)*)"|([{}])', t):
-        if m.group(2) == "{":
-            nuevo = {}; actual[clave or ""] = nuevo; pila.append(actual); actual = nuevo; clave = None
-        elif m.group(2) == "}":
-            actual = pila.pop() if pila else raiz; clave = None
-        elif clave is None:
-            clave = m.group(1).lower()
-        else:
-            actual[clave] = m.group(1); clave = None
-    return raiz
-
-def tiempos(steamid):
-    """{appid: (minutos jugados, última vez en epoch)} desde localconfig.vdf del usuario. Local, sin red."""
-    if not steamid:
-        return {}
-    try:
-        f = os.path.join(steam_path(), "userdata", str(int(steamid) - 76561197960265728), "config", "localconfig.vdf")
-        apps = _vdf(open(f, encoding="utf-8", errors="ignore").read())
-        for k in ("userlocalconfigstore", "software", "valve", "steam", "apps"):
-            apps = apps.get(k) or {}
-    except Exception:
-        return {}
-    out = {}
-    for aid, d in apps.items():
-        if isinstance(d, dict) and (d.get("playtime") or d.get("lastplayed")):
-            try: out[aid] = (int(d.get("playtime") or 0), int(d.get("lastplayed") or 0))
-            except ValueError: pass
-    return out
 
 def biblioteca(api_key, steamid):
     """Lista completa [(appid, nombre, minutos jugados, última vez)] vía Web API. None si no hay clave, el perfil es privado o falló."""

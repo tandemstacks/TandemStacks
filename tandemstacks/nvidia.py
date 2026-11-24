@@ -2,11 +2,9 @@
 """Ajustes del driver de NVIDIA por juego (como el Panel de control de NVIDIA → Administrar configuración 3D → Programa).
 
 Se usa la librería del propio driver (nvapi64.dll, perfiles "DRS"); no hace falta administrador.
-Pedido del dueño (10/11/2026): que TandemStacks ajuste NVIDIA sola según lo que midió Pulso. Reglas:
-- Solo lo aplica la persona con un botón, y siempre se guarda lo que había antes (botón Deshacer).
-- Lo usa la escalera de ajustes (escalera.py): sacar el tope de FPS, caché de sombreadores sin límite.
-- Nada de esto usa IA: son reglas fijas sobre los números de Pulso.
-"""
+Desde el 12/11/2026 TandemStacks ya no cambia nada de NVIDIA (regla del dueño: solo medir). Queda solo para
+"Deshacer": si una versión anterior dejó un ajuste puesto, aplicado() lo muestra en la ficha y deshacer() vuelve exacto.
+Las funciones para cambiar ajustes siguen acá sin uso desde la app."""
 import os, json, ctypes, datetime
 from . import paths
 

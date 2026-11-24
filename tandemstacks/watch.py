@@ -48,7 +48,6 @@ _rutas = {}  # (pid, cuándo arrancó): ruta del programa. Pedir la ruta obliga 
 
 _candado = threading.Lock()
 EN_JUEGO = [False]  # hay un juego andando (lo mira la página para consultar menos seguido y no robarle al juego)
-JUEGO = [set(), ""]  # procesos de los juegos abiertos (todos los de su carpeta) y sus nombres: los relojes muestran cuánto suman
 
 def _procs():
     """[(proceso, nombre, ruta)] de todo lo que corre. Se arma entero bajo candado: lo usan dos hilos a la vez."""
@@ -302,8 +301,6 @@ def vigilar(juegos, launchers, cfg, sumar, al_jugar=None, al_medir=None):
         try:
             ahora_j = en_curso(juegos())
             EN_JUEGO[0] = bool(ahora_j)
-            JUEGO[:] = [{p for j in ahora_j.values() for p in j.get("pids", ())},
-                        ", ".join(sorted({(j.get("g") or {}).get("name") or "" for j in ahora_j.values()} - {""}))]
             if ahora_j:
                 ahora = time.time()
                 if not desde and al_jugar:

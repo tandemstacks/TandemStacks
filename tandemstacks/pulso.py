@@ -483,7 +483,6 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
             if afk and a <= afk[-1][1] + MUESTRA * 2: afk[-1][1] = max(afk[-1][1], b)
             else: afk.append([a, b])
     en_afk = lambda x: any(a <= x <= b for a, b in afk)
-    afk_fuera = 0
     try:
         with open(csv_fps, newline="", encoding="utf-8-sig", errors="ignore") as f:  # -sig: PresentMon empieza con BOM y "Application" no se reconocía
             lector = csv.reader(f)
@@ -505,9 +504,7 @@ def resumir(csv_fps, muestras, g, exe, inicio, fin, fondo_cpu, error, version, d
                     v = float(r[i_v])
                     if not 0 < v < 30000: continue
                     mo = (float(r[i_t]) if i_t >= 0 and r[i_t] else 0.0) + desfase  # cuándo se dibujó cada cuadro (desde el inicio)
-                    if afk and en_afk(mo):
-                        afk_fuera += 1
-                        continue
+                    if afk and en_afk(mo): continue
                     tiempos.append(v)
                     momentos.append(mo)
                     if i_gpu >= 0 and r[i_gpu]: ocupada.append(min(1.0, float(r[i_gpu]) / v))  # parte del cuadro con la placa trabajando
@@ -728,12 +725,16 @@ _esc = {"pm": None, "lector": None, "pedido": 0.0, "hilo": None}
 SESION_ESC = "TandemStacks_escritorio"  # no la toca _limpiar_sesiones (busca TandemStacks_<número>)
 TANDA_ESC = 300  # PresentMon corre de a 5 min y se relanza (por si Windows lo corta)
 
-def _pm_parar(pm, sesion):
+def _pm_cerrar_sesion(sesion, timeout=15):
+    """Le pide a PresentMon que cierre esa sesión ordenado (así escribe lo último que tenía)."""
+    subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=timeout,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+
+def _pm_parar(pm, sesion, espera=10):
     if not pm: return
     try:
-        subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=15,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
-        pm.wait(10)
+        _pm_cerrar_sesion(sesion)
+        pm.wait(espera)
     except Exception:
         try: pm.kill()
         except Exception: pass
@@ -761,8 +762,7 @@ def apagar():
     _esc["pedido"] = 0
     _pm_parar(_esc["pm"], SESION_ESC)
     for pid in list(_activos_pid):
-        try: subprocess.run([PM, "--terminate_existing_session", "--session_name", "TandemStacks_%d" % pid], timeout=10,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
+        try: _pm_cerrar_sesion("TandemStacks_%d" % pid, 10)
         except Exception: pass
 
 def fps_escritorio():
@@ -850,13 +850,7 @@ def medir(g, al_terminar=None):
                 except OSError: vacio = True
                 if vacio:
                     _log("presentmon: por nombre no grabó nada, se graba todo", os.path.basename(exe))
-                    try:
-                        subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=15,
-                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
-                        pm.wait(10)
-                    except Exception:
-                        try: pm.kill()
-                        except Exception: pass
+                    _pm_parar(pm, sesion)
                     _esperar_lector(pid)  # que termine de escribir antes de que el nuevo abra el mismo archivo
                     try: pm = lanzar_pm(False)
                     except OSError as e: _log("presentmon", e); pm = None
@@ -866,12 +860,7 @@ def medir(g, al_terminar=None):
         fin = time.time()
         pm_ok = False
         if pm:
-            try:  # se le pide que cierre ordenado (así escribe lo último que tenía); si no responde, se mata
-                subprocess.run([PM, "--terminate_existing_session", "--session_name", sesion], timeout=15,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=SIN_VENTANA)
-                pm.wait(timeout=15)
-            except Exception:
-                pm.kill()
+            _pm_parar(pm, sesion, 15)  # se le pide que cierre ordenado (así escribe lo último que tenía); si no responde, se mata
             _esperar_lector(pid)  # el CSV lo escribe el lector: que termine antes de leerlo
             pm_ok = os.path.exists(csv_fps)
             if not pm_ok:
@@ -887,9 +876,6 @@ def medir(g, al_terminar=None):
                 from . import nvidia
                 a = nvidia.aplicado(g["id"])
                 if a: s["nvidia"] = "; ".join(a["que"])
-                from . import escalera
-                p = escalera.en_prueba(g["id"])
-                if p: s["paso"] = p  # el paso de la escalera que se estaba probando en esta partida
             except Exception: pass
             _guardar(g["id"], s)
             _log("guardado", g.get("name"), s["estado"], "; ".join(s["causas"]))

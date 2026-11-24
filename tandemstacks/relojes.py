@@ -8,7 +8,7 @@ Se leen los contadores de rendimiento de Windows (PDH, los mismos del Administra
 - VRAM: "GPU Adapter Memory" (total) y "GPU Process Memory" (por programa).
 - Disco: "% Idle Time" de cada disco; ocupado = 100 − libre del disco más ocupado (como "Tiempo activo").
 RAM, red y bytes de disco salen de psutil. La red no se puede separar por programa: Windows no la cuenta así.
-Del juego: procesador, RAM y disco por psutil (todos sus procesos, los de su carpeta), placa y VRAM por PDH.
+Lo del juego (placa y VRAM de sus procesos) lo pide solo Pulso con placa_juego; los relojes muestran la máquina entera.
 Solo se lee cuando la página lo pide (ventana a la vista): cada 4 s, o cada 10 s con un juego abierto."""
 import re, time, ctypes, threading, winreg
 import ctypes.wintypes as w
@@ -46,6 +46,7 @@ def _abrir():
             getattr(p, f).restype = ctypes.c_uint32  # PDH_STATUS: sin signo, para comparar con MAS_DATOS
         if p.PdhOpenQueryW(None, None, ctypes.byref(_hq)) != 0: raise OSError("PdhOpenQuery")
         for k, ruta in CONTADORES.items():
+            if k == "vram_p": continue  # memoria de video por programa: solo la usa Pulso (placa_juego, consulta propia)
             h = ctypes.c_void_p()
             if p.PdhAddEnglishCounterW(_hq, ruta, None, ctypes.byref(h)) == 0: _q[k] = h
         p.PdhCollectQueryData(_hq)  # la primera lectura solo arranca la cuenta
@@ -98,7 +99,7 @@ def _vram_total():
     return _vram_total.v
 _vram_total.v = None
 
-_ant = {"t": 0.0, "red": None, "disco": None, "juego": {}}  # lecturas anteriores, para calcular velocidades
+_ant = {"t": 0.0, "red": None, "disco": None}  # lecturas anteriores, para calcular velocidades
 
 # Pulso tiene su propia consulta: cada lectura de "GPU Engine" promedia desde la anterior, y si compartiera la de los
 # relojes cada uno le acortaría el intervalo al otro.
@@ -129,8 +130,8 @@ def placa_juego(pids):
         vram = sum(v for k, v in _varios("vram_p", _qp).items() if _PID.search(k) and int(_PID.search(k).group(1)) in pids)
         return {"gpu": round(max(0, min(100, max(motores.values()) if motores else 0)), 1), "vram_mb": round(vram / 1048576)}
 
-def medir(pids=()):
-    """Todo lo de los relojes. pids = procesos del juego abierto (vacío: sin juego)."""
+def medir():
+    """Todo lo de los relojes: la máquina entera, en tiempo real (lo del juego solo lo mide Pulso, con placa_juego)."""
     with _candado:
         p = _abrir()
         if p: p.PdhCollectQueryData(_hq)
@@ -164,14 +165,10 @@ def medir(pids=()):
         libres = [v for k, v in (_varios("disco") if p else {}).items() if k != "_Total"]
         out["dOcup"] = max(0, min(100, round(100 - min(libres)))) if libres else 0
         # placa de video: por motor, sumando programas; la placa = el motor más ocupado
-        motores, por_pid = {}, {}
+        motores = {}
         for inst, v in (_varios("gpu") if p else {}).items():
-            mo, pi = _MOTOR.search(inst), _PID.search(inst)
-            if not mo: continue
-            motores[mo.group(1)] = motores.get(mo.group(1), 0) + v
-            if pi:
-                clave = (int(pi.group(1)), mo.group(1))
-                por_pid[clave] = por_pid.get(clave, 0) + v
+            mo = _MOTOR.search(inst)
+            if mo: motores[mo.group(1)] = motores.get(mo.group(1), 0) + v
         if motores:
             out["gpu"] = max(0, min(100, round(max(motores.values()))))
             vt = _vram_total()
@@ -180,40 +177,4 @@ def medir(pids=()):
             if vt:
                 out["vramTotal"] = round(vt / 1073741824)
                 out["vramPct"] = round(100 * vu / vt)
-        # el juego: todos sus procesos
-        pids = set(pids or ())
-        if pids:
-            j = {"cpu": 0.0, "ram": 0, "lee": 0, "esc": 0}
-            prev, nuevo = _ant["juego"], {}
-            ncpu = psutil.cpu_count() or 1
-            escala = (cpu / cpu_t) if cpu_t and cpu_t > 1 else 1  # tiempo de procesador → la escala del Administrador
-            for pid in pids:
-                try:
-                    pr = psutil.Process(pid)
-                    ct, io = pr.cpu_times(), pr.io_counters()
-                    j["ram"] += pr.memory_info().rss
-                    nuevo[pid] = (ct.user + ct.system, io.read_bytes, io.write_bytes, pr.create_time())
-                    a = prev.get(pid)
-                    if a and a[3] == nuevo[pid][3] and dt > 0:
-                        j["cpu"] += 100 * (nuevo[pid][0] - a[0]) / dt / ncpu * escala
-                        j["lee"] += (nuevo[pid][1] - a[1]) / dt
-                        j["esc"] += (nuevo[pid][2] - a[2]) / dt
-                except Exception:
-                    pass
-            _ant["juego"] = nuevo
-            jg = {"cpu": max(0, min(out["cpu"], round(j["cpu"]))), "ramGB": round(j["ram"] / 1073741824, 1),
-                  "ram": round(100 * j["ram"] / m.total),
-                  # en Windows lo que lee y escribe un programa incluye algo más que el disco: nunca más que el total
-                  "dlee": max(0, min(out["dlee"], round(j["lee"]))), "descr": max(0, min(out["descr"], round(j["esc"])))}
-            if motores:
-                pm = {}
-                for (pid, mo), v in por_pid.items():
-                    if pid in pids: pm[mo] = pm.get(mo, 0) + v
-                jg["gpu"] = max(0, min(out["gpu"], round(max(pm.values())))) if pm else 0
-                vp = sum(v for k, v in (_varios("vram_p") or {}).items() if (_PID.search(k) and int(_PID.search(k).group(1)) in pids))
-                jg["vram"] = round(vp / 1073741824, 1)
-                if out.get("vramTotal"): jg["vramPct"] = round(100 * vp / vt)
-            out["juego"] = jg
-        else:
-            _ant["juego"] = {}
         return out

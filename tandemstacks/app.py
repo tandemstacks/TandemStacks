@@ -3,7 +3,7 @@
 import os, re, sys, json, time, glob, ctypes, pathlib, threading, subprocess, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import webview
-from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, escalera, relojes, afterburner, compartir, VERSION
+from . import paths, steam, stores, covers, detect, build, watch, inicio, fichas, pulso, nvidia, relojes, afterburner, compartir, VERSION
 from . import precios as precios_tiendas
 
 ORDEN_TIENDAS = ["Steam", "Epic", "EA", "Xbox", "Riot", "Battle.net", "Rockstar", "Ubisoft", "GOG", "Amazon", "itch.io", "Google Play"]
@@ -115,8 +115,7 @@ class Nucleo:
                 else: info, st = ("%d juegos" % cuenta(n)), ("ok" if l["ok"] else "no")
                 if not l["ok"]: info = "launcher no instalado" + (" · %d juegos" % cuenta(n) if cuenta(n) else "")
                 if n in fuera: st, info = "no", "desvinculada (clic para volver a vincular)"
-                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera,
-                                     "sinClave": n == "Steam" and not self.cfg.get("steam_api_key")})  # sin clave Steam no deja ver los no instalados
+                self.tiendas.append({"n": n, "c": l["color"], "st": st, "info": info, "ok": l["ok"], "bajar": l["bajar"], "fuera": n in fuera})
             self.estado.update(fase="listo", msg="", de="")
             self._publicar()
             stores.guardar_tamanos(self.juegos)
@@ -262,7 +261,8 @@ class Nucleo:
                 if time.time() - t0 > 5: paths.log("huella lenta: %.0f s" % (time.time() - t0))
                 if ahora != antes:
                     # diagnóstico (19/11/2026): Tyrian 2000 se instaló en GOG y no apareció hasta reabrir la app
-                    cambio = [l for l in ahora.splitlines() if l not in set(antes.splitlines())][:3]
+                    viejas = set(antes.splitlines())
+                    cambio = [l for l in ahora.splitlines() if l not in viejas][:3]
                     paths.log("cambio detectado, reescaneo:", "; ".join(c[:80] for c in cambio))
                     antes = ahora
                     t0 = time.time()
@@ -279,10 +279,6 @@ class Nucleo:
             if re.match(r"(TandemStacks|TasloStacks|SantiStacks)-Setup-.*\.exe$", a.get("name", ""), re.I):
                 return a
         return {}
-
-    @staticmethod
-    def _link_setup(release):
-        return Nucleo._asset_setup(release).get("browser_download_url", "")
 
     def actualizar(self, solo=False):
         """Baja el instalador nuevo mostrando el avance, lo corre en silencio y cierra la app (el instalador la vuelve a abrir).
@@ -355,7 +351,7 @@ class Nucleo:
         try:
             j = steam.http_json("https://api.github.com/repos/%s/releases/latest" % repo, 15)
             tag = j.get("tag_name", "")
-            json.dump({"ts": time.time(), "repo": repo, "tag": tag, "setup": self._link_setup(j)}, open(cache, "w"))
+            json.dump({"ts": time.time(), "repo": repo, "tag": tag}, open(cache, "w"))
             return mas_nueva(tag)
         except Exception:
             return None
@@ -371,23 +367,18 @@ class Api:
         """Lo pide la página cada pocos segundos, solo con la ventana a la vista (minimizada queda suspendida)."""
         try: abiertas = [t for t in ORDEN_TIENDAS if t in watch.abiertos({n: d for n, d in NUC.launchers.items() if d["ok"]})]
         except Exception: abiertas = []
-        try: bajando = steam.descargas()
-        except Exception: bajando = []
-        try: bajando += stores.epic_descargas("Epic" in abiertas)  # se reusa la lista de procesos de watch
-        except Exception as e: paths.log("descargas epic", e)
-        try: bajando += stores.ubisoft_descargas("Ubisoft" in abiertas)
-        except Exception as e: paths.log("descargas ubisoft", e)
-        try: bajando += stores.gog_descargas("GOG" in abiertas)
-        except Exception as e: paths.log("descargas gog", e)
-        try: bajando += stores.bnet_descargas()
-        except Exception as e: paths.log("descargas battle.net", e)
+        # tiendas que dicen qué bajan y cuánto falta: cada fila lleva su tienda ("de"), así no se adivina por el id
+        bajando = []
+        for t, f in (("Steam", steam.descargas), ("Epic", lambda: stores.epic_descargas("Epic" in abiertas)),
+                     ("Ubisoft", lambda: stores.ubisoft_descargas("Ubisoft" in abiertas)),
+                     ("GOG", lambda: stores.gog_descargas("GOG" in abiertas)), ("Battle.net", stores.bnet_descargas)):
+            try: bajando += [dict(d, de=t) for d in f()]
+            except Exception as e: paths.log("descargas", t, e)
+        con_pct = {d["de"] for d in bajando}
         try:  # las demás tiendas: no dicen qué ni cuánto falta, pero sí a qué velocidad escriben en el disco
             for t, v in watch.descargando(NUC.launchers).items():
-                pref = {"Epic": "epic_", "Ubisoft": "ubi_", "Battle.net": "bnet_", "GOG": "gog_"}
-                if t in ("Steam", *pref) and any(
-                        (d.get("id", "").startswith(pref[t]) if t in pref else not d.get("id", "").startswith(tuple(pref.values())))
-                        for d in bajando if d.get("id")):
-                    continue  # Steam, Epic, Ubisoft y Battle.net ya muestran nombre y porcentaje
+                if t in con_pct:
+                    continue  # ya muestra nombre y porcentaje
                 d = {"tienda": t, "vel": v}
                 if t == "itch.io":  # itch dice qué baja, no cuánto le falta
                     try: d["name"] = ", ".join(stores.itch_descargas())
@@ -430,7 +421,7 @@ class Api:
         for h in hilos: h.join(30)
         siguen = watch.abiertos(lanz) if intentar else set()
         for t in intentar:
-            if t in siguen and t not in motivo: motivo[t] = "error"  # el programa no se dejó cerrar (servicio de Windows, permisos)
+            if t in siguen and t not in motivo: motivo[t] = "error"  # (motivo puede tener "bajando", que pone watch.cerrar)  # el programa no se dejó cerrar (servicio de Windows, permisos)
         cerradas = [t for t in intentar if t not in motivo]
         mb = sum(res.get(t) or 0 for t in cerradas)
         if cerradas: watch._anotar(launchers=len(cerradas), ram_mb=mb)
@@ -451,28 +442,11 @@ class Api:
     def partidas_cuenta(self, ids):
         return sum(len(pulso.historial(i)) for i in ids or [])
 
-    def escalera(self, gid):
-        """Para la ficha: el paso de ajuste en prueba (con su resultado) o el próximo, y lo que TandemStacks tocó en NVIDIA."""
-        try:
-            return {"e": escalera.estado(gid), "nv": nvidia.aplicado(gid), "app": escalera.hay_app_nvidia()}
+    def nvidia_aplicado(self, gid):
+        """Para la ficha: si quedó un ajuste de NVIDIA que puso una versión vieja (para ofrecer "Deshacer")."""
+        try: return nvidia.aplicado(gid)
         except Exception as e:
-            paths.log("escalera", e); return {}
-
-    def escalera_empezar(self, gid):
-        if watch.en_curso(NUC.juegos): return {"error": "juego"}
-        try: return {"ok": escalera.empezar(gid)}
-        except Exception as e:
-            paths.log("escalera empezar", e); return {"error": str(e)}
-
-    def escalera_resolver(self, gid, dejar):
-        if watch.en_curso(NUC.juegos): return {"error": "juego"}
-        try: return {"ok": escalera.resolver(gid, bool(dejar))}
-        except Exception as e:
-            paths.log("escalera resolver", e); return {"error": str(e)}
-
-    def abrir_app_nvidia(self):
-        if escalera.hay_app_nvidia(): os.startfile(escalera.NVAPP); return True
-        return False
+            paths.log("nvidia aplicado", e); return None
 
     def nvidia_deshacer(self, gid):
         try: return {"ok": nvidia.deshacer(gid)}
@@ -716,7 +690,7 @@ def _firma_ok(exe):
         return not FIRMANTE or FIRMANTE.lower() in quien.lower()  # firmado, pero por quien corresponde
     return estado == "NotSigned" and not FIRMA_OBLIGATORIA
 
-_desins = {}  # id: {"dir", "t", "n0", "n", "tm", "ya"}: juegos a los que se les tocó Desinstalar
+_desins = {}  # id: {"dir", "t", "n0", "tm", "ya", "tya", "contando", "reesc"}: juegos a los que se les tocó Desinstalar
 
 def _anotar_desinstalar(g):
     if g and g.get("installed"):
@@ -746,25 +720,10 @@ def _link_con_tienda_cerrada(tienda, d):
 
 def _launcher_abierto(tienda, ventana=False):
     """¿Está andando el launcher? Con ventana=True, además que tenga su ventana principal (ya cargó)."""
-    import psutil
-    nombres = set(NUC.launchers.get(tienda, {}).get("procs") or [])
-    for p in psutil.process_iter(["name", "pid"]):
-        if (p.info["name"] or "").lower() in nombres:
-            if not ventana: return True
-            try:
-                import ctypes
-                from ctypes import wintypes
-                hay = []
-                def cb(h, _):
-                    pid = wintypes.DWORD(); ctypes.windll.user32.GetWindowThreadProcessId(h, ctypes.byref(pid))
-                    if pid.value == p.info["pid"] and ctypes.windll.user32.IsWindowVisible(h) and ctypes.windll.user32.GetWindowTextLengthW(h):
-                        hay.append(h); return False
-                    return True
-                ctypes.windll.user32.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)(cb), 0)
-                if hay: return True
-            except Exception:
-                return True
-    return False
+    d = NUC.launchers.get(tienda)
+    if not d: return False
+    if not ventana: return tienda in watch.abiertos({tienda: d})  # la misma cuenta que usa el resto de la app
+    return bool(watch._ventanas({pr.pid for pr, n, e in watch._procs() if watch._es_de(n, e, d)}))
 
 def _desinstalando():
     """Ids de juegos que se están desinstalando: se les tocó Desinstalar y su carpeta se está vaciando o ya no está.
@@ -854,9 +813,7 @@ def _en_vivo():
     """Procesador, RAM y red en este momento (lo pide la página cada 4 s, solo con la ventana a la vista). Leerlo no gasta casi nada."""
     # todo con los contadores del Administrador de tareas (relojes.py), más la parte del juego abierto
     try:
-        pids, nombre = watch.JUEGO
-        out = relojes.medir(pids if watch.EN_JUEGO[0] else ())
-        if out.get("juego") is not None: out["juego"]["nombre"] = nombre
+        out = relojes.medir()  # solo la máquina: el juego no se muestra aparte en los relojes (pedido del dueño 22/11/2026)
         # FPS: con juego, los del juego (Pulso); sin juego, los de la pantalla (PresentMon solo mientras la ventana está a la vista)
         if watch.EN_JUEGO[0]:
             out["fps"] = pulso.fps_ahora()

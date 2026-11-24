@@ -1121,7 +1121,7 @@ def main():
     ancho, alto, x, y = previa[:4] if previa else _tamano_inicial()
     maxi = bool(previa and previa[4])
     con_windows = "--inicio" in sys.argv  # la abrió Windows al iniciar: arranca minimizada y dormida
-    v = webview.create_window("TandemStacks %s" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
+    v = webview.create_window("TandemStacks %s (beta)" % VERSION, pathlib.Path(paths.HTML).as_uri(), js_api=Api(), width=ancho, height=alto, x=x, y=y,
                               min_size=(820, 520), background_color="#f2f2ef", minimized=con_windows, maximized=maxi and not con_windows)
     est = {"max": maxi, "normal": {"w": ancho, "h": alto, "x": x, "y": y} if previa else None}
     Main.est = est

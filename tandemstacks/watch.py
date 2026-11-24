@@ -135,18 +135,20 @@ def _ventanas(pids):
 def en_curso(juegos):
     """Juegos andando: {carpeta: {"tienda", "desde", "exes"}}. juegos = [{"dir", "store", "appid"}] instalados.
     Steam avisa en el registro qué juego corre; los demás se reconocen por un proceso dentro de su carpeta."""
-    out = {}
+    out, procs = {}, _procs()  # una sola lista de procesos para todo
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as k:
             aid = str(winreg.QueryValueEx(k, "RunningAppID")[0])
-        if aid not in ("0", ""):
+        # solo con Steam abierto: si Steam se cierra de golpe deja el último juego anotado y la app creía que seguía
+        # andando para siempre (24/11/2026: Bodycam "en curso" con Steam cerrado; la página consultaba cada 10 s)
+        if aid not in ("0", "") and any(n == "steam.exe" for _, n, _e in procs):
             g = next((g for g in juegos if g.get("store") == "Steam" and str(g.get("appid")) == aid), None)
             out[(g or {}).get("dir") or "steam:" + aid] = {"tienda": "Steam", "desde": None, "exes": set(), "g": g}
     except OSError:
         pass
     gp = [g for g in juegos if g.get("store") == "Google Play" and g.get("name")]
     if gp:  # Google Play: el juego corre dentro del emulador (crosvm.exe), cuya ventana se llama "<juego> - <cuenta>"
-        for pid, titulo in _ventanas({pr.pid for pr, n, e in _procs() if n == "crosvm.exe" and "play games" in e}):
+        for pid, titulo in _ventanas({pr.pid for pr, n, e in procs if n == "crosvm.exe" and "play games" in e}):
             t = re.sub(r"[\W_]", "", titulo.lower())  # el nombre sale del acceso directo, sin los signos que Windows no deja
             g = next((g for g in gp if t.startswith(re.sub(r"[\W_]", "", g["name"].lower()))), None)
             if g:
@@ -156,7 +158,7 @@ def en_curso(juegos):
     if not prefijos:
         return out
     tupla = tuple(prefijos)
-    for pr, n, e in _procs():
+    for pr, n, e in procs:
         if not e.startswith(tupla) or any(a in n for a in AYUDANTES):
             continue
         p = next(p for p in tupla if e.startswith(p))

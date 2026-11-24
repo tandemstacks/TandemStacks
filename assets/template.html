@@ -14,6 +14,7 @@ header{position:sticky;top:0;z-index:5;background:var(--panel);border-top:4px so
 .top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;cursor:pointer}
 .logo{width:38px;height:38px;border-radius:3px;display:block;box-shadow:var(--sh)}
+.beta{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:3px;background:#F58426;color:#1a1a1a;font-size:12px;font-weight:700;letter-spacing:.06em;line-height:1.2;vertical-align:middle;text-transform:uppercase}
 .brand h1{margin:0;font-size:22px;letter-spacing:.2px;font-weight:700;text-transform:uppercase}.brand h1 span{color:var(--acct)}
 .brand small{display:block;color:var(--mu);font-size:12px;margin-top:-2px}
 .tiendas{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -242,7 +243,7 @@ details.mas{margin:4px 0 8px}details.mas summary{cursor:pointer;color:var(--acct
 <body>
 <header>
   <div class="top">
-    <div class="brand" id="brand" onclick="api('abrir_url','https://tandemstacks.github.io/TandemStacks/')"><img class="logo" id="logo" alt=""><div><h1>Tandem<span>Stacks</span></h1><small id="sub"></small></div></div>
+    <div class="brand" id="brand" onclick="api('abrir_url','https://tandemstacks.github.io/TandemStacks/')"><img class="logo" id="logo" alt=""><div><h1>Tandem<span>Stacks</span><b class="beta" title="Versión de prueba: puede tener errores. Avisanos en Discord si algo no anda.">Beta</b></h1><small id="sub"></small></div></div>
     <div class="tiendas"><span id="tiendas" style="display:none"></span><div class="nivel" id="nivel"></div>
       <details class="dd der" id="ddmenu"><summary class="gear" id="gear" title="Menú">⚙</summary><div class="menu" id="menu"></div></details>
     </div>

@@ -1,4 +1,6 @@
-# TandemStacks
+# TandemStacks (beta)
+
+> **Versión beta:** se está probando y puede tener errores. Si algo no anda, avisanos en Discord.
 
 **Todas tus bibliotecas de juegos en una sola pantalla.** Steam, Epic, GOG, EA, Xbox / Game Pass, Riot, Battle.net, Rockstar, Ubisoft, Amazon Games, itch.io y Google Play Juegos, con portadas, fichas, reseñas, lo que ocupa cada juego en el disco y botones de *Instalar* / *Jugar* que abren la tienda que corresponda.
 

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TandemStacks</title>
 <style>
-:root{--brand:#006BB6;--brandT:#fff;--plata:#BEC0C2;--bgR:#E4E5E6;--panelR:#ffffff;--cardR:#E8E9EA;--txR:#1a1a1a;--muR:#5c6064;--acctR:#005E9F;--shR:0 2px 8px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.08);--bg:var(--bgR);--panel:var(--panelR);--card:var(--cardR);--tx:var(--txR);--mu:var(--muR);--acct:var(--acctR);--sh:var(--shR);--accb:#F58426;--accbt:#1a1a1a;--ln:#BEC0C2;--acc:#006BB6;--acc2:#006BB6;--ok:#1f9d55;--warn:#d08a00;--bad:#d9433b;--tagbg:rgba(255,255,255,.92)}
-:root[data-tema="oscuro"]{--bgR:#121316;--panelR:#1b1d22;--cardR:#272a32;--txR:#eef0f5;--muR:#BEC0C2;--acctR:#F58426;--shR:0 2px 8px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.4);--ln:rgba(190,192,194,.22);--acc:#F58426;--tagbg:rgba(20,22,28,.9)}
+:root{--brand:#006BB6;--brandT:#fff;--plata:#BEC0C2;--bgR:#E4E5E6;--panelR:#ffffff;--cardR:#E8E9EA;--txR:#1a1a1a;--muR:#5c6064;--acctR:#005E9F;--shR:0 2px 8px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.08);--bg:var(--bgR);--panel:var(--panelR);--card:var(--cardR);--tx:var(--txR);--mu:var(--muR);--acct:var(--acctR);--sh:var(--shR);--accb:#F58426;--accbt:#1a1a1a;--ln:#BEC0C2;--acc:#006BB6;--acc2:#006BB6;--ok:#17703d;--warn:#8a5a00;--bad:#b3261e;--badB:#b3261e;--tagbg:rgba(255,255,255,.92)}
+:root[data-tema="oscuro"]{--ok:#34b86a;--warn:#e09a1a;--bad:#f0625a;--bgR:#121316;--panelR:#1b1d22;--cardR:#272a32;--txR:#eef0f5;--muR:#BEC0C2;--acctR:#F58426;--shR:0 2px 8px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.4);--ln:rgba(190,192,194,.22);--acc:#F58426;--tagbg:rgba(20,22,28,.9)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 Bahnschrift,"Segoe UI",system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
 a{color:inherit}
@@ -121,8 +121,9 @@ main{padding:16px 22px 60px}
 .card .pct small{font-size:12px;opacity:.9}
 .card.desins>img,.card.desins>.ph{filter:grayscale(1) brightness(.45)}.card.desins{cursor:default}
 .card .pct.dsn{width:auto;height:auto;border-radius:4px;padding:8px 12px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;background:rgba(0,0,0,.75);animation:dsn 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.card .pct.dsn,.nbar.ind i{animation:none}}
 @keyframes dsn{50%{opacity:.55}}
-.tag .gris{opacity:.45;filter:grayscale(1)}
+.tag .gris{opacity:.6;filter:grayscale(1)}
 .card.off:hover img,.card.off:hover .ph{filter:none}
 .ph{color:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;font-size:15px;line-height:1.2}
 .nm{position:absolute;left:0;right:0;bottom:0;padding:22px 9px 8px;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .15s}
@@ -151,7 +152,7 @@ main{padding:16px 22px 60px}
 .btn:hover{filter:brightness(.95)}
 .btn.pri{background:var(--accb);color:var(--accbt)}
 .btn.ok{background:var(--accb);color:var(--accbt)}
-.dlx{background:none;border:0;color:var(--mu);font-size:15px;line-height:1;padding:2px 6px;margin-left:6px;cursor:pointer;border-radius:3px}.dlx:hover{color:#fff;background:var(--bad)}
+.dlx{background:none;border:0;color:var(--mu);font-size:15px;line-height:1;padding:2px 6px;margin-left:6px;cursor:pointer;border-radius:3px}.dlx:hover{color:#fff;background:var(--badB)}
 .card.conb::after{content:'▶';position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) scale(.85);width:54px;height:54px;border-radius:50%;background:var(--brand);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;padding-left:4px;box-sizing:border-box;opacity:0;transition:opacity .15s,transform .15s;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none}
 .card.conb:hover::after{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .card img.gpbg{filter:blur(4px) brightness(.62);transform:scale(1.12)}.card.baja img.gpbg{filter:blur(4px) brightness(.5) grayscale(1)}
@@ -177,9 +178,9 @@ details.mas{margin:4px 0 8px}details.mas summary{cursor:pointer;color:var(--acct
 .nvpuesto{margin-top:10px;padding-top:8px;border-top:1px solid var(--ln)}.nvpuesto .nota{margin:0 0 6px}
 .tabs{display:flex;gap:2px;margin:6px 0 14px;border-bottom:2px solid var(--ln)}.tabs button{border:0;background:none;font:inherit;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mu);padding:9px 14px;cursor:pointer;margin-bottom:-2px;border-bottom:3px solid transparent}
 .tabs button:hover{color:var(--tx)}.tabs button.on{color:var(--tx);border-bottom-color:var(--acc)}.tabp{display:none}.tabp.on{display:block}
-.btn.cancela{background:var(--bad);color:#fff;display:inline-flex;align-items:center;gap:6px}.btn.cancela svg{fill:currentColor}
+.btn.cancela{background:var(--badB);color:#fff;display:inline-flex;align-items:center;gap:6px}.btn.cancela svg{fill:currentColor}
 .btn.del{order:9;margin-left:auto;color:var(--mu);background:var(--card);font-size:17px;padding-left:12px;padding-right:12px;filter:grayscale(1)}
-.btn.del:hover{filter:none;color:#fff;background:var(--bad)}
+.btn.del:hover{filter:none;color:#fff;background:var(--badB)}
 .x{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--mu);font-size:26px;cursor:pointer}
 .nota{font-size:12px;color:var(--mu);margin-top:10px;min-height:1em}
 .lgb{display:inline-flex;vertical-align:-3px;margin-right:8px}
@@ -256,7 +257,7 @@ details.mas{margin:4px 0 8px}details.mas summary{cursor:pointer;color:var(--acct
   <div id="grid"></div>
   <div class="empty" id="empty" style="display:none"></div>
 </main>
-<div id="bg"><div class="modal" id="modal"></div></div>
+<div id="bg"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
 <div id="carga"><img id="cargalogo" alt=""><h2>Tandem<span>Stacks</span></h2><div class="pb ind" id="cargapb"><i id="cargabar"></i></div><p id="cargatxt"></p></div>
 <div id="cfgbg"><div class="modal cfg" id="cfg"></div></div>
 <script>
@@ -301,7 +302,7 @@ vAyuda:{cpu:{lineas:['Uso del procesador'],que:'cuánto está trabajando el proc
  red:{lineas:['Bajada','Subida'],que:'cuánto está bajando (naranja) y subiendo (gris) tu conexión, sumando todos los programas. Windows no cuenta la red de cada programa por separado, así que acá no se puede ver la parte del juego.',leer:'una descarga de un juego se ve como una meseta alta. Jugando online se usa poco: ahí importa el ping, no la velocidad.',ojo:'si jugás online y ves mucha bajada al mismo tiempo, alguna tienda o Windows está descargando: pausala para que no te suba el ping.'},
  fps:{lineas:['FPS del juego'],que:'cuántas imágenes por segundo se dibujan (FPS). Con un juego abierto, las del juego; sin juego, las que muestra la pantalla (si nada se mueve, son pocas: es normal).',leer:'jugando, más es mejor. Los del juego los mide Pulso (tiene que estar prendido en Configuración).',ojo:'si baja de 30 se nota trabado. Si salta mucho de arriba a abajo, se sienten tirones aunque el promedio sea alto: mirá la ficha del juego, pestaña Pulso.'}},
 vPantalla:'pantalla',abAbrir:'Abrí MSI Afterburner para ver la temperatura del procesador.',abBajar:'Para ver la temperatura del procesador, instalá MSI Afterburner (gratis) y dejalo abierto.',abLink:'Bajar MSI Afterburner',abOk:'MSI Afterburner está abierto: se suman temperaturas, vatios, velocidades, ventiladores y frenos de la placa.',abPasos:'Para que TandemStacks lo abra solo: en MSI Afterburner tocá el engranaje → pestaña General → marcá «Iniciar con Windows» y «Iniciar minimizado» → Aceptar.',abFreno:'Se está frenando por calor: va a {mhz} MHz.',cAfter:'Abrir MSI Afterburner minimizado al abrir TandemStacks (si está instalado), para ver la temperatura del procesador',abCaliente:'Pasa los 90 °C: el procesador se frena solo para no quemarse. Limpiá el polvo y revisá que los ventiladores giren.',vFpsEspera:'midiendo…',vFpsPulso:'prendé Pulso',
-cerrar:'Cerrar',ningunaAbierta:'ninguna abierta',bajandoEn:'Bajando en',cancelarDl:'Cancelar descarga en',cancelarAyuda:'Se abre {t} para cancelar la descarga; la confirmación la hacés ahí.',cerrandoT:'Cerrando tiendas…',cerradasT:'{n} tiendas cerradas · {mb} liberados',noCierra:{juego:'quedó abierta porque la usa el juego que está andando',bajando:'quedó abierta porque está bajando algo',error:'no se dejó cerrar (probá cerrarla a mano)'},conJuegoT:'Hay un juego abierto: cerralo primero',cAhorro:'Lo que ahorró TandemStacks',cAhL:'launchers cerrados',cAhR:'de memoria liberada',cAhD:'de disco liberado',cAhNada:'Todavía nada: se mide a partir de tu próxima partida.',
+cerrar:'Cerrar',ningunaAbierta:'ninguna abierta',bajandoEn:'Bajando en',cancelarDl:'Cancelar descarga en',cancelarAyuda:'Se abre {t} para cancelar la descarga; la confirmación la hacés ahí.',cerrandoT:'Cerrando tiendas…',cerradasT:'{n} tiendas cerradas · {mb} liberados',cerradaT1:'1 tienda cerrada · {mb} liberados',noCierra:{juego:'quedó abierta porque la usa el juego que está andando',bajando:'quedó abierta porque está bajando algo',error:'no se dejó cerrar (probá cerrarla a mano)'},conJuegoT:'Hay un juego abierto: cerralo primero',cAhorro:'Lo que ahorró TandemStacks',cAhL:'launchers cerrados',cAhR:'de memoria liberada',cAhD:'de disco liberado',cAhNada:'Todavía nada: se mide a partir de tu próxima partida.',
   cGuardar:'Guardar y escanear',cInicio:'Inicio de Windows',cInicioBtn:'Quitar launchers del inicio',cInicioAct:'arrancan con Windows',cInicioOk:'Ningún launcher arranca con Windows',cInicioAdmin:'Estos están configurados para todos los usuarios y necesitan permisos de administrador (sacalos desde Administrador de tareas → Inicio):',cSoloApp:'Solo disponible dentro de la aplicación.',cLibre:'software libre (MIT)'},
  english:{sinId:'This game is in your {t} account, but TandemStacks doesn\'t know which one it is yet. Tell us and the next version will show it by name for everyone. Code:',avisar:'Tell us which one',
   noComprados:'Not owned',catAyuda:'Store games that aren\'t in your library. Tap one and it opens in its store to buy it (if you already own it, the store offers to install it).',sinOfertas:'No deals with these filters. Only GOG, Steam and itch.io publish which games are on sale.',ncElegir:'It\'s on several stores. Where do you want to see it?',nivel:'Level',nivelAyuda:'Hours played with TandemStacks open. Click to see your medals.',contacto:'Contact:',gratis:'Free',descuento:'On sale',buscandoOf:'Looking for deals on {t}…',noPublica:'{t} does not publish which games are on sale. GOG, Steam and itch.io do.',noPublican:'{t} do not publish which games are on sale. GOG, Steam and itch.io do.',noOficial:'TandemStacks is not an official product of any store and is not endorsed by them. Store and game names and logos belong to their owners.',medallas:'Medals',medAyuda:'One medal every 5 levels. Each level takes a bit more than the last: level 100 takes about 2,200 hours, almost 3 years playing 2 hours a day.',medTiers:['Bronze','Silver','Gold','Platinum','Legend'],medFalta:'at {h} h',medLograda:'earned',nivelMax:'max level',bajando:'Downloading',antPag:'Previous page',sigPag:'Next page',pagina:'Page',cargandoCat:'Loading catalog…',
@@ -330,7 +331,7 @@ vAyuda:{cpu:{lineas:['CPU usage'],que:'how hard your CPU is working, from 0 to 1
  red:{lineas:['Download','Upload'],que:'how much your connection is downloading (orange) and uploading (grey), adding up every program. Windows does not count network per program, so the game\'s share cannot be shown here.',leer:'a game download looks like a high plateau. Online gaming uses little: what matters there is ping, not speed.',ojo:'if you play online and see heavy downloading at the same time, a store or Windows is downloading: pause it so your ping does not rise.'},
  fps:{lineas:['Game FPS'],que:'how many images per second are drawn (FPS). With a game open, the game\'s; without a game, what the screen shows (if nothing moves, it is low: that is normal).',leer:'while gaming, higher is better. Game FPS are measured by Pulse (it must be on in Settings).',ojo:'below 30 it feels choppy. If it jumps up and down a lot, you feel stutters even with a high average: check the game card, Pulse tab.'}},
 vPantalla:'screen',abAbrir:'Open MSI Afterburner to see the CPU temperature.',abBajar:'To see the CPU temperature, install MSI Afterburner (free) and keep it open.',abLink:'Get MSI Afterburner',abOk:'MSI Afterburner is open: temperatures, watts, clocks, fans and GPU limits are added.',abPasos:'For TandemStacks to open it: in MSI Afterburner click the gear → General tab → tick «Start with Windows» and «Start minimized» → OK.',abFreno:'It is slowing down from heat: running at {mhz} MHz.',cAfter:'Open MSI Afterburner minimized when TandemStacks opens (if installed), to see the CPU temperature',abCaliente:'Over 90 °C: the CPU slows itself down to avoid damage. Clean the dust and check the fans spin.',vFpsEspera:'measuring…',vFpsPulso:'turn on Pulse',
-cerrar:'Close',ningunaAbierta:'none open',bajandoEn:'Downloading on',cancelarDl:'Cancel download on',cancelarAyuda:'Opens {t} to cancel the download; you confirm it there.',cerrandoT:'Closing stores…',cerradasT:'{n} stores closed · {mb} freed',noCierra:{juego:'left open: the running game uses it',bajando:'left open: it is downloading',error:'would not close (try closing it yourself)'},conJuegoT:'A game is running: close it first',cAhorro:'What TandemStacks saved',cAhL:'launchers closed',cAhR:'of memory freed',cAhD:'of disk freed',cAhNada:'Nothing yet: it starts measuring on your next game.',
+cerrar:'Close',ningunaAbierta:'none open',bajandoEn:'Downloading on',cancelarDl:'Cancel download on',cancelarAyuda:'Opens {t} to cancel the download; you confirm it there.',cerrandoT:'Closing stores…',cerradasT:'{n} stores closed · {mb} freed',cerradaT1:'1 store closed · {mb} freed',noCierra:{juego:'left open: the running game uses it',bajando:'left open: it is downloading',error:'would not close (try closing it yourself)'},conJuegoT:'A game is running: close it first',cAhorro:'What TandemStacks saved',cAhL:'launchers closed',cAhR:'of memory freed',cAhD:'of disk freed',cAhNada:'Nothing yet: it starts measuring on your next game.',
   cGuardar:'Save and scan',cInicio:'Windows startup',cInicioBtn:'Remove launchers from startup',cInicioAct:'start with Windows',cInicioOk:'No launcher starts with Windows',cInicioAdmin:'These are set for all users and need administrator rights (remove them from Task Manager → Startup):',cSoloApp:'Only available inside the app.',cLibre:'free software (MIT)'}
 };
 const IDIOMA=(CONF.idioma==='english')?'english':'spanish';
@@ -405,7 +406,7 @@ function graf(series,max){  // series: [[valores,color],...] → gráfica de ár
 // notificación pasajera abajo: aparece, se va sola a los segundos y se puede cerrar con la cruz
 let notiT=0;
 function noti(txt,seg){
-  let n=$('#noti'); if(!n){n=document.createElement('div');n.id='noti';n.setAttribute('role','status');document.body.appendChild(n);}
+  let n=$('#noti'); if(!n){n=document.createElement('div');n.id='noti';n.setAttribute('role','status');n.setAttribute('aria-live','polite');n.setAttribute('role','status');document.body.appendChild(n);}
   n.innerHTML=`<span>${txt}</span><button onclick="notiFuera()" title="${esc(L.cerrar||'Cerrar')}" aria-label="${esc(L.cerrar||'Cerrar')}">✕</button>`;
   requestAnimationFrame(()=>n.classList.add('ver'));
   clearTimeout(notiT); if(seg) notiT=setTimeout(notiFuera,seg*1000);
@@ -427,7 +428,7 @@ function cerrarTiendas(){
     if(!r) return noti(L.noPudo,6);
     // se cierran las que se puede; de las otras se dice cuál y por qué
     const no=Object.entries(r.no||{}), mbT=r.mb>=1024?(r.mb/1024).toFixed(1)+' GB':r.mb+' MB';
-    const ok=r.cerradas?L.cerradasT.replace('{n}',r.cerradas).replace('{mb}',mbT):'';
+    const ok=r.cerradas?(r.cerradas===1?L.cerradaT1:L.cerradasT).replace('{n}',r.cerradas).replace('{mb}',mbT):'';
     const por=no.map(([t,m])=>`${logo(t,sc(t),13)} <b>${esc(t)}</b>: ${L.noCierra[m]||L.noCierra.error}`).join('<br>');
     noti([ok,por].filter(Boolean).join('<br>')||L.noPudo,no.length?12:6);
     EST.abiertas=(EST.abiertas||[]).filter(t=>r.no&&r.no[t]);
@@ -450,7 +451,7 @@ function enVivo(p){
   const J=EST.enJuego;  // con un juego abierto, el reloj de FPS es el del juego (si no, el de la pantalla)
   for(const k in HV){HV[k].push(p[k]||0);if(HV[k].length>HN)HV[k].shift();}
   // solo la máquina en tiempo real: el juego no se marca aparte (pedido del dueño 22/11/2026)
-  const caja=(k,pk,txt,series)=>`<div class="vv" onclick="verGraf('${k}')" title="${esc(L.verMas)}"><div class="lbl"><span>${VIVO[k].t()} <small>${pk}</small></span><b>${txt}</b></div>${graf(series,VIVO[k].max())}</div>`;
+  const caja=(k,pk,txt,series)=>`<div class="vv" role="button" tabindex="0" onclick="verGraf('${k}')" title="${esc(L.verMas)}"><div class="lbl"><span>${VIVO[k].t()} <small>${pk}</small></span><b>${txt}</b></div>${graf(series,VIVO[k].max())}</div>`;
   const tc=t=>t>=90?'var(--bad)':t>=80?'var(--warn)':'inherit', tmp=t=>t!=null?` · <span style="color:${tc(t)}">${t} °C</span>`:'';
   let h=caja('cpu',`${L.pico} ${pico(HV.cpu)} %${tmp(p.cpuTemp)}`,p.cpu+' %',[[HV.cpu,colV(p.cpu)]])
     +caja('ram',`${L.pico} ${pico(HV.ram)} %`,`${p.ram} % · ${p.ramGB} / ${p.ramTotal} GB`,[[HV.ram,colV(p.ram)]]);
@@ -467,7 +468,7 @@ let grafAbierta=null, grafTop=0;
 function verGraf(k){
   cerrarGraf(); grafAbierta=k;
   const d=document.createElement('div'); d.className='dlgbg'; d.id='dlgGraf';
-  d.innerHTML=`<div class="dlg graf"><button class="x" aria-label="${esc(L.cerrar)}">×</button><div id="grafCuerpo"></div></div>`;
+  d.innerHTML=`<div role="dialog" aria-modal="true" class="dlg graf"><button class="x" aria-label="${esc(L.cerrar)}">×</button><div id="grafCuerpo"></div></div>`;
   d.addEventListener('click',e=>{if(e.target===d||e.target.classList.contains('x'))cerrarGraf();});
   document.body.appendChild(d); pintarGraf();
   if(k==='cpu'||k==='ram'){const pide=()=>api('top',k).then(t=>{if(grafAbierta!==k)return;const b=$('#grafTop');if(b)b.innerHTML=topHtml(k,t||[]);});pide();grafTop=setInterval(pide,4000);}
@@ -604,7 +605,7 @@ function filtrosGrupo(k,base,tiendasDe,generosDe,ordenes){
 // mientras se abre una tienda la app queda en espera, así no se toca dos veces; la ventanita se saca al terminar
 function abriendo(p,nombre){
   const d=document.createElement('div'); d.className='dlgbg';
-  d.innerHTML=`<div class="dlg"><p class="cargando">${L.abriendo.replace(nombre?'{j}':' {j}',nombre?esc(nombre):'')}</p></div>`;
+  d.innerHTML=`<div role="dialog" aria-modal="true" class="dlg"><p class="cargando">${L.abriendo.replace(nombre?'{j}':' {j}',nombre?esc(nombre):'')}</p></div>`;
   document.body.appendChild(d);
   return p.then(r=>typeof r==='string'?api('esperar_tienda',r).then(()=>r,()=>r):new Promise(f=>setTimeout(()=>f(r),1500)))
     .catch(()=>false).then(r=>{d.remove();return r;});
@@ -739,7 +740,7 @@ function nivel(){
 function verMedallas(){
   const h=(EST.jugado||0)/3600, n=nivelDe(h), d=document.createElement('div'); d.className='dlgbg';
   const lista=Array.from({length:NIV_MAX/5},(_,i)=>(i+1)*5).map(m=>`<div class="${m<=n?'':'no'}">${medalla(m,56)}<b>${L.nivel} ${m}</b>${L.medTiers[rango(m)]}<br>${m<=n?L.medLograda:L.medFalta.replace('{h}',numH(horasNivel(m)))}</div>`).join('');
-  d.innerHTML=`<div class="dlg ancho"><button class="x" aria-label="${L.cerrar||'×'}">×</button><h3>${L.medallas}</h3><div>${L.medAyuda}</div><div class="medgrid">${lista}</div></div>`;
+  d.innerHTML=`<div role="dialog" aria-modal="true" class="dlg ancho"><button class="x" aria-label="${L.cerrar||'×'}">×</button><h3>${L.medallas}</h3><div>${L.medAyuda}</div><div class="medgrid">${lista}</div></div>`;
   d.addEventListener('click',e=>{if(e.target===d||e.target.classList.contains('x'))d.remove();});
   document.body.appendChild(d);
 }
@@ -771,21 +772,23 @@ function menu(){
   $('#menu').innerHTML=`
     <div class="it cerrarT" id="mCerrar" onclick="cerrarTiendas()">${itemCerrar()}</div>
     <div class="sep"></div>
-    <div class="it" onclick="tema()">${ico('moon')} ${L.mOscuro}<span class="sw ${oscuro?'on':''}"></span></div>
-    <div class="it" onclick="idioma()">${ico('globe')} ${L.mIdioma}<span class="swl ${IDIOMA==='english'?'en':'es'}" title="${IDIOMA==='english'?'English':'Español'}"></span></div>
+    <div class="it" role="button" tabindex="0" onclick="tema()">${ico('moon')} ${L.mOscuro}<span class="sw ${oscuro?'on':''}"></span></div>
+    <div class="it" role="button" tabindex="0" onclick="idioma()">${ico('globe')} ${L.mIdioma}<span class="swl ${IDIOMA==='english'?'en':'es'}" title="${IDIOMA==='english'?'English':'Español'}"></span></div>
     <div class="sep"></div>
     <div class="it msi">${ico('gauge')} ${L.mMsi}${ayuda(L.mMsiAy)}${itemMsi()}</div>
     <div class="sep"></div>
-    <div class="it" onclick="cerrarMenu();api('abrir_url','https://tandemstacks.github.io/TandemStacks/manual.html')">${ico('book')} ${L.mManual}</div>
-    <div class="it poco" onclick="cerrarMenu();api('abrir_datos')">${ico('folder')} ${L.mDatos}${ayuda(L.mDatosAy)}</div>
+    <div class="it" role="button" tabindex="0" onclick="cerrarMenu();api('abrir_url','https://tandemstacks.github.io/TandemStacks/manual.html')">${ico('book')} ${L.mManual}</div>
+    <div class="it poco" role="button" tabindex="0" onclick="cerrarMenu();api('abrir_datos')">${ico('folder')} ${L.mDatos}${ayuda(L.mDatosAy)}</div>
     <div class="sep"></div>
-    <div class="it top" onclick="cerrarMenu();configuracion(false)">${ico('gear')} ${L.mConfig}</div>`;
+    <div class="it top" role="button" tabindex="0" onclick="cerrarMenu();configuracion(false)">${ico('gear')} ${L.mConfig}</div>`;
 }
 // MSI Afterburner en el menú: abierto, instalado, o botón para bajarlo de la página oficial de MSI (solo hay versión para Windows)
 function itemMsi(){const ab=(EST.pc||{}).ab;
   if(ab==='ok') return `<small class="msiE" style="color:var(--ok)">${L.mMsiOk}</small>`;
   if(ab==='cerrado'||ab==='sin_tarea') return `<small class="msiE" style="color:var(--ok)">${L.mMsiInst}</small>`;
   return `<button class="btn pri msiE" onclick="event.stopPropagation();cerrarMenu();api('abrir_url','https://www.msi.com/Landing/afterburner/graphics-cards')">⬇ ${L.mMsiBajar}</button>`;}
+// teclado: Enter o espacio sobre algo marcado como botón (relojes, menú) hace lo mismo que el clic (accesibilidad, 24/11/2026)
+document.addEventListener('keydown',e=>{const b=e.target;if((e.key==='Enter'||e.key===' ')&&b&&b.getAttribute&&b.getAttribute('role')==='button'&&b.tagName!=='BUTTON'){e.preventDefault();b.click();}});
 function cerrarMenu(){$('#ddmenu').open=false;}
 // el ítem Cerrar tiendas se pone al día al abrir la rueda y mientras está abierta
 function itemMenuCerrar(){const d=$('#ddmenu'),m=$('#mCerrar');if(d&&d.open&&m){const h=itemCerrar();if(m._h!==h){m.innerHTML=h;m._h=h;}}}
@@ -808,7 +811,7 @@ function idioma(){
 // avisos propios: los de Windows salen en el idioma del sistema ("This page says") y con su estilo
 function dialogo(msg,si,no){
   return new Promise(fin=>{const d=document.createElement('div');d.className='dlgbg';
-    d.innerHTML=`<div class="dlg"><div>${esc(msg)}</div><div class="acts">${no?`<button class="btn" data-r="0">${no}</button>`:''}<button class="btn pri" data-r="1">${si}</button></div></div>`;
+    d.innerHTML=`<div role="dialog" aria-modal="true" class="dlg"><div>${esc(msg)}</div><div class="acts">${no?`<button class="btn" data-r="0">${no}</button>`:''}<button class="btn pri" data-r="1">${si}</button></div></div>`;
     d.addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b&&e.target!==d)return;d.remove();fin(!!b&&b.dataset.r==='1');});  // se saca de la página al cerrarlo
     document.body.appendChild(d);});
 }
@@ -940,7 +943,7 @@ function abrir(g){
       <div class="nota" id="nota"></div>
     </div></div>
     <div class="fcuerpo">
-      ${conPulso?`<div class="ftabs" role="tablist"><button class="on" data-f="info">${L.fInfo}</button><button data-f="pulso">${L.fPulso}</button></div>`:''}
+      ${conPulso?`<div class="ftabs" role="tablist"><button role="tab" aria-selected="true" class="on" data-f="info">${L.fInfo}</button><button role="tab" aria-selected="false" data-f="pulso">${L.fPulso}</button></div>`:''}
       <div class="fpan on" data-f="info">
       <div class="stats">${cajas.join('')}</div>
       ${g.desconocido?`<div class="aviso"><span>?</span><div>${L.sinId.replace('{t}',esc(g.store))} <b>${esc(g.desconocido.slice(0,12))}</b></div></div>
@@ -956,7 +959,7 @@ function abrir(g){
 // pestañas de la ficha: Pulso y Mejorar se piden recién al abrirlas
 function fichaTab(g,f){
   g._tab=f;
-  $('#modal').querySelectorAll('.ftabs button').forEach(b=>b.classList.toggle('on',b.dataset.f===f));
+  $('#modal').querySelectorAll('.ftabs button').forEach(b=>{b.classList.toggle('on',b.dataset.f===f);b.setAttribute('aria-selected',b.dataset.f===f);});
   $('#modal').querySelectorAll('.fpan').forEach(x=>x.classList.toggle('on',x.dataset.f===f));
   if(f==='pulso'){verPulso(g);verNvidia((g.items.find(x=>x.installed)||g.items[0]).id);}
 }
@@ -1053,7 +1056,7 @@ function tablaPartidas(nombre,lista){
     <td>${u.frena?L.frenaTxt[u.frena]:'<span class="mu">—</span>'}<small>${u.vsync!=null?' · V-Sync '+(u.vsync?'sí':'no'):''}${u.hz?' · '+u.hz+' Hz':''}</small></td>
     <td class="cau"><div class="cauw">${(u.consejos||[]).map(c=>'💡 '+esc(c)).join('<br>')}${(u.consejos||[]).length?'<br>':''}${u.paso?`<b>🪜 ${esc(u.paso)}</b><br>`:''}${u.nvidia?`<b style="color:var(--acct)">NVIDIA: ${esc(u.nvidia)}</b><br>`:''}${(u.causas||[]).map(esc).join('<br>')||(u.sinFps?`<span class="mu">${L.sinFpsCorto}</span>`:'')}</div></td></tr>`).join('');
   const d=document.createElement('div'); d.className='dlgbg'; d.id='dlgPartidas';
-  d.innerHTML=`<div class="dlg graf partidas"><button class="x" aria-label="${esc(L.cerrar)}">×</button><h3>${L.partidasDe} ${esc(nombre)}</h3>
+  d.innerHTML=`<div role="dialog" aria-modal="true" class="dlg graf partidas"><button class="x" aria-label="${esc(L.cerrar)}">×</button><h3>${L.partidasDe} ${esc(nombre)}</h3>
     <p class="nota">${L.partidasAyuda}</p><div class="tablaW"><table class="tabla ptab"><thead><tr>${L.partidasCols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${fil}</tbody></table></div>
     <p class="nota">🔒 ${L.pulsoLocal}</p></div>`;
   d.addEventListener('click',e=>{if(e.target===d||e.target.classList.contains('x'))d.remove();});
@@ -1175,7 +1178,7 @@ function configuracion(primera){
       <h2>${primera?L.cBienvenida:L.cTitulo}</h2>
       ${primera?`<p>${L.cIntro0}</p><div class="integ">${(c.launchers_vista||[]).map(l=>`<span title="${esc(l.n)}" style="background:${SC[l.n]}">${logo(l.n,'#fff',22)}</span>`).join('')}</div>`:''}
       <p>${primera?L.cIntro1:L.cIntro2}</p>
-      <div class="tabs" role="tablist">${[['tiendas',L.tTiendas],['auto',L.tAuto],['pulso',L.tPulso],['acerca',L.tAcerca]].map(([k,t],i)=>`<button role="tab" data-tab="${k}" class="${i?'':'on'}">${t}</button>`).join('')}</div>
+      <div class="tabs" role="tablist">${[['tiendas',L.tTiendas],['auto',L.tAuto],['pulso',L.tPulso],['acerca',L.tAcerca]].map(([k,t],i)=>`<button role="tab" aria-selected="${!i}" data-tab="${k}" class="${i?'':'on'}">${t}</button>`).join('')}</div>
       <div class="tabp on" data-p="tiendas">
       <label>${L.cLaunchers}</label>${filas}
       <label>${L.cComp}</label>
@@ -1207,7 +1210,7 @@ function configuracion(primera){
       <div class="acts"><button class="btn pri" id="c_guardar">💾 ${L.cGuardar}</button><button class="btn" onclick="api('reescanear');cerrar()">↻ ${L.reescanear}</button><button class="btn" onclick="api('abrir_datos')">📁 ${L.mDatos}${ayuda(L.mDatosAy)}</button></div>
 `;
     $('#cfg').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{  // pestañas: todo queda en la página (Guardar lee todas), solo se muestra una
-      $('#cfg').querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));
+      $('#cfg').querySelectorAll('[data-tab]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b);});
       $('#cfg').querySelectorAll('.tabp').forEach(x=>x.classList.toggle('on',x.dataset.p===b.dataset.tab));});
     requestAnimationFrame(()=>{const ps=[...$('#cfg').querySelectorAll('.tabp')];let alto=0;  // todas las pestañas del alto de la más alta: la ventana no salta al cambiar
      ps.forEach(x=>{x.style.display='block';alto=Math.max(alto,x.offsetHeight);x.style.display='';});
